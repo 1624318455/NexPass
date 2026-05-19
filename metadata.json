@@ -1,0 +1,6 @@
+{
+  "name": "NexPass Security Core Studio",
+  "description": "Interactive developer studio and playground for NexPass Flutter security module, utilizing Argon2id and AES-256-GCM under Isolates with interactive testing and visual trace logs.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
