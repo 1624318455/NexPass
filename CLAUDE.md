@@ -1,57 +1,107 @@
-# NexPass Security Core Studio - 交互式开发者工作室
+# NexPass — 零知识离线优先密码管理器
 
 ## 项目概述
 
-Google AI Studio 应用，作为 NexPass Flutter 密码管理器安全模块的交互式开发者工作室和 Playground。展示 Argon2id 密钥派生、AES-256-GCM 加解密、Isolate 后台计算等核心安全概念，并提供可视化的 Trace Logs 和交互式测试界面。
+NexPass 由两部分组成：
+
+1. **React Studio** (`src/`) — Google AI Studio 展示应用，交互式 Play
+2. **Flutter App** (`flutter_app/`) — 生产级移动密码管理器（核心产品）
+
+核心哲学：离线优先、零知识信封加密、Monica 双剪贴板、WebDAV 原子同步。
 
 - **GitHub**: https://github.com/1624318455/NexPass
 - **AI Studio**: https://ai.studio/apps/d8d1c69a-beb2-48e1-a7d3-d742d6165207
-
-## 技术栈
-
-- **语言**: TypeScript 5.8 + React 19
-- **构建工具**: Vite 6.2
-- **包管理器**: npm
-- **UI 框架**: Tailwind CSS 4 (via @tailwindcss/vite)
-- **图标库**: Lucide React
-- **动画**: Motion (Framer Motion 继任)
-- **AI API**: @google/genai (Gemini API)
-- **服务端**: Express (用于部署/代理)
-- **测试框架**: 无 [待配置]
-- **Lint/Format**: 仅 `tsc --noEmit` 类型检查
-- **数据库**: 无（前端纯展示应用）
 
 ## 项目架构
 
 ```
 NexPass/
-├── index.html              # 入口 HTML
-├── src/
-│   ├── main.tsx            # React 入口，StrictMode 挂载
-│   ├── App.tsx             # 核心应用（大单文件，包含所有 UI 模块）
-│   ├── index.css           # Tailwind 入口
-│   └── data/
-│       └── dartCode.ts     # NexPass Flutter 源码片段（作为展示数据）
-├── .env.example            # 环境变量模板
-├── metadata.json           # AI Studio 应用元数据
-├── vite.config.ts          # Vite 配置（含 HMR 控制）
-└── tsconfig.json           # TypeScript 配置
+├── CLAUDE.md                    # 本文件（静态知识地图）
+├── flutter_app/                 # ★ 核心产品：Flutter 密码管理器
+│   ├── pubspec.yaml
+│   └── lib/
+│       ├── main.dart            # 入口：密钥派生 → Isar 加密初始化 → Riverpod
+│       ├── models/
+│       │   ├── nex_item.dart    # Isar @collection 数据模型
+│       │   └── nex_item.g.dart  # Isar 代码生成
+│       ├── repositories/
+│       │   └── vault_repository.dart   # 批量加解密仓储（单 Isolate）
+│       ├── services/
+│       │   ├── crypto_utils.dart           # Argon2id + PBKDF2 + AES-256-GCM（Isolate）
+│       │   ├── secure_storage_service.dart # Keychain/Keystore 密钥管理
+│       │   ├── database_service.dart       # Isar 加密配置（AesGcmFileCipher）
+│       │   ├── clipboard_service.dart      # Monica 双剪贴板引擎
+│       │   ├── sync_service.dart           # WebDAV 原子同步（PROPFIND→PUT.tmp→MOVE）
+│       │   ├── security_audit_service.dart # 弱密码/重复密码审计
+│       │   ├── password_generator_service.dart
+│       │   ├── autofill_engine.dart        # 跨平台自动填充抽象层
+│       │   └── autofill_channel_service.dart # MethodChannel 桥接
+│       ├── state/
+│       │   ├── vault_state_notifier.dart   # Vault CRUD + 搜索
+│       │   └── sync_state.dart             # 同步进度状态机
+│       └── screens/
+│           ├── main_screen.dart            # 主仪表板（搜索/分类/复制）
+│           ├── clipboard_overlay.dart      # 双剪贴板提示覆盖层
+│           ├── security_audit_screen.dart  # 安全审计面板
+│           └── health_ring_chart.dart      # 自定义环形图
+├── src/                         # React Studio（AI Studio 展示）
+│   ├── App.tsx                  # 展示 UI
+│   └── data/dartCode.ts         # Dart 源码参考数据
+├── android/                     # Android AutofillService 存根
+│   └── app/src/main/
+│       ├── AndroidManifest.xml
+│       ├── kotlin/io/nexpass/
+│       │   ├── AutofillService.kt
+│       │   ├── AutofillStructureParser.kt
+│       │   ├── AuthActivity.kt
+│       │   └── AutofillServicePlugin.kt
+│       └── res/
+├── ios/                         # iOS CredentialProvider 扩展
+│   └── CredentialProvider/
+│       ├── CredentialProviderViewController.swift
+│       ├── CredentialStore.swift
+│       └── Info.plist
+└── web/extension/               # Chrome Extension Manifest V3
 ```
 
-### 功能模块（均在 App.tsx 内）
+## 技术栈
 
-- **Vault**: 零知识密码库模拟（搜索、分类、解密展示）
-- **Files**: Dart 源码浏览器（语法高亮、复制、下载）
-- **Sandbox**: 交互式加密沙箱（Argon2id + AES-256-GCM 参数调优）
-- **Tests**: 安全测试模拟面板
-- **Autofill**: Android/iOS/Chrome 自动填充流程模拟 + Trace Log
-- **Security**: 安全审计仪表板
+### Flutter App（核心产品）
 
-### 关键设计决策
+| 领域 | 技术 |
+|------|------|
+| 语言 | Dart 3.0+ |
+| 状态管理 | flutter_riverpod 2.4 |
+| 本地数据库 | Isar 3.1（AES-256-GCM 加密文件） |
+| 密钥存储 | flutter_secure_storage 9.0 |
+| 加密引擎 | pointycastle (Argon2id) + cryptography (AES-GCM) |
+| 网络同步 | http (WebDAV 原子事务) |
+| UI | Material 3 暗色主题 |
 
-- **HMR 默认禁用**: 通过 `DISABLE_HMR` 环境变量控制，AI Studio 环境下关闭文件监听防止 Agent 编辑闪烁
-- **路径别名**: `@/` 映射到项目根目录
-- **单文件架构**: App.tsx 包含所有业务逻辑，适合 AI Studio 应用的展示性质
+### React Studio（展示应用）
+
+| 领域 | 技术 |
+|------|------|
+| 语言 | TypeScript 5.8 + React 19 |
+| 构建 | Vite 6.2 |
+| UI | Tailwind CSS 4 |
+| AI API | @google/genai (Gemini) |
+
+## 密码学架构
+
+```
+主密码 (用户输入)
+    ↓
+Argon2id (iterations=3, memory=64MB, parallelism=4)
+    ↓
+256-bit 派生密钥
+    ├──→ AesGcmFileCipher → Isar 文件级加密
+    ├──→ VaultRepository → 字段级 AES-256-GCM 加密
+    ├──→ SecureStorageService → Keychain/Keystore 持久化
+    └──→ KeyManager → 内存缓存（5min 自动过期）
+```
+
+**双层加密**：Isar 文件块级（AesGcmFileCipher）+ 敏感字段级（VaultRepository）。
 
 ## 开发流程（自动执行）
 
@@ -60,40 +110,65 @@ NexPass/
 
 ## 常用命令
 
+### Flutter App
+- 安装依赖: `cd flutter_app && flutter pub get`
+- 代码生成: `dart run build_runner build --delete-conflicting-outputs`
+- 运行: `flutter run`
+- 构建 APK: `flutter build apk`
+- 类型检查: `flutter analyze`
+
+### React Studio
 - 安装依赖: `npm install`
-- 启动开发: `npm run dev` (端口 3000, 0.0.0.0)
+- 开发: `npm run dev` (端口 3000)
 - 构建: `npm run build`
-- 预览构建: `npm run preview`
-- 类型检查: `npm run lint` (实际是 tsc --noEmit)
-- 清理: `npm run clean` (删除 dist/ 和 server.js)
+
+## 验证规则（强制执行）
+
+### 1. 核心数据无模拟状态
+- `lib/` 中禁止 React 级模拟值，必须使用原生加密包的物理加密类
+- 所有密码学操作通过 pointycastle / cryptography 包实现
+- Demo 数据仅在 `_seedDemoDataIfEmpty()` 中使用合成值
+
+### 2. 安全性
+- 原始密钥通过 KeyManager 隔离在内存中，5min 自动过期
+- 系统剪贴板在 30s 无活动后自动清空（Clipboard.setData("")）
+- 派生密钥通过 flutter_secure_storage 存储在 Keychain/Keystore
+- 完整性标签防跨设备恢复攻击
+
+### 3. 性能
+- 所有 CPU 密集操作（Argon2id、AES-GCM、JSON 大载荷）在 Isolate 中执行
+- VaultRepository 批量加解密：单个 Isolate 处理所有字段
+- SyncService JSON 序列化/反序列化在 Isolate 中执行
+- 主线程仅处理 UI 渲染和轻量状态更新
 
 ## 编码规范
 
-- **文件命名**: camelCase (TypeScript), kebab-case (CSS)
-- **变量/函数**: camelCase
-- **组件**: PascalCase (React 函数组件)
-- **接口**: PascalCase + I 前缀可选（当前使用不带前缀风格）
-- **通用原则**: 不写废话注释，三次原则，优先编辑现有文件，安全优先。
+- **Dart**: snake_case 文件名，camelCase 变量/函数，PascalCase 类名
+- **TypeScript**: camelCase 变量/函数，PascalCase 组件/接口
+- **通用**: 不写废话注释，三次原则，优先编辑现有文件，安全优先
 
 ## 环境变量
 
-| 变量 | 用途 | 来源 |
-|------|------|------|
-| `GEMINI_API_KEY` | Gemini AI API 调用密钥 | AI Studio 自动注入 / .env.local |
-| `APP_URL` | 应用托管地址 | AI Studio 自动注入 (Cloud Run) |
+### React Studio
+| 变量 | 用途 |
+|------|------|
+| `GEMINI_API_KEY` | Gemini AI API 密钥 |
+| `APP_URL` | 应用托管地址 |
 
-## 测试策略
-
-- 当前无测试框架 [待配置]
-- **推荐**: Vitest + React Testing Library
-- **提交前检查清单**: tsc 类型检查、无调试代码、无硬编码密钥、构建成功
+### Flutter App（通过 --dart-define 传入）
+| 变量 | 用途 |
+|------|------|
+| `NEXPASS_MASTER_PASSWORD` | 主密码（首次启动必须提供） |
+| `NEXPASS_WEBDAV_URL` | WebDAV 服务地址 |
+| `NEXPASS_WEBDAV_USER` | WebDAV 用户名 |
+| `NEXPASS_WEBDAV_PASS` | WebDAV 密码 |
 
 ## 安全护栏
 
 - 人工确认: 数据库迁移、认证、支付、基础设施
 - 禁止命令: `rm -rf /`, `DROP TABLE`, `git push --force main`
 - 发布命令前展示摘要
-- 注意: `.env*` 已在 .gitignore 中排除，仅 `.env.example` 可提交
+- `.env*` 已在 .gitignore 中排除，仅 `.env.example` 可提交
 
 ## 协作规则 (Hermes)
 
@@ -107,17 +182,17 @@ NexPass/
 ## 决策权限矩阵
 
 - 局部: 单文件内部修改 → 自主
-- 模块内: App.tsx 内功能模块调整 → 自主
-- 跨模块: 修改 dartCode.ts 数据结构或 vite.config.ts → 必须确认
+- 模块内: 功能模块调整 → 自主
+- 跨模块: 修改数据模型或 vite.config.ts → 必须确认
 - 全局: 架构变更、依赖升级、环境变量修改 → 必须确认
 
 ## 记忆维护
 
-- 本项目 CLAUDE.md 只放静态知识，过程记忆由 claude-mem 负责。
+- 本 CLAUDE.md 只放静态知识，过程记忆由 claude-mem 负责。
 - 发现坑点、特殊用法立即更新；milestone 后精简合并。
 
 ## 部署与发布
 
-- 由 Google AI Studio 托管（Cloud Run）
-- 本地开发: `npm run dev`
-- 生产构建: `npm run build`
+- React Studio: Google AI Studio 托管（Cloud Run）
+- Flutter App: `flutter build apk` / `flutter build ios`
+- 本地开发: `flutter run`

@@ -1,0 +1,21 @@
+{
+  "manifest_version": 3,
+  "name": "NexPass Core Autofill Utility",
+  "version": "1.0.0",
+  "description": "Next-generation local-first, zero-knowledge browser integration module.",
+  "permissions": ["activeTab", "storage", "nativeMessaging", "declarativeContent"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "run_at": "document_end"
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": "assets/shield-48.png"
+  }
+}

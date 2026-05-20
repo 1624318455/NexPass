@@ -1,0 +1,42 @@
+name: nexpass
+description: Next-generation local-first, zero-knowledge password manager.
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.0.0 <4.0.0"
+  flutter: ">=3.10.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # State Management & Dependency Injection
+  flutter_riverpod: ^2.4.0
+  riverpod_annotation: ^2.2.0
+
+  # Local Secure Database
+  isar: ^3.1.0
+  isar_flutter_libs: ^3.1.0
+  flutter_secure_storage: ^9.0.0
+
+  # Cryptographic Engine (Zero-Knowledge Compliant)
+  cryptography: ^2.5.0
+  pointycastle: ^3.7.3
+
+  # Network & Sync
+  http: ^1.1.0
+  path_provider: ^2.1.0
+  uuid: ^4.0.0
+
+  # Modern UI Assets
+  lucide_icons: ^0.320.0
+  google_fonts: ^6.1.0
+  flutter_animate: ^4.2.0
+
+  meta: ^1.11.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  isar_generator: ^3.1.0
+  build_runner: ^2.4.0
