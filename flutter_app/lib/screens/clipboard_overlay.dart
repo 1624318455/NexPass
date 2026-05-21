@@ -143,7 +143,7 @@ class _DualClipboardOverlayState extends ConsumerState<DualClipboardOverlay>
 
                         const SizedBox(height: NexTheme.md),
 
-                        // Guidance
+                        // Guidance + Quick Paste
                         Container(
                           padding: const EdgeInsets.all(10),
                           decoration: BoxDecoration(
@@ -158,6 +158,38 @@ class _DualClipboardOverlayState extends ConsumerState<DualClipboardOverlay>
                                 style: const TextStyle(color: NexTheme.textSecondary, fontSize: 12, height: 1.5)),
                             ),
                           ]),
+                        ),
+
+                        const SizedBox(height: NexTheme.sm),
+
+                        // Quick Paste button
+                        GestureDetector(
+                          onTap: () {
+                            final pwd = notifier.consumePassword();
+                            if (pwd != null) {
+                              Clipboard.setData(ClipboardData(text: pwd));
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Password ready to paste')),
+                              );
+                            }
+                            notifier.dismiss();
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(vertical: 10),
+                            decoration: BoxDecoration(
+                              color: NexTheme.primary,
+                              borderRadius: BorderRadius.circular(NexTheme.rSm),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const NexIcon(NexIconType.copy, size: 14, color: NexTheme.background),
+                                const SizedBox(width: NexTheme.sm),
+                                Text(S.quickPaste, style: const TextStyle(
+                                  color: NexTheme.background, fontSize: 13, fontWeight: FontWeight.w600)),
+                              ],
+                            ),
+                          ),
                         ),
                       ]),
                     ),

@@ -4,6 +4,7 @@ import '../i18n/app_localizations.dart';
 import '../main.dart';
 import '../theme/nex_theme.dart';
 import '../widgets/nex_icons.dart';
+import 'main_screen.dart';
 
 class OnboardingScreen extends ConsumerStatefulWidget {
   const OnboardingScreen({super.key});
@@ -37,7 +38,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             Align(
               alignment: Alignment.topRight,
               child: TextButton(
-                onPressed: () => ref.read(onboardingDoneProvider.notifier).state = true,
+                onPressed: _finish,
                 child: Text(S.onboardingSkip, style: const TextStyle(color: NexTheme.textMuted)),
               ),
             ),
@@ -69,7 +70,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                       if (_page < pages.length - 1) {
                         _ctrl.nextPage(duration: const Duration(milliseconds: 300), curve: Curves.easeOut);
                       } else {
-                        ref.read(onboardingDoneProvider.notifier).state = true;
+                        _finish();
                       }
                     },
                     child: Container(
@@ -91,6 +92,16 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         ),
       ),
     );
+  }
+
+  void _finish() async {
+    final secureStorage = ref.read(secureStorageProvider);
+    await secureStorage.write(key: 'onboarding_done', value: 'true');
+    if (mounted) {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => const MainScreen()),
+      );
+    }
   }
 
   Widget _buildPage(_OnbPage p) {

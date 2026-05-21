@@ -71,8 +71,10 @@ class _VaultPageState extends ConsumerState<_VaultPage> {
     final vaultNotifier = ref.read(vaultStateProvider.notifier);
     final S = AppLocalizations.of(context);
 
-    return CustomScrollView(
-      slivers: [
+    return Stack(
+      children: [
+        CustomScrollView(
+          slivers: [
         // ── Header ──────────────────────────────────────
         SliverToBoxAdapter(
           child: Container(
@@ -148,6 +150,17 @@ class _VaultPageState extends ConsumerState<_VaultPage> {
           SliverFillRemaining(child: _emptyState(S))
         else
           _itemSliverList(vaultState, S),
+      ],
+        ),
+
+        Positioned(
+          bottom: 16, right: 16,
+          child: FloatingActionButton(
+            onPressed: () => _showAddDialog(context),
+            backgroundColor: NexTheme.primary,
+            child: const NexIcon(NexIconType.plus, size: 24, color: NexTheme.background),
+          ),
+        ),
       ],
     );
   }
@@ -238,6 +251,84 @@ class _VaultPageState extends ConsumerState<_VaultPage> {
             child: Text(S.delete, style: const TextStyle(color: NexTheme.danger)),
           ),
         ],
+      ),
+    );
+  }
+
+  void _showAddDialog(BuildContext context) {
+    final S = AppLocalizations.of(context);
+    final nameC = TextEditingController();
+    final userC = TextEditingController();
+    final passC = TextEditingController();
+    int type = 1;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setModalState) => AlertDialog(
+          title: Text(S.addCredential),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _addField(nameC, S.nameLabel),
+                const SizedBox(height: NexTheme.md),
+                _addField(userC, S.usernameLabel),
+                const SizedBox(height: NexTheme.md),
+                _addField(passC, S.passwordLabel),
+                const SizedBox(height: NexTheme.lg),
+                Row(children: [
+                  _typeBtn(S.typeLogin, 1, type, (v) => setModalState(() => type = v)),
+                  const SizedBox(width: NexTheme.sm),
+                  _typeBtn(S.typeCard, 2, type, (v) => setModalState(() => type = v)),
+                  const SizedBox(width: NexTheme.sm),
+                  _typeBtn(S.typeNote, 3, type, (v) => setModalState(() => type = v)),
+                ]),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx),
+                child: Text(S.cancel, style: const TextStyle(color: NexTheme.textSecondary))),
+            FilledButton(
+              onPressed: () {
+                if (nameC.text.isNotEmpty && passC.text.isNotEmpty) {
+                  ref.read(vaultStateProvider.notifier).addNewCredential(
+                    title: nameC.text, itemType: type,
+                    username: userC.text, password: passC.text,
+                  );
+                  Navigator.pop(ctx);
+                }
+              },
+              style: FilledButton.styleFrom(backgroundColor: NexTheme.primary),
+              child: Text(S.add, style: const TextStyle(color: NexTheme.background)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _addField(TextEditingController c, String hint) {
+    return TextField(
+      controller: c, style: const TextStyle(color: NexTheme.textPrimary),
+      decoration: InputDecoration(hintText: hint),
+    );
+  }
+
+  Widget _typeBtn(String label, int value, int current, Function(int) onSelect) {
+    final isActive = value == current;
+    return GestureDetector(
+      onTap: () => onSelect(value),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: isActive ? NexTheme.primaryDim : Colors.transparent,
+          borderRadius: BorderRadius.circular(NexTheme.rSm),
+          border: Border.all(color: isActive ? NexTheme.primary : NexTheme.border),
+        ),
+        child: Text(label, style: TextStyle(fontSize: 12,
+            color: isActive ? NexTheme.primary : NexTheme.textSecondary)),
       ),
     );
   }

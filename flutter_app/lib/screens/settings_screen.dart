@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../i18n/app_localizations.dart';
 import '../main.dart';
+import '../state/sync_state.dart';
+import '../state/vault_state_notifier.dart';
 import '../theme/nex_theme.dart';
 import '../widgets/nex_icons.dart';
+import 'security_audit_screen.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -27,11 +30,20 @@ class SettingsScreen extends ConsumerWidget {
           _tile(NexIconType.language, S.settingsLanguage, _langName(locale.languageCode),
               onTap: () => _showLanguageDialog(context, ref)),
           _section(S.settingsSync),
-          _tile(NexIconType.cloud, S.settingsWebDAV, S.settingsWebDAVDesc),
-          _tile(NexIconType.refresh, S.settingsSyncNow, S.settingsSyncNowDesc),
+          _tile(NexIconType.cloud, S.settingsWebDAV, S.settingsWebDAVDesc,
+              onTap: () => _showWebDAVDialog(context, ref)),
+          _tile(NexIconType.refresh, S.settingsSyncNow, S.settingsSyncNowDesc,
+              onTap: () {
+                ref.read(syncStateProvider.notifier).syncNow();
+                ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Sync started...')));
+              }),
           _section(S.settingsSecurity),
-          _tile(NexIconType.lock, S.settingsLockVault, S.settingsLockVaultDesc),
-          _tile(NexIconType.shield, S.settingsSecurityAudit, S.settingsSecurityAuditDesc),
+          _tile(NexIconType.lock, S.settingsLockVault, S.settingsLockVaultDesc,
+              onTap: () => ref.read(keyManagerProvider).wipe()),
+          _tile(NexIconType.shield, S.settingsSecurityAudit, S.settingsSecurityAuditDesc,
+              onTap: () => Navigator.push(context,
+                  MaterialPageRoute(builder: (_) => const SecurityAuditScreen()))),
           _section(S.settingsAbout),
           _tile(NexIconType.info, S.settingsVersion, '1.0.0+1'),
           _tile(NexIconType.globe, S.settingsGitHub, 'github.com/1624318455/NexPass'),
@@ -91,4 +103,64 @@ class SettingsScreen extends ConsumerWidget {
   String _langName(String code) => switch (code) {
     'zh' => '中文', 'ja' => '日本語', _ => 'English',
   };
+
+  void _showWebDAVDialog(BuildContext context, WidgetRef ref) async {
+    final secureStorage = ref.read(secureStorageProvider);
+    final urlCtrl = TextEditingController(text: await secureStorage.read('webdav_url') ?? '');
+    final userCtrl = TextEditingController(text: await secureStorage.read('webdav_user') ?? '');
+    final passCtrl = TextEditingController(text: await secureStorage.read('webdav_pass') ?? '');
+
+    if (!context.mounted) return;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('WebDAV Configuration'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _fieldCtrl(urlCtrl, 'URL (https://dav.example.com/dav)'),
+              const SizedBox(height: NexTheme.md),
+              _fieldCtrl(userCtrl, 'Username'),
+              const SizedBox(height: NexTheme.md),
+              _fieldCtrl(passCtrl, 'Password', obscure: true),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancel', style: TextStyle(color: NexTheme.textSecondary))),
+          FilledButton(
+            onPressed: () async {
+              await secureStorage.write(key: 'webdav_url', value: urlCtrl.text);
+              await secureStorage.write(key: 'webdav_user', value: userCtrl.text);
+              await secureStorage.write(key: 'webdav_pass', value: passCtrl.text);
+              if (ctx.mounted) Navigator.pop(ctx);
+            },
+            style: FilledButton.styleFrom(backgroundColor: NexTheme.primary),
+            child: const Text('Save', style: TextStyle(color: NexTheme.background)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _fieldCtrl(TextEditingController c, String hint, {bool obscure = false}) {
+    return TextField(
+      controller: c, obscureText: obscure,
+      style: const TextStyle(color: NexTheme.textPrimary),
+      decoration: InputDecoration(
+        hintText: hint, hintStyle: const TextStyle(color: NexTheme.textMuted),
+        filled: true, fillColor: NexTheme.background,
+        border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(NexTheme.rSm),
+            borderSide: const BorderSide(color: NexTheme.border)),
+        enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(NexTheme.rSm),
+            borderSide: const BorderSide(color: NexTheme.border)),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      ),
+    );
+  }
 }

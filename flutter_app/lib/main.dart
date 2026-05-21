@@ -56,7 +56,22 @@ void main() async {
     );
   }
 
-  // ── 3. Open Isar database ────────────────────────────────────────────
+  // ── 3. Activate KeyManager (5min auto-expiry) ────────────────────────
+  final keyManager = KeyManager(
+    sessionTimeout: const Duration(minutes: 5),
+    onLock: () => debugPrint('[KeyManager] Vault locked'),
+  );
+  keyManager.activate(derivedKey);
+
+  // ── 4. Persist onboarding state ──────────────────────────────────────
+  final onboardingDone = await secureStorage.read('onboarding_done') == 'true';
+
+  // ── 5. Load WebDAV credentials from SecureStorage ────────────────────
+  final webDavUrl = await secureStorage.read('webdav_url') ?? '';
+  final webDavUser = await secureStorage.read('webdav_user') ?? '';
+  final webDavPass = await secureStorage.read('webdav_pass') ?? '';
+
+  // ── 6. Open Isar database ────────────────────────────────────────────
   final isar = await DatabaseService.initialize();
 
   // ── 4. Build repository & seed demo data ─────────────────────────────
@@ -67,22 +82,11 @@ void main() async {
 
   await _seedDemoDataIfEmpty(repository, derivedKey);
 
-  // ── 5. Build sync service ──────────────────────────────────────────
-  // NOTE: In production, WebDAV credentials must come from a settings
-  // screen backed by SecureStorage. The values below are placeholders.
+  // ── 8. Build sync service ──────────────────────────────────────────
   final syncService = SyncService(
-    webDavUrl: const String.fromEnvironment(
-      'NEXPASS_WEBDAV_URL',
-      defaultValue: '',
-    ),
-    username: const String.fromEnvironment(
-      'NEXPASS_WEBDAV_USER',
-      defaultValue: '',
-    ),
-    password: const String.fromEnvironment(
-      'NEXPASS_WEBDAV_PASS',
-      defaultValue: '',
-    ),
+    webDavUrl: webDavUrl,
+    username: webDavUser,
+    password: webDavPass,
   );
 
   runApp(
@@ -90,6 +94,9 @@ void main() async {
       overrides: [
         masterKeyProvider.overrideWithValue(derivedKey),
         repositoryProvider.overrideWithValue(repository),
+        secureStorageProvider.overrideWithValue(secureStorage),
+        keyManagerProvider.overrideWithValue(keyManager),
+        onboardingDoneProvider.overrideWithValue(onboardingDone),
         syncServiceProvider.overrideWithValue(syncService),
         syncStateProvider.overrideWith((ref) => SyncNotifier(
               syncService: ref.watch(syncServiceProvider),
@@ -164,8 +171,18 @@ NexField _field(String name, String value, int fieldType, bool sensitive) {
 /// Locale provider — controls the app language.
 final localeProvider = StateProvider<Locale>((ref) => const Locale('en'));
 
-/// Tracks whether the user has completed onboarding.
-final onboardingDoneProvider = StateProvider<bool>((ref) => false);
+/// Tracks whether the user has completed onboarding (read-only after init).
+final onboardingDoneProvider = Provider<bool>((ref) => false);
+
+/// SecureStorageService instance (injected at startup).
+final secureStorageProvider = Provider<SecureStorageService>((ref) {
+  throw UnimplementedError('Override at app startup');
+});
+
+/// KeyManager instance (injected at startup).
+final keyManagerProvider = Provider<KeyManager>((ref) {
+  throw UnimplementedError('Override at app startup');
+});
 
 class NexPassApp extends ConsumerWidget {
   const NexPassApp({super.key});
