@@ -87,6 +87,23 @@ Argon2id (iterations=3, memory=64MB, parallelism=4)  ← Isolate
 - **iOS**: CredentialProvider 扩展 Swift 存根
 - **抽象层**: autofill_engine.dart 跨平台统一接口 + MethodChannel 桥接
 
+#### 🌐 国际化
+| 语言 | 状态 |
+|------|------|
+| 中文（简体） | 默认 — 52 字符串全覆盖 |
+| 日本語 | 完全対応 — 52 文字列 + 動的補間 |
+| English | Full — 52 strings + dynamic interpolation |
+
+- **技术方案**: `Map<String, Map<String, String>>` + `InheritedWidget`，零第三方依赖
+- **即时切换**: AppBar 🌐 按钮 / 设置页语言选项，无需重启
+- **热重载友好**: `context.watch<LocaleState>().t('key')` 访问模式
+
+#### 🚀 引导与导航
+- **4 页引导流程**: 零知识加密 → 双剪贴板 → WebDAV 同步 → 安全审计
+- `PageView` + `Indicator` 分页，底部「跳过」入口
+- **底部导航栏**: Vault（密码库）+ Settings（设置）双 Tab
+- **设置页**: 语言切换、WebDAV 配置、手动同步、应用锁定、关于
+
 ### 项目结构
 
 ```
@@ -94,7 +111,12 @@ NexPass/
 ├── flutter_app/                 # ★ 核心产品
 │   ├── pubspec.yaml
 │   └── lib/
-│       ├── main.dart                    # 入口：密钥派生 → Isar 初始化 → Riverpod
+│       ├── main.dart                    # 入口：密钥派生 → Isar 初始化 → Riverpod → 底部导航
+│       ├── l10n/
+│       │   ├── locale_state.dart        # Locale 状态管理（InheritedWidget）
+│       │   ├── strings_zh.dart          # 中文翻译 (52 字符串)
+│       │   ├── strings_ja.dart          # 日文翻译
+│       │   └── strings_en.dart          # 英文翻译
 │       ├── models/
 │       │   └── nex_item.dart            # Isar @collection 数据模型
 │       ├── repositories/
@@ -112,8 +134,11 @@ NexPass/
 │       ├── state/
 │       │   ├── vault_state_notifier.dart     # Vault CRUD + 搜索
 │       │   └── sync_state.dart               # 同步进度状态机
+│       ├── state/settings_state.dart         # 设置状态（语言、WebDAV 配置）
 │       └── screens/
 │           ├── main_screen.dart             # 主仪表板（搜索/分类/复制）
+│           ├── settings_screen.dart         # 设置页（语言/WebDAV/同步/锁定）
+│           ├── onboarding_screen.dart       # 引导流程（4 页 PageView）
 │           ├── clipboard_overlay.dart       # 双剪贴板提示覆盖层
 │           ├── security_audit_screen.dart   # 安全审计面板
 │           └── health_ring_chart.dart       # 自定义环形图

@@ -1,5 +1,117 @@
 # Changelog
 
+## [0.2.4] — 2026-05-21
+
+### 新增 — 引导流程与设置页
+
+#### 🚀 引导流程（4 页）
+- 零知识密码学原理介绍页
+- Monica 双剪贴板使用说明页
+- WebDAV 原子同步配置引导页
+- 安全审计面板功能介绍页
+- `PageView` + `Indicator` 分页导航，底部「跳过」入口
+
+#### ⚙️ 设置页
+- 语言切换（中/日/英）
+- WebDAV 配置（URL/用户名/密码表单）
+- 手动同步触发
+- 应用锁定设置
+- 关于页面（版本号、许可证）
+
+#### 🔽 底部导航栏
+- 双 Tab 导航：Vault（密码库）+ Settings（设置）
+- 语言切换从 AppBar 🌐 移至设置页，统一管理
+- 引导→密码库→设置全链路真机验证通过
+
+### Commits
+
+| Hash | 描述 |
+|------|------|
+| `bad87fb` | feat: add onboarding flow, settings page, and bottom navigation |
+
+---
+
+## [0.2.3] — 2026-05-21
+
+### 新增 — i18n 国际化
+
+#### 🌐 三语支持
+- **中文**（简体）— 默认语言
+- **日文**— ローカライズ完全対応
+- **英文**— Full English localization
+- 52 个翻译字符串 + 6 个动态插值（含复数规则）
+- AppBar 🌐 按钮即时切换，无需重启
+
+#### 技术方案
+- 轻量自研：`Map<String, Map<String, String>>` + `InheritedWidget`
+- 零代码生成、零第三方依赖
+- 热重载友好：`context.watch<LocaleState>().t('key')`
+- 真机验证三种语言界面显示正确
+
+### Commits
+
+| Hash | 描述 |
+|------|------|
+| `2f6b3e0` | feat: add trilingual i18n support (zh/ja/en) |
+
+---
+
+## [0.2.2] — 2026-05-21
+
+### 新增 — UI 修复与暗色主题
+
+#### 🎨 UI 图标兼容性修复
+- Material Icons 在部分 Android 设备渲染异常 → **改用 emoji 文本图标**
+- 🔐 → 密码图标 / 🔄 → 同步图标 / ✂️ → 剪贴板图标
+- 彻底移除 `lucide_icons`、`google_fonts`、`flutter_animate` 未使用依赖
+
+#### 🌙 GitHub 风格暗色主题
+- 品牌渐变徽章（#58a6ff → #8250df）
+- 卡片式布局 + 毛玻璃效果
+- 统一色调：背景 `#0d1117`、卡片 `#161b22`、边框 `#30363d`
+
+#### 📂 分类导航
+- 分类标签栏：All / Logins / Cards / Notes
+- FAB 浮动添加按钮
+- 空状态提示（「暂无密码，点击 + 添加」）
+- 真机验证分类筛选与渲染正确
+
+### Commits
+
+| Hash | 描述 |
+|------|------|
+| `84c20ac` | feat: fix UI icons, add dark theme and category navigation |
+
+---
+
+## [0.2.1] — 2026-05-21
+
+### 修复
+
+#### 🔧 编译错误修复
+- pointycastle API 对齐：`Pointycastle/BasicUtils` → `pointycastle/extensions`（Dart 3 兼容）
+- Isar 兼容性：AGP 降级至 `8.7.3`（适配 `isar_flutter_libs 3.1.0`）
+- Android v2 embedding 迁移完成
+- `flutter create` 重建全平台脚手架（Android / iOS / Web）
+
+### 配置
+
+- `android/app/build.gradle` — AGP 版本锁定 8.7.3
+- 平台级 `AndroidManifest.xml`、`Info.plist` 存根
+
+### 验证
+
+- OPPO Android 15 debug 构建成功
+- `adb install` 真机部署验证通过
+
+### Commits
+
+| Hash | 描述 |
+|------|------|
+| `7d6448c` | fix: fix compile errors, align pointycastle API, verify on real device |
+
+---
+
 ## [0.2.0] — 2026-05-20
 
 ### 新增 — Flutter 密码管理器 (核心产品)
