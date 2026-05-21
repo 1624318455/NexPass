@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import '../theme/nex_theme.dart';
 
 /// An animated ring chart that visualises a 0–1 health score.
 ///
@@ -104,7 +105,7 @@ class _HealthRingChartState extends State<HealthRingChart>
                   Text(
                     widget.label,
                     style: TextStyle(
-                      color: Colors.grey[500],
+                      color: NexTheme.textMuted,
                       fontSize: widget.size * 0.075,
                       fontWeight: FontWeight.w600,
                       letterSpacing: 1.2,
@@ -120,9 +121,9 @@ class _HealthRingChartState extends State<HealthRingChart>
   }
 
   Color _scoreColor(double value) {
-    if (value < 0.35) return const Color(0xFFEF4444);
-    if (value < 0.6) return const Color(0xFFF59E0B);
-    return const Color(0xFF2DD4BF);
+    if (value < 0.35) return NexTheme.danger;
+    if (value < 0.6) return NexTheme.warning;
+    return NexTheme.primary;
   }
 }
 
@@ -143,7 +144,7 @@ class _RingPainter extends CustomPainter {
 
     // ── Background track ─────────────────────────────────────────
     final trackPaint = Paint()
-      ..color = const Color(0xFF1E293B)
+      ..color = NexTheme.border
       ..style = PaintingStyle.stroke
       ..strokeWidth = strokeWidth
       ..strokeCap = StrokeCap.round;
@@ -194,9 +195,9 @@ class _RingPainter extends CustomPainter {
   }
 
   Color _progressColor(double value) {
-    if (value < 0.35) return const Color(0xFFEF4444);
-    if (value < 0.6) return const Color(0xFFF59E0B);
-    return const Color(0xFF2DD4BF);
+    if (value < 0.35) return NexTheme.danger;
+    if (value < 0.6) return NexTheme.warning;
+    return NexTheme.primary;
   }
 
   @override

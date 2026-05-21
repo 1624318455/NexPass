@@ -1,333 +1,173 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
 import '../i18n/app_localizations.dart';
 import '../services/clipboard_service.dart';
+import '../theme/nex_theme.dart';
+import '../widgets/nex_icons.dart';
 
-/// An animated overlay that appears when the dual-clipboard flow activates.
-///
-/// Displays:
-/// - TOTP code copied to system clipboard
-/// - Password cached in secure RAM with live countdown
-/// - Guidance text for the two-step paste flow
-///
-/// Auto-dismisses when the RAM cache expires or the user taps to close.
 class DualClipboardOverlay extends ConsumerStatefulWidget {
   const DualClipboardOverlay({super.key});
 
   @override
-  ConsumerState<DualClipboardOverlay> createState() =>
-      _DualClipboardOverlayState();
+  ConsumerState<DualClipboardOverlay> createState() => _DualClipboardOverlayState();
 }
 
 class _DualClipboardOverlayState extends ConsumerState<DualClipboardOverlay>
     with SingleTickerProviderStateMixin {
-  late AnimationController _animCtrl;
-  late Animation<double> _fadeAnim;
-  late Animation<Offset> _slideAnim;
+  late AnimationController _ctrl;
+  late Animation<double> _fade;
+  late Animation<Offset> _slide;
 
   @override
   void initState() {
     super.initState();
-    _animCtrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 350),
-    );
-    _fadeAnim = CurvedAnimation(parent: _animCtrl, curve: Curves.easeOut);
-    _slideAnim = Tween<Offset>(
-      begin: const Offset(0, -0.3),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(parent: _animCtrl, curve: Curves.easeOutCubic));
-    _animCtrl.forward();
+    _ctrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 350));
+    _fade = CurvedAnimation(parent: _ctrl, curve: Curves.easeOut);
+    _slide = Tween(begin: const Offset(0, -0.3), end: Offset.zero)
+        .animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOutCubic));
+    _ctrl.forward();
   }
 
   @override
-  void dispose() {
-    _animCtrl.dispose();
-    super.dispose();
-  }
+  void dispose() { _ctrl.dispose(); super.dispose(); }
 
   @override
   Widget build(BuildContext context) {
     final clipState = ref.watch(dualClipboardProvider);
-    final S = AppLocalizations.of(context);
-
     if (!clipState.isVisible) return const SizedBox.shrink();
 
     final notifier = ref.read(dualClipboardProvider.notifier);
     final remaining = clipState.secondsRemaining;
     final progress = remaining / DualClipboardNotifier.cacheDurationSeconds;
+    final S = AppLocalizations.of(context);
 
-    return AnimatedBuilder(
-      animation: _animCtrl,
-      builder: (context, child) {
-        return FadeTransition(
-          opacity: _fadeAnim,
-          child: SlideTransition(
-            position: _slideAnim,
-            child: child,
-          ),
-        );
-      },
-      child: Positioned(
-        top: MediaQuery.of(context).padding.top + 8,
-        left: 16,
-        right: 16,
-        child: Material(
-          color: Colors.transparent,
-          child: Container(
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFF1A2E35), Color(0xFF0F1F24)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
+    return FadeTransition(
+      opacity: _fade,
+      child: SlideTransition(
+        position: _slide,
+        child: Positioned(
+          top: MediaQuery.of(context).padding.top + 8,
+          left: NexTheme.lg, right: NexTheme.lg,
+          child: Material(
+            color: Colors.transparent,
+            child: Container(
+              decoration: BoxDecoration(
+                color: NexTheme.surfaceElevated,
+                borderRadius: BorderRadius.circular(NexTheme.rXl),
+                border: Border.all(color: NexTheme.primary.withOpacity(0.2)),
+                boxShadow: [BoxShadow(color: NexTheme.primary.withOpacity(0.08), blurRadius: 20, offset: const Offset(0, 6))],
               ),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: Colors.tealAccent.withOpacity( 0.3),
-                width: 1,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.tealAccent.withOpacity( 0.15),
-                  blurRadius: 24,
-                  offset: const Offset(0, 8),
-                ),
-              ],
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(16),
-              child: Stack(
-                children: [
-                  // Countdown progress bar
-                  Positioned.fill(
-                    child: Align(
-                      alignment: Alignment.bottomLeft,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(NexTheme.xl),
+                child: Stack(
+                  children: [
+                    // Progress bar
+                    Positioned(bottom: 0, left: 0,
                       child: FractionallySizedBox(
                         widthFactor: progress,
-                        child: Container(
-                          height: 3,
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [
-                                Colors.tealAccent.withOpacity( 0.6),
-                                Colors.tealAccent.withOpacity( 0.1),
-                              ],
-                            ),
-                          ),
-                        ),
+                        child: Container(height: 2, color: NexTheme.primary.withOpacity(0.5)),
                       ),
                     ),
-                  ),
 
-                  Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // ── Header row ──────────────────────────
-                        Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: Colors.tealAccent.withOpacity( 0.15),
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: const Text('\u{1F6E1}', style: TextStyle(fontSize: 18)),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    S.dualClipboardActive,
-                                    style: const TextStyle(
-                                      color: Colors.tealAccent,
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w700,
-                                      letterSpacing: 0.5,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    clipState.itemName,
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ],
-                              ),
-                            ),
-                            GestureDetector(
-                              onTap: () {
-                                _animCtrl.reverse().then((_) {
-                                  notifier.dismiss();
-                                });
-                              },
-                              child: const Text('\u{2716}', style: TextStyle(color: Color(0xFF8B949E), fontSize: 16)),
-                            ),
-                          ],
-                        ),
+                    Padding(
+                      padding: const EdgeInsets.all(NexTheme.lg),
+                      child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+                        // Header
+                        Row(children: [
+                          const NexIcon(NexIconType.clipboard, size: 18, color: NexTheme.primary),
+                          const SizedBox(width: NexTheme.sm),
+                          Expanded(
+                            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                              Text(S.dualClipboardActive, style: const TextStyle(
+                                color: NexTheme.primary, fontSize: 12, fontWeight: FontWeight.w700, letterSpacing: 0.3)),
+                              const SizedBox(height: 2),
+                              Text(clipState.itemName, style: const TextStyle(
+                                color: NexTheme.textPrimary, fontSize: 14, fontWeight: FontWeight.w600),
+                                maxLines: 1, overflow: TextOverflow.ellipsis),
+                            ]),
+                          ),
+                          GestureDetector(
+                            onTap: () { _ctrl.reverse().then((_) => notifier.dismiss()); },
+                            child: const NexIcon(NexIconType.close, size: 16, color: NexTheme.textMuted),
+                          ),
+                        ]),
 
-                        const SizedBox(height: 14),
+                        const SizedBox(height: NexTheme.lg),
 
-                        // ── TOTP row ────────────────────────────
-                        _InfoRow(
-                          emoji: '\u{23F0}',
-                          label: S.totpToClipboard,
-                          child: GestureDetector(
-                            onTap: () {
-                              Clipboard.setData(
-                                  ClipboardData(text: clipState.totpCode));
-                            },
+                        // TOTP row
+                        Row(children: [
+                          const NexIcon(NexIconType.clock, size: 14, color: NexTheme.textMuted),
+                          const SizedBox(width: NexTheme.sm),
+                          Text(S.totpToClipboard, style: const TextStyle(color: NexTheme.textSecondary, fontSize: 11, fontWeight: FontWeight.w600)),
+                          const Spacer(),
+                          GestureDetector(
+                            onTap: () => Clipboard.setData(ClipboardData(text: clipState.totpCode)),
                             child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 10, vertical: 5),
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                               decoration: BoxDecoration(
-                                color: Colors.black.withOpacity( 0.4),
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(
-                                  color: Colors.tealAccent.withOpacity( 0.3),
-                                ),
+                                color: NexTheme.background,
+                                borderRadius: BorderRadius.circular(NexTheme.rSm),
+                                border: Border.all(color: NexTheme.border),
                               ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text(
-                                    clipState.totpCode,
-                                    style: const TextStyle(
-                                      color: Colors.tealAccent,
-                                      fontFamily: 'monospace',
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w700,
-                                      letterSpacing: 2,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  const Text('\u{1F4CB}', style: TextStyle(fontSize: 12)),
-                                ],
-                              ),
+                              child: Row(mainAxisSize: MainAxisSize.min, children: [
+                                Text(clipState.totpCode, style: const TextStyle(
+                                  color: NexTheme.primary, fontFamily: 'monospace', fontSize: 14, fontWeight: FontWeight.w700, letterSpacing: 1.5)),
+                                const SizedBox(width: NexTheme.sm),
+                                const NexIcon(NexIconType.copy, size: 12, color: NexTheme.primary),
+                              ]),
                             ),
                           ),
-                        ),
+                        ]),
 
-                        const SizedBox(height: 10),
+                        const SizedBox(height: NexTheme.md),
 
-                        // ── Password RAM cache row ──────────────
-                        _InfoRow(
-                          emoji: '\u{1F9E0}',
-                          label: S.passwordToRam,
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Container(
-                                width: 8,
-                                height: 8,
-                                decoration: BoxDecoration(
-                                  color: remaining > 10
-                                      ? Colors.greenAccent
-                                      : remaining > 5
-                                          ? Colors.orangeAccent
-                                          : Colors.redAccent,
-                                  shape: BoxShape.circle,
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                '${remaining}s',
-                                style: TextStyle(
-                                  color: remaining > 10
-                                      ? Colors.greenAccent
-                                      : remaining > 5
-                                          ? Colors.orangeAccent
-                                          : Colors.redAccent,
-                                  fontFamily: 'monospace',
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                            ],
+                        // RAM row
+                        Row(children: [
+                          const NexIcon(NexIconType.brain, size: 14, color: NexTheme.textMuted),
+                          const SizedBox(width: NexTheme.sm),
+                          Text(S.passwordToRam, style: const TextStyle(color: NexTheme.textSecondary, fontSize: 11, fontWeight: FontWeight.w600)),
+                          const Spacer(),
+                          Container(
+                            width: 8, height: 8,
+                            decoration: BoxDecoration(
+                              color: remaining > 10 ? NexTheme.success : remaining > 5 ? NexTheme.warning : NexTheme.danger,
+                              shape: BoxShape.circle,
+                            ),
                           ),
-                        ),
+                          const SizedBox(width: NexTheme.sm),
+                          Text('${remaining}s', style: TextStyle(
+                            color: remaining > 10 ? NexTheme.success : remaining > 5 ? NexTheme.warning : NexTheme.danger,
+                            fontFamily: 'monospace', fontSize: 13, fontWeight: FontWeight.w700)),
+                        ]),
 
-                        const SizedBox(height: 12),
+                        const SizedBox(height: NexTheme.md),
 
-                        // ── Guidance text ───────────────────────
+                        // Guidance
                         Container(
                           padding: const EdgeInsets.all(10),
                           decoration: BoxDecoration(
-                            color: Colors.tealAccent.withOpacity( 0.06),
-                            borderRadius: BorderRadius.circular(8),
+                            color: NexTheme.primaryDim.withOpacity(0.3),
+                            borderRadius: BorderRadius.circular(NexTheme.rSm),
                           ),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text('\u{2139}\u{FE0F}', style: TextStyle(fontSize: 14)),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  S.clipboardCountdown(remaining),
-                                  style: TextStyle(
-                                    color: Colors.grey[300],
-                                    fontSize: 12,
-                                    height: 1.4,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
+                          child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                            const NexIcon(NexIconType.info, size: 14, color: NexTheme.primary),
+                            const SizedBox(width: NexTheme.sm),
+                            Expanded(
+                              child: Text(S.clipboardCountdown(remaining),
+                                style: const TextStyle(color: NexTheme.textSecondary, fontSize: 12, height: 1.5)),
+                            ),
+                          ]),
                         ),
-                      ],
+                      ]),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
         ),
       ),
-    );
-  }
-}
-
-// ── Reusable row widget ─────────────────────────────────────────────────
-
-class _InfoRow extends StatelessWidget {
-  final String emoji;
-  final String label;
-  final Widget child;
-
-  const _InfoRow({
-    required this.emoji,
-    required this.label,
-    required this.child,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Text(emoji, style: const TextStyle(fontSize: 14)),
-        const SizedBox(width: 8),
-        Text(
-          label,
-          style: TextStyle(
-            color: Colors.grey[400],
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        const Spacer(),
-        child,
-      ],
     );
   }
 }

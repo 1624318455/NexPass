@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
 import '../i18n/app_localizations.dart';
 import '../main.dart';
+import '../theme/nex_theme.dart';
+import '../widgets/nex_icons.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -10,101 +11,51 @@ class SettingsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final S = AppLocalizations.of(context);
-    final currentLocale = ref.watch(localeProvider);
+    final locale = ref.watch(localeProvider);
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0D1117),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF161B22),
-        title: Text(S.settings, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
-      ),
+      backgroundColor: NexTheme.background,
       body: ListView(
+        padding: EdgeInsets.fromLTRB(0, MediaQuery.of(context).padding.top + 12, 0, 80),
         children: [
-          // ── General ──
-          _sectionHeader(S.settingsGeneral),
-          _settingTile(
-            emoji: '\u{1F310}',
-            title: S.settingsLanguage,
-            subtitle: _langName(currentLocale.languageCode),
-            onTap: () => _showLanguageDialog(context, ref),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(NexTheme.lg, 0, NexTheme.lg, NexTheme.xl),
+            child: Text(S.settings, style: const TextStyle(
+              color: NexTheme.textPrimary, fontSize: 24, fontWeight: FontWeight.w800)),
           ),
-
-          const SizedBox(height: 16),
-
-          // ── Sync ──
-          _sectionHeader(S.settingsSync),
-          _settingTile(
-            emoji: '\u{2601}\u{FE0F}',
-            title: S.settingsWebDAV,
-            subtitle: S.settingsWebDAVDesc,
-            onTap: () {},
-          ),
-          _settingTile(
-            emoji: '\u{1F504}',
-            title: S.settingsSyncNow,
-            subtitle: S.settingsSyncNowDesc,
-            onTap: () {},
-          ),
-
-          const SizedBox(height: 16),
-
-          // ── Security ──
-          _sectionHeader(S.settingsSecurity),
-          _settingTile(
-            emoji: '\u{1F512}',
-            title: S.settingsLockVault,
-            subtitle: S.settingsLockVaultDesc,
-            onTap: () {},
-          ),
-          _settingTile(
-            emoji: '\u{1F6E1}',
-            title: S.settingsSecurityAudit,
-            subtitle: S.settingsSecurityAuditDesc,
-            onTap: () {},
-          ),
-
-          const SizedBox(height: 16),
-
-          // ── About ──
-          _sectionHeader(S.settingsAbout),
-          _settingTile(
-            emoji: '\u{2139}\u{FE0F}',
-            title: S.settingsVersion,
-            subtitle: '1.0.0+1',
-            onTap: () {},
-          ),
-          _settingTile(
-            emoji: '\u{1F517}',
-            title: S.settingsGitHub,
-            subtitle: 'github.com/1624318455/NexPass',
-            onTap: () {},
-          ),
+          _section(S.settingsGeneral),
+          _tile(NexIconType.language, S.settingsLanguage, _langName(locale.languageCode),
+              onTap: () => _showLanguageDialog(context, ref)),
+          _section(S.settingsSync),
+          _tile(NexIconType.cloud, S.settingsWebDAV, S.settingsWebDAVDesc),
+          _tile(NexIconType.refresh, S.settingsSyncNow, S.settingsSyncNowDesc),
+          _section(S.settingsSecurity),
+          _tile(NexIconType.lock, S.settingsLockVault, S.settingsLockVaultDesc),
+          _tile(NexIconType.shield, S.settingsSecurityAudit, S.settingsSecurityAuditDesc),
+          _section(S.settingsAbout),
+          _tile(NexIconType.info, S.settingsVersion, '1.0.0+1'),
+          _tile(NexIconType.globe, S.settingsGitHub, 'github.com/1624318455/NexPass'),
         ],
       ),
     );
   }
 
-  Widget _sectionHeader(String title) {
+  Widget _section(String title) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+      padding: const EdgeInsets.fromLTRB(NexTheme.lg, NexTheme.xl, NexTheme.lg, NexTheme.sm),
       child: Text(title, style: const TextStyle(
-        color: Color(0xFF8B949E), fontSize: 11, fontWeight: FontWeight.w700,
-        letterSpacing: 0.8)),
+        color: NexTheme.textMuted, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 0.8)),
     );
   }
 
-  Widget _settingTile({
-    required String emoji,
-    required String title,
-    required String subtitle,
-    required VoidCallback onTap,
-  }) {
+  Widget _tile(NexIconType icon, String title, String subtitle, {VoidCallback? onTap}) {
     return ListTile(
-      leading: Text(emoji, style: const TextStyle(fontSize: 22)),
-      title: Text(title, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500)),
-      subtitle: Text(subtitle, style: const TextStyle(color: Color(0xFF8B949E), fontSize: 12)),
-      trailing: const Text('\u{203A}', style: TextStyle(color: Color(0xFF484F58), fontSize: 20)),
+      leading: NexIcon(icon, size: 20),
+      title: Text(title, style: const TextStyle(color: NexTheme.textPrimary, fontSize: 14, fontWeight: FontWeight.w500)),
+      subtitle: Text(subtitle, style: const TextStyle(color: NexTheme.textMuted, fontSize: 12)),
+      trailing: const NexIcon(NexIconType.chevronRight, size: 16, color: NexTheme.textMuted),
       onTap: onTap,
+      contentPadding: const EdgeInsets.symmetric(horizontal: NexTheme.lg, vertical: 2),
     );
   }
 
@@ -117,16 +68,15 @@ class SettingsScreen extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF161B22),
-        title: const Text('Language', style: TextStyle(color: Colors.white)),
+        title: const Text('Language'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: languages.map((l) {
             final current = ref.read(localeProvider).languageCode == l.$1;
             return ListTile(
-              leading: Text(l.$3, style: const TextStyle(fontSize: 24)),
-              title: Text(l.$2, style: TextStyle(color: current ? const Color(0xFF2DD4BF) : Colors.white)),
-              trailing: current ? const Text('\u{2714}', style: TextStyle(color: Color(0xFF2DD4BF), fontSize: 18)) : null,
+              leading: Text(l.$3, style: const TextStyle(fontSize: 22)),
+              title: Text(l.$2, style: TextStyle(color: current ? NexTheme.primary : NexTheme.textPrimary)),
+              trailing: current ? const NexIcon(NexIconType.check, size: 18, color: NexTheme.primary) : null,
               onTap: () {
                 ref.read(localeProvider.notifier).state = Locale(l.$1);
                 Navigator.pop(ctx);
@@ -139,8 +89,6 @@ class SettingsScreen extends ConsumerWidget {
   }
 
   String _langName(String code) => switch (code) {
-    'zh' => '中文',
-    'ja' => '日本語',
-    _ => 'English',
+    'zh' => '中文', 'ja' => '日本語', _ => 'English',
   };
 }

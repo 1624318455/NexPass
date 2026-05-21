@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 
 import 'i18n/app_localizations.dart';
+import 'theme/nex_theme.dart';
 
 import 'models/nex_item.dart';
 import 'repositories/vault_repository.dart';
@@ -184,26 +185,7 @@ class NexPassApp extends ConsumerWidget {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      theme: ThemeData(
-        brightness: Brightness.dark,
-        scaffoldBackgroundColor: const Color(0xFF0D1117),
-        colorScheme: const ColorScheme.dark(
-          primary: Color(0xFF2DD4BF),
-          onPrimary: Color(0xFF0D1117),
-          surface: Color(0xFF161B22),
-          onSurface: Colors.white,
-        ),
-        appBarTheme: const AppBarTheme(
-          backgroundColor: Color(0xFF161B22),
-          elevation: 0,
-          iconTheme: IconThemeData(color: Color(0xFF8B949E)),
-        ),
-        iconTheme: const IconThemeData(color: Color(0xFF8B949E)),
-        snackBarTheme: const SnackBarThemeData(
-          backgroundColor: Color(0xFF161B22),
-          contentTextStyle: TextStyle(color: Colors.white),
-        ),
-      ),
+      theme: NexTheme.theme,
       home: ref.watch(onboardingDoneProvider) ? const MainScreen() : const OnboardingScreen(),
     );
   }
