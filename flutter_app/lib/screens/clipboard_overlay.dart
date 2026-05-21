@@ -134,11 +134,7 @@ class _DualClipboardOverlayState extends ConsumerState<DualClipboardOverlay>
                                 color: Colors.tealAccent.withOpacity( 0.15),
                                 borderRadius: BorderRadius.circular(10),
                               ),
-                              child: const Icon(
-                                Icons.shield,
-                                color: Colors.tealAccent,
-                                size: 20,
-                              ),
+                              child: const Text('\u{1F6E1}', style: TextStyle(fontSize: 18)),
                             ),
                             const SizedBox(width: 12),
                             Expanded(
@@ -168,14 +164,13 @@ class _DualClipboardOverlayState extends ConsumerState<DualClipboardOverlay>
                                 ],
                               ),
                             ),
-                            IconButton(
-                              icon: const Icon(Icons.close,
-                                  color: Colors.grey, size: 18),
-                              onPressed: () {
+                            GestureDetector(
+                              onTap: () {
                                 _animCtrl.reverse().then((_) {
                                   notifier.dismiss();
                                 });
                               },
+                              child: const Text('\u{2716}', style: TextStyle(color: Color(0xFF8B949E), fontSize: 16)),
                             ),
                           ],
                         ),
@@ -184,7 +179,7 @@ class _DualClipboardOverlayState extends ConsumerState<DualClipboardOverlay>
 
                         // ── TOTP row ────────────────────────────
                         _InfoRow(
-                          icon: Icons.timer,
+                          emoji: '\u{23F0}',
                           label: 'TOTP → Clipboard',
                           child: GestureDetector(
                             onTap: () {
@@ -215,8 +210,7 @@ class _DualClipboardOverlayState extends ConsumerState<DualClipboardOverlay>
                                     ),
                                   ),
                                   const SizedBox(width: 8),
-                                  const Icon(Icons.copy,
-                                      color: Colors.tealAccent, size: 14),
+                                  const Text('\u{1F4CB}', style: TextStyle(fontSize: 12)),
                                 ],
                               ),
                             ),
@@ -227,7 +221,7 @@ class _DualClipboardOverlayState extends ConsumerState<DualClipboardOverlay>
 
                         // ── Password RAM cache row ──────────────
                         _InfoRow(
-                          icon: Icons.memory,
+                          emoji: '\u{1F9E0}',
                           label: 'Password → RAM',
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
@@ -274,8 +268,7 @@ class _DualClipboardOverlayState extends ConsumerState<DualClipboardOverlay>
                           child: Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Icon(Icons.info_outline,
-                                  color: Colors.tealAccent, size: 16),
+                              const Text('\u{2139}\u{FE0F}', style: TextStyle(fontSize: 14)),
                               const SizedBox(width: 8),
                               Expanded(
                                 child: Text(
@@ -308,12 +301,12 @@ class _DualClipboardOverlayState extends ConsumerState<DualClipboardOverlay>
 // ── Reusable row widget ─────────────────────────────────────────────────
 
 class _InfoRow extends StatelessWidget {
-  final IconData icon;
+  final String emoji;
   final String label;
   final Widget child;
 
   const _InfoRow({
-    required this.icon,
+    required this.emoji,
     required this.label,
     required this.child,
   });
@@ -322,7 +315,7 @@ class _InfoRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(icon, color: Colors.grey[500], size: 16),
+        Text(emoji, style: const TextStyle(fontSize: 14)),
         const SizedBox(width: 8),
         Text(
           label,

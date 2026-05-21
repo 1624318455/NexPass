@@ -14,6 +14,7 @@ import 'services/sync_service.dart';
 import 'state/sync_state.dart';
 import 'state/vault_state_notifier.dart';
 import 'screens/main_screen.dart';
+import 'screens/security_audit_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
