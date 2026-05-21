@@ -174,6 +174,35 @@ class AppLocalizations {
   String get onboardingComplete => get('onboardingComplete');
   String get onboardingCompleteDesc => get('onboardingCompleteDesc');
   String get onboardingLanguageSystem => get('onboardingLanguageSystem');
+
+  // Settings (extended)
+  String get settingsAppearance => get('settingsAppearance');
+  String get settingsTheme => get('settingsTheme');
+  String get settingsThemeDesc => get('settingsThemeDesc');
+  String get settingsMasterPassword => get('settingsMasterPassword');
+  String get settingsMasterPasswordDesc => get('settingsMasterPasswordDesc');
+  String get settingsBiometricDesc => get('settingsBiometricDesc');
+  String get settingsAutofillLabel => get('settingsAutofillLabel');
+  String get settingsAutofillDesc => get('settingsAutofillDesc');
+  String get settingsEnabledLabel => get('settingsEnabledLabel');
+  String get settingsDisabledLabel => get('settingsDisabledLabel');
+  String get settingsLayout => get('settingsLayout');
+  String get settingsBottomNav => get('settingsBottomNav');
+  String get settingsBottomNavDesc => get('settingsBottomNavDesc');
+  String get settingsPasswordList => get('settingsPasswordList');
+  String get settingsPasswordListDesc => get('settingsPasswordListDesc');
+  String get settingsShowRecent => get('settingsShowRecent');
+  String get settingsShowFavorites => get('settingsShowFavorites');
+  String get settingsPasswordCards => get('settingsPasswordCards');
+  String get settingsPasswordCardsDesc => get('settingsPasswordCardsDesc');
+  String get settingsDataManager => get('settingsDataManager');
+  String get settingsImport => get('settingsImport');
+  String get settingsImportDesc => get('settingsImportDesc');
+  String get settingsBitwarden => get('settingsBitwarden');
+  String get settingsKeePass => get('settingsKeePass');
+  String get settingsCSV => get('settingsCSV');
+  String get settingsAuthDisplay => get('settingsAuthDisplay');
+  String get settingsAuthDisplayDesc => get('settingsAuthDisplayDesc');
 }
 
 class _AppLocalizationsDelegate
