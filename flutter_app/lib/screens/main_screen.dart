@@ -30,22 +30,14 @@ class _MainScreenState extends ConsumerState<MainScreen> {
           body: _navIndex == 0
               ? _VaultPage(searchController: _searchController)
               : const SettingsScreen(),
-          bottomNavigationBar: Container(
-            decoration: const BoxDecoration(
-              color: NexTheme.surface,
-              border: Border(top: BorderSide(color: NexTheme.border, width: 0.5)),
-            ),
-            child: NavigationBar(
-              selectedIndex: _navIndex,
-              onDestinationSelected: (i) => setState(() => _navIndex = i),
-              backgroundColor: Colors.transparent,
-              elevation: 0,
-              height: 64,
-              destinations: [
-                NavigationDestination(icon: NexIcon(NexIconType.lock, size: 22), label: S.tabVault),
-                NavigationDestination(icon: NexIcon(NexIconType.gear, size: 22), label: S.tabSettings),
-              ],
-            ),
+          bottomNavigationBar: NavigationBar(
+            selectedIndex: _navIndex,
+            onDestinationSelected: (i) => setState(() => _navIndex = i),
+            height: 64,
+            destinations: [
+              NavigationDestination(icon: NexIcon(NexIconType.lock, size: 22), label: S.tabVault),
+              NavigationDestination(icon: NexIcon(NexIconType.gear, size: 22), label: S.tabSettings),
+            ],
           ),
         ),
         const DualClipboardOverlay(),
@@ -71,6 +63,8 @@ class _VaultPageState extends ConsumerState<_VaultPage> {
     final vaultNotifier = ref.read(vaultStateProvider.notifier);
     final S = AppLocalizations.of(context);
 
+    final cs = Theme.of(context).colorScheme;
+
     return Stack(
       children: [
         CustomScrollView(
@@ -79,24 +73,23 @@ class _VaultPageState extends ConsumerState<_VaultPage> {
         SliverToBoxAdapter(
           child: Container(
             padding: EdgeInsets.fromLTRB(NexTheme.lg, MediaQuery.of(context).padding.top + 12, NexTheme.lg, NexTheme.lg),
-            decoration: const BoxDecoration(color: NexTheme.surface),
             child: Row(
               children: [
                 Container(
                   width: 32, height: 32,
                   decoration: BoxDecoration(
-                    gradient: const LinearGradient(colors: [NexTheme.primary, NexTheme.primaryGlow]),
+                    color: cs.primary,
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Center(child: NexIcon(NexIconType.shield, size: 18, color: NexTheme.textPrimary)),
+                  child: Center(child: NexIcon(NexIconType.shield, size: 18, color: cs.onPrimary)),
                 ),
                 const SizedBox(width: 10),
-                Text(S.appTitle, style: const TextStyle(
-                  fontSize: 17, fontWeight: FontWeight.w700, color: NexTheme.textPrimary, letterSpacing: -0.3)),
+                Text(S.appTitle, style: TextStyle(
+                  fontSize: 17, fontWeight: FontWeight.w700, color: cs.onSurface, letterSpacing: -0.3)),
                 const Spacer(),
                 GestureDetector(
                   onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SecurityAuditScreen())),
-                  child: const NexIcon(NexIconType.shield, size: 20, color: NexTheme.textSecondary),
+                  child: NexIcon(NexIconType.shield, size: 20, color: cs.onSurfaceVariant),
                 ),
               ],
             ),
@@ -110,12 +103,12 @@ class _VaultPageState extends ConsumerState<_VaultPage> {
             child: TextField(
               controller: widget.searchController,
               onChanged: vaultNotifier.setSearchQuery,
-              style: const TextStyle(color: NexTheme.textPrimary, fontSize: 14),
+              style: TextStyle(color: cs.onSurface, fontSize: 14),
               decoration: InputDecoration(
                 hintText: S.searchHint,
-                prefixIcon: const Padding(
-                  padding: EdgeInsets.only(left: 12, right: 8),
-                  child: NexIcon(NexIconType.search, size: 18),
+                prefixIcon: Padding(
+                  padding: const EdgeInsets.only(left: 12, right: 8),
+                  child: NexIcon(NexIconType.search, size: 18, color: cs.onSurfaceVariant),
                 ),
                 prefixIconConstraints: const BoxConstraints(minWidth: 40, minHeight: 0),
               ),
@@ -157,8 +150,7 @@ class _VaultPageState extends ConsumerState<_VaultPage> {
           bottom: 16, right: 16,
           child: FloatingActionButton(
             onPressed: () => _showAddDialog(context),
-            backgroundColor: NexTheme.primary,
-            child: const NexIcon(NexIconType.plus, size: 24, color: NexTheme.background),
+            child: const NexIcon(NexIconType.plus, size: 24),
           ),
         ),
       ],
@@ -167,28 +159,25 @@ class _VaultPageState extends ConsumerState<_VaultPage> {
 
   Widget _tabChip(WidgetRef ref, String label, NexIconType icon, int index, int activeIndex) {
     final isActive = index == activeIndex;
+    final cs = Theme.of(ref.context).colorScheme;
     return Expanded(
-      child: GestureDetector(
-        onTap: () => ref.read(vaultStateProvider.notifier).setTab(index),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          decoration: BoxDecoration(
-            color: isActive ? NexTheme.primaryDim : NexTheme.surface,
-            borderRadius: BorderRadius.circular(NexTheme.rSm),
-            border: Border.all(color: isActive ? NexTheme.primary : NexTheme.border),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              NexIcon(icon, size: 13, color: isActive ? NexTheme.primary : NexTheme.textSecondary),
-              const SizedBox(width: 4),
-              Text(label, style: TextStyle(
-                fontSize: 11, fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
-                color: isActive ? NexTheme.primary : NexTheme.textSecondary,
-              )),
-            ],
-          ),
+      child: FilterChip(
+        label: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            NexIcon(icon, size: 13, color: isActive ? cs.primary : cs.onSurfaceVariant),
+            const SizedBox(width: 4),
+            Text(label, style: TextStyle(
+              fontSize: 11, fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
+            )),
+          ],
+        ),
+        selected: isActive,
+        onSelected: (_) => ref.read(vaultStateProvider.notifier).setTab(index),
+        selectedColor: cs.primaryContainer,
+        checkmarkColor: cs.onPrimaryContainer,
+        side: BorderSide(
+          color: isActive ? cs.primary : cs.outline,
         ),
       ),
     );
@@ -345,74 +334,77 @@ class _VaultItemCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     NexIconType iconType;
     Color iconColor;
     switch (item.type) {
-      case 1: iconType = NexIconType.person; iconColor = NexTheme.primary; break;
-      case 2: iconType = NexIconType.globe; iconColor = const Color(0xFF8B5CF6); break;
+      case 1: iconType = NexIconType.person; iconColor = cs.primary; break;
+      case 2: iconType = NexIconType.globe; iconColor = cs.tertiary; break;
       case 3: iconType = NexIconType.stickyNote; iconColor = NexTheme.warning; break;
-      case 4: iconType = NexIconType.clock; iconColor = const Color(0xFFF97583); break;
-      default: iconType = NexIconType.key; iconColor = NexTheme.primary;
+      case 4: iconType = NexIconType.clock; iconColor = cs.error; break;
+      default: iconType = NexIconType.key; iconColor = cs.primary;
     }
     final hasTotp = item.fields.any((f) => f.name == 'totpSecret' || f.fieldType == 3);
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: NexTheme.sm),
-      padding: const EdgeInsets.all(NexTheme.md),
-      decoration: BoxDecoration(
-        color: NexTheme.surface,
-        borderRadius: BorderRadius.circular(NexTheme.rMd),
-        border: Border.all(color: NexTheme.border),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 36, height: 36,
-            decoration: BoxDecoration(
-              color: iconColor.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(NexTheme.rSm),
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(NexTheme.md),
+        child: Row(
+          children: [
+            Container(
+              width: 36, height: 36,
+              decoration: BoxDecoration(
+                color: iconColor.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(NexTheme.rSm),
+              ),
+              child: Center(child: NexIcon(iconType, size: 18, color: iconColor)),
             ),
-            child: Center(child: NexIcon(iconType, size: 18, color: iconColor)),
-          ),
-          const SizedBox(width: NexTheme.md),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(item.name, style: const TextStyle(
-                        color: NexTheme.textPrimary, fontSize: 13, fontWeight: FontWeight.w600),
-                        maxLines: 1, overflow: TextOverflow.ellipsis),
-                    ),
-                    if (hasTotp) Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: NexTheme.primaryDim,
-                        borderRadius: BorderRadius.circular(3),
+            const SizedBox(width: NexTheme.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(item.name, style: TextStyle(
+                          color: cs.onSurface, fontSize: 13, fontWeight: FontWeight.w600),
+                          maxLines: 1, overflow: TextOverflow.ellipsis),
                       ),
-                      child: const Text('TOTP', style: TextStyle(
-                        color: NexTheme.primary, fontSize: 9, fontWeight: FontWeight.w700, letterSpacing: 0.5)),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 2),
-                Text(item.username, style: const TextStyle(color: NexTheme.textMuted, fontSize: 12),
-                    maxLines: 1, overflow: TextOverflow.ellipsis),
-              ],
+                      if (hasTotp) Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: cs.primaryContainer,
+                          borderRadius: BorderRadius.circular(3),
+                        ),
+                        child: Text('TOTP', style: TextStyle(
+                          color: cs.onPrimaryContainer, fontSize: 9, fontWeight: FontWeight.w700, letterSpacing: 0.5)),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 2),
+                  Text(item.username, style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12),
+                      maxLines: 1, overflow: TextOverflow.ellipsis),
+                ],
+              ),
             ),
-          ),
-          const SizedBox(width: NexTheme.sm),
-          GestureDetector(
-            onTap: onCopy,
-            child: const Padding(padding: EdgeInsets.all(6), child: NexIcon(NexIconType.copy, size: 16)),
-          ),
-          GestureDetector(
-            onTap: onDelete,
-            child: const Padding(padding: EdgeInsets.all(6), child: NexIcon(NexIconType.trash, size: 16)),
-          ),
-        ],
+            const SizedBox(width: NexTheme.sm),
+            IconButton(
+              onPressed: onCopy,
+              icon: NexIcon(NexIconType.copy, size: 16, color: cs.onSurfaceVariant),
+              iconSize: 16,
+              padding: const EdgeInsets.all(6),
+              constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+            ),
+            IconButton(
+              onPressed: onDelete,
+              icon: NexIcon(NexIconType.trash, size: 16, color: cs.error.withOpacity(0.6)),
+              iconSize: 16,
+              padding: const EdgeInsets.all(6),
+              constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+            ),
+          ],
+        ),
       ),
     );
   }
