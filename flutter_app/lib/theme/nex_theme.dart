@@ -5,8 +5,18 @@ import 'package:flutter/material.dart';
 class NexTheme {
   NexTheme._();
 
-  /// MD3 seed color — blue palette.
-  static const Color seedColor = Color(0xFF3B82F6);
+  /// MD3 seed color — deep purple/indigo (matching reference design).
+  static const Color seedColor = Color(0xFF5B21B6);
+
+  /// Theme presets matching the reference design color palettes.
+  static const List<Color> themePresets = [
+    Color(0xFF5B21B6), // Deep purple (default)
+    Color(0xFF1D4ED8), // Blue
+    Color(0xFF059669), // Green
+    Color(0xFFD97706), // Amber
+    Color(0xFFDC2626), // Red
+    Color(0xFF7C3AED), // Violet
+  ];
 
   // ── Semantic color aliases (for use outside ThemeData) ──────────────
 
@@ -20,7 +30,7 @@ class NexTheme {
   // ── Legacy color aliases (mapped to MD3) ────────────────────────────
   // These allow existing screen code to compile without changes.
 
-  static const background = Color(0xFFF8FAFC);
+  static const background = Color(0xFFF5F5F5);
   static const surface = Color(0xFFFFFFFF);
   static const surfaceElevated = Color(0xFFF1F5F9);
   static const border = Color(0xFFE2E8F0);

@@ -203,8 +203,7 @@ class NexPassApp extends ConsumerWidget {
         GlobalCupertinoLocalizations.delegate,
       ],
       theme: NexTheme.lightTheme,
-      darkTheme: NexTheme.darkTheme,
-      themeMode: ThemeMode.system,
+      themeMode: ThemeMode.light,
       home: ref.watch(onboardingDoneProvider) ? const MainScreen() : const OnboardingScreen(),
     );
   }
