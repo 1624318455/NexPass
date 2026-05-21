@@ -4,7 +4,6 @@ import 'package:path_provider/path_provider.dart';
 import 'dart:convert';
 import 'dart:io';
 
-import '../models/nex_item.dart';
 import '../state/vault_state_notifier.dart';
 
 // ---------------------------------------------------------------------------
@@ -67,7 +66,7 @@ class AutofillChannelService {
 
     debugPrint('[AutofillChannelService] Query: "$domain"');
 
-    final items = _vaultNotifier.state.items.where((item) {
+    final items = _vaultNotifier.currentItems.where((item) {
       return item.name.toLowerCase().contains(lowerDomain) ||
           item.username.toLowerCase().contains(lowerDomain) ||
           item.fields
@@ -98,7 +97,7 @@ class AutofillChannelService {
 
     debugPrint('[AutofillChannelService] Fill request: $credentialId');
 
-    final items = _vaultNotifier.state.items;
+    final items = _vaultNotifier.currentItems;
     final match = items.where((i) => i.uuid == credentialId);
 
     if (match.isEmpty) {

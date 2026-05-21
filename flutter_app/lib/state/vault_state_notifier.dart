@@ -58,6 +58,9 @@ class VaultNotifier extends StateNotifier<VaultState> {
 
   Uint8List get derivedKey => _masterKey;
 
+  /// Public accessor for current items (avoids accessing protected `state`).
+  List<NexItem> get currentItems => state.items;
+
   /// Loads vault items, filtered by the current search query.
   Future<void> loadVault() async {
     state = state.copyWith(isLoading: true, errorMessage: null);

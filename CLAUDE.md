@@ -171,13 +171,26 @@ Argon2id (iterations=3, memory=64MB, parallelism=4)
 - `.env*` 已在 .gitignore 中排除，仅 `.env.example` 可提交
 
 ## 协作规则 (Hermes)
-
-- 完成任务后通知 Hermes（飞书群聊 @爱马仕）
-- Hermes 负责: CHANGELOG.md、README.md 等文档创建和维护
-- 通知内容需包含: 项目路径、GitHub URL、commit hashes、变更摘要、需要做的事
-- Hermes bot open_id: ou_bcb48e73ca7890a12ac93b588437167b
-- Hermes API: http://127.0.0.1:8642（OpenAI 兼容格式）
-- 使用 Node.js 发送飞书消息（Windows 下 curl 中文乱码）
+- 完成任务后通过飞书通知 Hermes（bot open_id: ou_bcb48e73ca7890a12ac93b588437167b）
+- API: http://127.0.0.1:8642（OpenAI 兼容格式）
+- 消息内容：项目路径、GitHub URL（https://github.com/1624318455/NexPass）、commit hashes、变更摘要、待办事项
+- 使用 Node.js 发送飞书消息（避免 Windows curl 中文乱码）
+- 飞书 @ 提及必须使用富文本格式 (msg_type: "post")，纯文本 `@名字` 不会触发通知：
+  ```json
+  {
+    "msg_type": "post",
+    "content": {
+      "zh_cn": {
+        "title": "",
+        "content": [[
+          {"tag": "at", "user_id": "ou_xxx"},
+          {"tag": "text", "text": " 消息内容"}
+        ]]
+      }
+    }
+  }
+  ```
+- 注意：不同应用下同一个用户的 open_id 不同，需要使用当前应用识别到的 ID
 
 ## 决策权限矩阵
 

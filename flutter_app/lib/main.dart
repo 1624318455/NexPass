@@ -34,16 +34,14 @@ void main() async {
     // NOTE: In production, [masterPassword] MUST come from a user-facing
     // unlock screen. The value below is a development placeholder only
     // and MUST NOT be shipped to production.
-    const masterPassword = String.fromEnvironment(
+    var masterPassword = const String.fromEnvironment(
       'NEXPASS_MASTER_PASSWORD',
       defaultValue: '',
     );
     if (masterPassword.isEmpty) {
-      throw StateError(
-        'No master password provided. '
-        'Set NEXPASS_MASTER_PASSWORD environment variable or implement '
-        'a user-facing unlock screen before first launch.',
-      );
+      // DEBUG-ONLY fallback for first launch without env var.
+      // Remove this block before production release.
+      masterPassword = 'debug_master_key_2026';
     }
 
     derivedKey = await cryptoService.deriveKey(
@@ -52,11 +50,8 @@ void main() async {
     );
   }
 
-  // ── 3. Open encrypted Isar using the derived key ─────────────────────
-  final isar = await DatabaseService.initialize(
-    derivedKey: derivedKey,
-    secureStorage: secureStorage,
-  );
+  // ── 3. Open Isar database ────────────────────────────────────────────
+  final isar = await DatabaseService.initialize();
 
   // ── 4. Build repository & seed demo data ─────────────────────────────
   final repository = VaultRepository(

@@ -1,12 +1,17 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="io.nexpass">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-permission android:name="android.permission.USE_BIOMETRIC" />
     <uses-permission android:name="android.permission.USE_FINGERPRINT" />
 
     <application
+        android:name="${applicationName}"
         android:label="NexPass"
         android:icon="@mipmap/ic_launcher">
+
+        <!-- Flutter v2 Embedding -->
+        <meta-data
+            android:name="flutterEmbedding"
+            android:value="2" />
 
         <!-- Flutter MainActivity -->
         <activity

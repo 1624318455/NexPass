@@ -185,11 +185,12 @@ class _MainScreenState extends ConsumerState<MainScreen> {
     final notifier = ref.read(vaultStateProvider.notifier);
     final isActive = index == activeIndex;
     return ChoiceChip(
-      label: Text(title),
+      label: Text(title, style: TextStyle(
+        color: isActive ? Colors.white : Colors.grey,
+      )),
       selected: isActive,
       onSelected: (_) => notifier.setTab(index),
       selectedColor: Colors.teal[800],
-      textColor: isActive ? Colors.white : Colors.grey,
     );
   }
 

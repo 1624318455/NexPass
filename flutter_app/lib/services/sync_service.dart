@@ -115,7 +115,7 @@ class SyncService {
         'Remote vault not found — uploading full local vault',
       ));
       await _atomicUpload(localItems, emit);
-      emit(const SyncProgressEvent(
+      emit(SyncProgressEvent(
         SyncPhase.success,
         'Initial upload complete (${localItems.length} items)',
       ));

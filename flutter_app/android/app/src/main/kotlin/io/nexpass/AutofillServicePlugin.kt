@@ -5,10 +5,8 @@ import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 
 /**
- * Flutter plugin that registers the MethodChannel for autofill
- * communication between Dart and Android native services.
- *
- * Register this in [MainActivity.configureFlutterEngine].
+ * Registers the MethodChannel for autofill communication
+ * between Dart and Android native services.
  */
 class AutofillServicePlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
 
@@ -21,26 +19,9 @@ class AutofillServicePlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
 
     override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
         when (call.method) {
-            "queryMatchingCredentials" -> {
-                val domain = call.argument<String>("domain") ?: ""
-                // Delegate to Dart-side handler via the channel's default behavior.
-                // In production, the AutofillService would call this directly.
-                result.success(emptyList<Any>())
-            }
-
-            "fillCredential" -> {
-                val credentialId = call.argument<String>("id") ?: ""
-                result.success(mapOf(
-                    "success" to true,
-                    "timestamp" to System.currentTimeMillis()
-                ))
-            }
-
-            "onCredentialSelected" -> {
-                val uuid = call.argument<String>("uuid") ?: ""
-                result.success(null)
-            }
-
+            "queryMatchingCredentials" -> result.success(emptyList<Any>())
+            "fillCredential" -> result.success(mapOf("success" to true, "timestamp" to System.currentTimeMillis()))
+            "onCredentialSelected" -> result.success(null)
             else -> result.notImplemented()
         }
     }
