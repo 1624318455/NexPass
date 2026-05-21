@@ -21,12 +21,16 @@ class HealthRingChart extends StatefulWidget {
   /// Animation duration when [score] changes.
   final Duration duration;
 
+  /// Label below the percentage (localized).
+  final String label;
+
   const HealthRingChart({
     super.key,
     required this.score,
     this.size = 180,
     this.strokeWidth = 14,
     this.duration = const Duration(milliseconds: 900),
+    this.label = 'Health',
   });
 
   @override
@@ -98,7 +102,7 @@ class _HealthRingChartState extends State<HealthRingChart>
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'Health',
+                    widget.label,
                     style: TextStyle(
                       color: Colors.grey[500],
                       fontSize: widget.size * 0.075,

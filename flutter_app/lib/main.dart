@@ -2,8 +2,11 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
+
+import 'i18n/app_localizations.dart';
 
 import 'models/nex_item.dart';
 import 'repositories/vault_repository.dart';
@@ -156,14 +159,27 @@ NexField _field(String name, String value, int fieldType, bool sensitive) {
 // App root widget
 // ---------------------------------------------------------------------------
 
-class NexPassApp extends StatelessWidget {
+/// Locale provider — controls the app language.
+final localeProvider = StateProvider<Locale>((ref) => const Locale('en'));
+
+class NexPassApp extends ConsumerWidget {
   const NexPassApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final locale = ref.watch(localeProvider);
+
     return MaterialApp(
       title: 'NexPass',
       debugShowCheckedModeBanner: false,
+      locale: locale,
+      supportedLocales: AppLocalizations.supportedLocales,
+      localizationsDelegates: const [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
       theme: ThemeData(
         brightness: Brightness.dark,
         scaffoldBackgroundColor: const Color(0xFF0D1117),

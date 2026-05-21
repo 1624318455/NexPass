@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../i18n/app_localizations.dart';
+import '../main.dart';
 import '../state/vault_state_notifier.dart';
 import '../services/clipboard_service.dart';
 import '../services/password_generator_service.dart';
@@ -23,6 +25,7 @@ class _MainScreenState extends ConsumerState<MainScreen> {
     final vaultState = ref.watch(vaultStateProvider);
     final vaultNotifier = ref.read(vaultStateProvider.notifier);
     final clipState = ref.watch(dualClipboardProvider);
+    final S = AppLocalizations.of(context);
 
     return Stack(
       children: [
@@ -36,23 +39,31 @@ class _MainScreenState extends ConsumerState<MainScreen> {
               children: [
                 _iconBadge('\u{1F6E1}', const Color(0xFF2DD4BF)),
                 const SizedBox(width: 10),
-                const Column(
+                Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('NexPass',
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white, letterSpacing: -0.3)),
-                    Text('Zero-Knowledge Vault',
-                        style: TextStyle(fontSize: 11, color: Color(0xFF8B949E))),
+                    Text(S.appTitle,
+                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white, letterSpacing: -0.3)),
+                    Text(S.vaultSubtitle,
+                        style: const TextStyle(fontSize: 11, color: Color(0xFF8B949E))),
                   ],
                 ),
               ],
             ),
             actions: [
+              // Language switcher
+              GestureDetector(
+                onTap: () => _showLanguageDialog(context),
+                child: const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+                  child: Text('\u{1F310}', style: TextStyle(fontSize: 20)),
+                ),
+              ),
               if (clipState.isVisible)
-                _iconBtn('\u{1F4CB}', const Color(0xFF3FB950), _handleQuickPaste, 'Quick Paste'),
+                _iconBtn('\u{1F4CB}', const Color(0xFF3FB950), _handleQuickPaste, S.quickPaste),
               _iconBtn('\u{1F6E1}', const Color(0xFF58A6FF), () => Navigator.push(context,
-                  MaterialPageRoute(builder: (_) => const SecurityAuditScreen())), 'Security Audit'),
-              _iconBtn('\u{1F510}', const Color(0xFF58A6FF), () => _showGeneratorDialog(context), 'Generator'),
+                  MaterialPageRoute(builder: (_) => const SecurityAuditScreen())), S.securityAudit),
+              _iconBtn('\u{1F510}', const Color(0xFF58A6FF), () => _showGeneratorDialog(context), S.generator),
             ],
           ),
           body: Column(
@@ -65,7 +76,7 @@ class _MainScreenState extends ConsumerState<MainScreen> {
                   onChanged: vaultNotifier.setSearchQuery,
                   style: const TextStyle(color: Colors.white, fontSize: 14),
                   decoration: InputDecoration(
-                    hintText: 'Search vault...',
+                    hintText: S.searchHint,
                     hintStyle: const TextStyle(color: Color(0xFF484F58)),
                     prefixIcon: const Padding(
                       padding: EdgeInsets.only(left: 12, right: 8),
@@ -96,13 +107,13 @@ class _MainScreenState extends ConsumerState<MainScreen> {
                 margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                 child: Row(
                   children: [
-                    _tabChip(ref, '\u{2714} All', 0, vaultState.selectedTypeTab),
+                    _tabChip(ref, '\u{2714} ${S.tabAll}', 0, vaultState.selectedTypeTab),
                     const SizedBox(width: 8),
-                    _tabChip(ref, '\u{1F464} Logins', 1, vaultState.selectedTypeTab),
+                    _tabChip(ref, '\u{1F464} ${S.tabLogins}', 1, vaultState.selectedTypeTab),
                     const SizedBox(width: 8),
-                    _tabChip(ref, '\u{1F4B3} Cards', 2, vaultState.selectedTypeTab),
+                    _tabChip(ref, '\u{1F4B3} ${S.tabCards}', 2, vaultState.selectedTypeTab),
                     const SizedBox(width: 8),
-                    _tabChip(ref, '\u{1F4DD} Notes', 3, vaultState.selectedTypeTab),
+                    _tabChip(ref, '\u{1F4DD} ${S.tabNotes}', 3, vaultState.selectedTypeTab),
                   ],
                 ),
               ),
@@ -114,7 +125,7 @@ class _MainScreenState extends ConsumerState<MainScreen> {
                 child: vaultState.isLoading
                     ? const Center(child: CircularProgressIndicator(color: Color(0xFF2DD4BF)))
                     : vaultState.items.isEmpty
-                        ? _emptyState()
+                        ? _emptyState(S)
                         : _itemList(vaultState),
               ),
             ],
@@ -137,15 +148,10 @@ class _MainScreenState extends ConsumerState<MainScreen> {
     );
   }
 
-  // ── Reusable icon helpers ────────────────────────────────────────────
-
   Widget _iconBadge(String emoji, Color bg) {
     return Container(
       width: 36, height: 36,
-      decoration: BoxDecoration(
-        gradient: LinearGradient(colors: [bg, bg.withOpacity(0.7)]),
-        borderRadius: BorderRadius.circular(10),
-      ),
+      decoration: BoxDecoration(gradient: LinearGradient(colors: [bg, bg.withOpacity(0.7)]), borderRadius: BorderRadius.circular(10)),
       child: Center(child: Text(emoji, style: const TextStyle(fontSize: 18))),
     );
   }
@@ -153,17 +159,12 @@ class _MainScreenState extends ConsumerState<MainScreen> {
   Widget _iconBtn(String emoji, Color color, VoidCallback onTap, String tooltip) {
     return Tooltip(
       message: tooltip,
-      child: GestureDetector(
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
-          child: Text(emoji, style: TextStyle(fontSize: 20, color: color)),
-        ),
-      ),
+      child: GestureDetector(onTap: onTap, child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+        child: Text(emoji, style: TextStyle(fontSize: 20, color: color)),
+      )),
     );
   }
-
-  // ── Tab chip ─────────────────────────────────────────────────────────
 
   Widget _tabChip(WidgetRef ref, String label, int index, int activeIndex) {
     final isActive = index == activeIndex;
@@ -178,52 +179,69 @@ class _MainScreenState extends ConsumerState<MainScreen> {
             borderRadius: BorderRadius.circular(8),
             border: Border.all(color: isActive ? const Color(0xFF1F6FEB) : const Color(0xFF21262D)),
           ),
-          child: Text(label,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
-                color: isActive ? const Color(0xFF58A6FF) : const Color(0xFF8B949E),
-              )),
+          child: Text(label, textAlign: TextAlign.center, style: TextStyle(
+            fontSize: 12, fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
+            color: isActive ? const Color(0xFF58A6FF) : const Color(0xFF8B949E),
+          )),
         ),
       ),
     );
   }
 
-  // ── Empty state ──────────────────────────────────────────────────────
-
-  Widget _emptyState() {
-    return const Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text('\u{1F512}', style: TextStyle(fontSize: 48)),
-          SizedBox(height: 16),
-          Text('Your vault is empty', style: TextStyle(color: Color(0xFF8B949E), fontSize: 16, fontWeight: FontWeight.w500)),
-          SizedBox(height: 8),
-          Text('Tap + to add your first credential', style: TextStyle(color: Color(0xFF484F58), fontSize: 13)),
-        ],
-      ),
-    );
+  Widget _emptyState(S) {
+    return Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
+      const Text('\u{1F512}', style: TextStyle(fontSize: 48)),
+      const SizedBox(height: 16),
+      Text(S.vaultEmpty, style: const TextStyle(color: Color(0xFF8B949E), fontSize: 16, fontWeight: FontWeight.w500)),
+      const SizedBox(height: 8),
+      Text(S.vaultEmptyHint, style: const TextStyle(color: Color(0xFF484F58), fontSize: 13)),
+    ]));
   }
 
-  // ── Item list ────────────────────────────────────────────────────────
-
   Widget _itemList(VaultState state) {
+    final S = AppLocalizations.of(context);
     final filtered = state.items.where((item) {
       if (state.selectedTypeTab != 0 && item.type != state.selectedTypeTab) return false;
       return true;
     }).toList();
-
-    if (filtered.isEmpty) return const Center(child: Text('No items in this category', style: TextStyle(color: Color(0xFF484F58))));
-
+    if (filtered.isEmpty) return Center(child: Text(S.noItemsInCategory, style: const TextStyle(color: Color(0xFF484F58))));
     return ListView.builder(
       padding: const EdgeInsets.only(bottom: 80),
       itemCount: filtered.length,
-      itemBuilder: (context, idx) => _VaultItemCard(
-        item: filtered[idx],
+      itemBuilder: (context, idx) => _VaultItemCard(item: filtered[idx],
         onCopy: () => _handleCopyItem(filtered[idx]),
-        onDelete: () => _confirmDelete(filtered[idx]),
+        onDelete: () => _confirmDelete(filtered[idx])),
+    );
+  }
+
+  // ── Language dialog ──────────────────────────────────────────────────
+
+  void _showLanguageDialog(BuildContext context) {
+    final languages = [
+      ('en', 'English', '\u{1F1EC}\u{1F1E7}'),
+      ('zh', '中文', '\u{1F1E8}\u{1F1F3}'),
+      ('ja', '日本語', '\u{1F1EF}\u{1F1F5}'),
+    ];
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF161B22),
+        title: const Text('Language', style: TextStyle(color: Colors.white)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: languages.map((l) {
+            final current = ref.read(localeProvider).languageCode == l.$1;
+            return ListTile(
+              leading: Text(l.$3, style: const TextStyle(fontSize: 24)),
+              title: Text(l.$2, style: TextStyle(color: current ? const Color(0xFF2DD4BF) : Colors.white)),
+              trailing: current ? const Text('\u{2714}', style: TextStyle(color: Color(0xFF2DD4BF), fontSize: 18)) : null,
+              onTap: () {
+                ref.read(localeProvider.notifier).state = Locale(l.$1);
+                Navigator.pop(ctx);
+              },
+            );
+          }).toList(),
+        ),
       ),
     );
   }
@@ -231,49 +249,51 @@ class _MainScreenState extends ConsumerState<MainScreen> {
   // ── Handlers ─────────────────────────────────────────────────────────
 
   Future<void> _handleCopyItem(dynamic item) async {
+    final S = AppLocalizations.of(context);
     final isDual = await ref.read(dualClipboardProvider.notifier).copyItem(item);
     if (!mounted) return;
     if (!isDual) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: const Text('Password copied'), behavior: SnackBarBehavior.floating,
+        SnackBar(content: Text(S.passwordCopied), behavior: SnackBarBehavior.floating,
             backgroundColor: const Color(0xFF161B22), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
       );
     }
   }
 
   void _handleQuickPaste() {
+    final S = AppLocalizations.of(context);
     final notifier = ref.read(dualClipboardProvider.notifier);
     final password = notifier.consumePassword();
     if (password != null && mounted) {
       Clipboard.setData(ClipboardData(text: password));
       notifier.dismiss();
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Password ready to paste'), behavior: SnackBarBehavior.floating),
+        SnackBar(content: Text(S.passwordReadyToPaste), behavior: SnackBarBehavior.floating),
       );
     }
   }
 
   void _confirmDelete(dynamic item) {
+    final S = AppLocalizations.of(context);
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: const Color(0xFF161B22),
-        title: const Text('Delete item?', style: TextStyle(color: Colors.white)),
-        content: Text('Delete "${item.name}" permanently?', style: const TextStyle(color: Color(0xFF8B949E))),
+        title: Text(S.deleteTitle, style: const TextStyle(color: Colors.white)),
+        content: Text(S.deleteConfirm(item.name), style: const TextStyle(color: Color(0xFF8B949E))),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel', style: TextStyle(color: Color(0xFF8B949E)))),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: Text(S.cancel, style: const TextStyle(color: Color(0xFF8B949E)))),
           TextButton(
             onPressed: () { Navigator.pop(ctx); ref.read(vaultStateProvider.notifier).deleteItem(item); },
-            child: const Text('Delete', style: TextStyle(color: Color(0xFFF85149))),
+            child: Text(S.delete, style: const TextStyle(color: Color(0xFFF85149))),
           ),
         ],
       ),
     );
   }
 
-  // ── Add dialog ───────────────────────────────────────────────────────
-
   void _showAddDialog(BuildContext context) {
+    final S = AppLocalizations.of(context);
     final nameC = TextEditingController();
     final userC = TextEditingController();
     final passC = TextEditingController();
@@ -284,31 +304,29 @@ class _MainScreenState extends ConsumerState<MainScreen> {
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setModalState) => AlertDialog(
           backgroundColor: const Color(0xFF161B22),
-          title: const Text('Add Credential', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          title: Text(S.addCredential, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                _field(nameC, 'Name'),
+                _field(nameC, S.nameLabel),
                 const SizedBox(height: 12),
-                _field(userC, 'Username / Email'),
+                _field(userC, S.usernameLabel),
                 const SizedBox(height: 12),
-                _field(passC, 'Password'),
+                _field(passC, S.passwordLabel),
                 const SizedBox(height: 16),
-                Row(
-                  children: [
-                    _typeBtn('Login', 1, type, (v) => setModalState(() => type = v)),
-                    const SizedBox(width: 8),
-                    _typeBtn('Card', 2, type, (v) => setModalState(() => type = v)),
-                    const SizedBox(width: 8),
-                    _typeBtn('Note', 3, type, (v) => setModalState(() => type = v)),
-                  ],
-                ),
+                Row(children: [
+                  _typeBtn(S.typeLogin, 1, type, (v) => setModalState(() => type = v)),
+                  const SizedBox(width: 8),
+                  _typeBtn(S.typeCard, 2, type, (v) => setModalState(() => type = v)),
+                  const SizedBox(width: 8),
+                  _typeBtn(S.typeNote, 3, type, (v) => setModalState(() => type = v)),
+                ]),
               ],
             ),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel', style: TextStyle(color: Color(0xFF8B949E)))),
+            TextButton(onPressed: () => Navigator.pop(ctx), child: Text(S.cancel, style: const TextStyle(color: Color(0xFF8B949E)))),
             FilledButton(
               onPressed: () {
                 if (nameC.text.isNotEmpty && passC.text.isNotEmpty) {
@@ -318,7 +336,7 @@ class _MainScreenState extends ConsumerState<MainScreen> {
                 }
               },
               style: FilledButton.styleFrom(backgroundColor: const Color(0xFF2DD4BF)),
-              child: const Text('Add', style: TextStyle(color: Color(0xFF0D1117))),
+              child: Text(S.add, style: const TextStyle(color: Color(0xFF0D1117))),
             ),
           ],
         ),
@@ -327,19 +345,12 @@ class _MainScreenState extends ConsumerState<MainScreen> {
   }
 
   Widget _field(TextEditingController c, String hint) {
-    return TextField(
-      controller: c,
-      style: const TextStyle(color: Colors.white),
-      decoration: InputDecoration(
-        hintText: hint,
-        hintStyle: const TextStyle(color: Color(0xFF484F58)),
-        filled: true,
-        fillColor: const Color(0xFF0D1117),
+    return TextField(controller: c, style: const TextStyle(color: Colors.white),
+      decoration: InputDecoration(hintText: hint, hintStyle: const TextStyle(color: Color(0xFF484F58)),
+        filled: true, fillColor: const Color(0xFF0D1117),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFF21262D))),
         enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFF21262D))),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      ),
-    );
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10)));
   }
 
   Widget _typeBtn(String label, int value, int current, Function(int) onSelect) {
@@ -358,9 +369,8 @@ class _MainScreenState extends ConsumerState<MainScreen> {
     );
   }
 
-  // ── Generator ────────────────────────────────────────────────────────
-
   void _showGeneratorDialog(BuildContext context) {
+    final S = AppLocalizations.of(context);
     showDialog(
       context: context,
       builder: (context) {
@@ -368,11 +378,11 @@ class _MainScreenState extends ConsumerState<MainScreen> {
         return StatefulBuilder(
           builder: (context, setModalState) {
             final score = _generator.evaluateStrength(gen);
-            final label = score >= 0.85 ? 'Excellent' : score >= 0.6 ? 'Strong' : 'Fair';
+            final label = score >= 0.85 ? S.excellent : score >= 0.6 ? S.strong : S.fair;
             final color = score >= 0.85 ? const Color(0xFF3FB950) : score >= 0.6 ? const Color(0xFF2DD4BF) : const Color(0xFFD29922);
             return AlertDialog(
               backgroundColor: const Color(0xFF161B22),
-              title: const Text('Password Generator', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              title: Text(S.passwordGenerator, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -380,26 +390,24 @@ class _MainScreenState extends ConsumerState<MainScreen> {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(color: const Color(0xFF0D1117), borderRadius: BorderRadius.circular(8), border: Border.all(color: const Color(0xFF21262D))),
-                    child: Row(
-                      children: [
-                        Expanded(child: SelectableText(gen, style: const TextStyle(color: Color(0xFF2DD4BF), fontFamily: 'monospace', fontSize: 15))),
-                        GestureDetector(
-                          onTap: () { Clipboard.setData(ClipboardData(text: gen)); },
-                          child: const Text('\u{1F4CB}', style: TextStyle(fontSize: 16)),
-                        ),
-                      ],
-                    ),
+                    child: Row(children: [
+                      Expanded(child: SelectableText(gen, style: const TextStyle(color: Color(0xFF2DD4BF), fontFamily: 'monospace', fontSize: 15))),
+                      GestureDetector(
+                        onTap: () => Clipboard.setData(ClipboardData(text: gen)),
+                        child: const Text('\u{1F4CB}', style: TextStyle(fontSize: 16)),
+                      ),
+                    ]),
                   ),
                   const SizedBox(height: 12),
-                  Text('Strength: $label', style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.w600)),
+                  Text(S.strengthLabel(label), style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.w600)),
                 ],
               ),
               actions: [
-                TextButton(onPressed: () => Navigator.pop(context), child: const Text('Close', style: TextStyle(color: Color(0xFF8B949E)))),
+                TextButton(onPressed: () => Navigator.pop(context), child: Text(S.close, style: const TextStyle(color: Color(0xFF8B949E)))),
                 FilledButton(
                   onPressed: () => setModalState(() => gen = _generator.generate(length: 20)),
                   style: FilledButton.styleFrom(backgroundColor: const Color(0xFF2DD4BF)),
-                  child: const Text('Regenerate', style: TextStyle(color: Color(0xFF0D1117))),
+                  child: Text(S.regenerate, style: const TextStyle(color: Color(0xFF0D1117))),
                 ),
               ],
             );
@@ -435,11 +443,7 @@ class _VaultItemCard extends StatelessWidget {
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      decoration: BoxDecoration(
-        color: const Color(0xFF161B22),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: const Color(0xFF21262D)),
-      ),
+      decoration: BoxDecoration(color: const Color(0xFF161B22), borderRadius: BorderRadius.circular(10), border: Border.all(color: const Color(0xFF21262D))),
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
         leading: Container(
@@ -447,43 +451,21 @@ class _VaultItemCard extends StatelessWidget {
           decoration: BoxDecoration(color: bg.withOpacity(0.15), borderRadius: BorderRadius.circular(8)),
           child: Center(child: Text(emoji, style: const TextStyle(fontSize: 16))),
         ),
-        title: Row(
-          children: [
-            Expanded(
-              child: Text(item.name,
-                  style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600),
-                  maxLines: 1, overflow: TextOverflow.ellipsis),
-            ),
-            if (hasTotp)
-              Container(
-                margin: const EdgeInsets.only(left: 6),
-                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-                decoration: BoxDecoration(color: const Color(0xFF2DD4BF).withOpacity(0.12), borderRadius: BorderRadius.circular(4)),
-                child: const Text('2FA', style: TextStyle(color: Color(0xFF2DD4BF), fontSize: 9, fontWeight: FontWeight.w700)),
-              ),
-          ],
-        ),
-        subtitle: Text(item.username, style: const TextStyle(color: Color(0xFF8B949E), fontSize: 12),
-            maxLines: 1, overflow: TextOverflow.ellipsis),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            GestureDetector(
-              onTap: onCopy,
-              child: const Padding(
-                padding: EdgeInsets.all(6),
-                child: Text('\u{1F4CB}', style: TextStyle(fontSize: 16)),
-              ),
-            ),
-            GestureDetector(
-              onTap: onDelete,
-              child: const Padding(
-                padding: EdgeInsets.all(6),
-                child: Text('\u{1F5D1}', style: TextStyle(fontSize: 16)),
-              ),
-            ),
-          ],
-        ),
+        title: Row(children: [
+          Expanded(child: Text(item.name, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600),
+              maxLines: 1, overflow: TextOverflow.ellipsis)),
+          if (hasTotp) Container(
+            margin: const EdgeInsets.only(left: 6),
+            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+            decoration: BoxDecoration(color: const Color(0xFF2DD4BF).withOpacity(0.12), borderRadius: BorderRadius.circular(4)),
+            child: const Text('2FA', style: TextStyle(color: Color(0xFF2DD4BF), fontSize: 9, fontWeight: FontWeight.w700)),
+          ),
+        ]),
+        subtitle: Text(item.username, style: const TextStyle(color: Color(0xFF8B949E), fontSize: 12), maxLines: 1, overflow: TextOverflow.ellipsis),
+        trailing: Row(mainAxisSize: MainAxisSize.min, children: [
+          GestureDetector(onTap: onCopy, child: const Padding(padding: EdgeInsets.all(6), child: Text('\u{1F4CB}', style: TextStyle(fontSize: 16)))),
+          GestureDetector(onTap: onDelete, child: const Padding(padding: EdgeInsets.all(6), child: Text('\u{1F5D1}', style: TextStyle(fontSize: 16)))),
+        ]),
       ),
     );
   }

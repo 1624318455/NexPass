@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../i18n/app_localizations.dart';
 import '../services/clipboard_service.dart';
 
 /// An animated overlay that appears when the dual-clipboard flow activates.
@@ -50,6 +51,7 @@ class _DualClipboardOverlayState extends ConsumerState<DualClipboardOverlay>
   @override
   Widget build(BuildContext context) {
     final clipState = ref.watch(dualClipboardProvider);
+    final S = AppLocalizations.of(context);
 
     if (!clipState.isVisible) return const SizedBox.shrink();
 
@@ -141,9 +143,9 @@ class _DualClipboardOverlayState extends ConsumerState<DualClipboardOverlay>
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const Text(
-                                    'Dual Clipboard Active',
-                                    style: TextStyle(
+                                  Text(
+                                    S.dualClipboardActive,
+                                    style: const TextStyle(
                                       color: Colors.tealAccent,
                                       fontSize: 13,
                                       fontWeight: FontWeight.w700,
@@ -180,7 +182,7 @@ class _DualClipboardOverlayState extends ConsumerState<DualClipboardOverlay>
                         // ── TOTP row ────────────────────────────
                         _InfoRow(
                           emoji: '\u{23F0}',
-                          label: 'TOTP → Clipboard',
+                          label: S.totpToClipboard,
                           child: GestureDetector(
                             onTap: () {
                               Clipboard.setData(
@@ -222,7 +224,7 @@ class _DualClipboardOverlayState extends ConsumerState<DualClipboardOverlay>
                         // ── Password RAM cache row ──────────────
                         _InfoRow(
                           emoji: '\u{1F9E0}',
-                          label: 'Password → RAM',
+                          label: S.passwordToRam,
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
@@ -272,9 +274,7 @@ class _DualClipboardOverlayState extends ConsumerState<DualClipboardOverlay>
                               const SizedBox(width: 8),
                               Expanded(
                                 child: Text(
-                                  'TOTP copied to system clipboard! Password is '
-                                  'cached in secure app memory (${remaining}s). '
-                                  'Use Quick Paste to fill both fields.',
+                                  S.clipboardCountdown(remaining),
                                   style: TextStyle(
                                     color: Colors.grey[300],
                                     fontSize: 12,
