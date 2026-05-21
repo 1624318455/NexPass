@@ -120,16 +120,19 @@ class _VaultPageState extends ConsumerState<_VaultPage> {
         SliverToBoxAdapter(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: NexTheme.lg, vertical: NexTheme.xs),
-            child: Row(
-              children: [
-                _tabChip(ref, S.tabAll, NexIconType.check, 0, vaultState.selectedTypeTab),
-                const SizedBox(width: NexTheme.sm),
-                _tabChip(ref, S.tabLogins, NexIconType.person, 1, vaultState.selectedTypeTab),
-                const SizedBox(width: NexTheme.sm),
-                _tabChip(ref, S.tabCards, NexIconType.globe, 2, vaultState.selectedTypeTab),
-                const SizedBox(width: NexTheme.sm),
-                _tabChip(ref, S.tabNotes, NexIconType.stickyNote, 3, vaultState.selectedTypeTab),
-              ],
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  _tabChip(ref, S.tabAll, 0, vaultState.selectedTypeTab),
+                  const SizedBox(width: NexTheme.sm),
+                  _tabChip(ref, S.tabLogins, 1, vaultState.selectedTypeTab),
+                  const SizedBox(width: NexTheme.sm),
+                  _tabChip(ref, S.tabCards, 2, vaultState.selectedTypeTab),
+                  const SizedBox(width: NexTheme.sm),
+                  _tabChip(ref, S.tabNotes, 3, vaultState.selectedTypeTab),
+                ],
+              ),
             ),
           ),
         ),
@@ -157,29 +160,20 @@ class _VaultPageState extends ConsumerState<_VaultPage> {
     );
   }
 
-  Widget _tabChip(WidgetRef ref, String label, NexIconType icon, int index, int activeIndex) {
+  Widget _tabChip(WidgetRef ref, String label, int index, int activeIndex) {
     final isActive = index == activeIndex;
     final cs = Theme.of(ref.context).colorScheme;
-    return Expanded(
-      child: FilterChip(
-        label: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            NexIcon(icon, size: 13, color: isActive ? cs.primary : cs.onSurfaceVariant),
-            const SizedBox(width: 4),
-            Text(label, style: TextStyle(
-              fontSize: 11, fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
-            )),
-          ],
-        ),
-        selected: isActive,
-        onSelected: (_) => ref.read(vaultStateProvider.notifier).setTab(index),
-        selectedColor: cs.primaryContainer,
-        checkmarkColor: cs.onPrimaryContainer,
-        side: BorderSide(
-          color: isActive ? cs.primary : cs.outline,
-        ),
-      ),
+    return FilterChip(
+      label: Text(label, style: TextStyle(
+        fontSize: 12, fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
+      )),
+      selected: isActive,
+      onSelected: (_) => ref.read(vaultStateProvider.notifier).setTab(index),
+      selectedColor: cs.primaryContainer,
+      checkmarkColor: cs.onPrimaryContainer,
+      side: BorderSide(color: isActive ? cs.primary : cs.outline),
+      visualDensity: VisualDensity.compact,
+      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
     );
   }
 
@@ -368,7 +362,7 @@ class _VaultItemCard extends StatelessWidget {
                     children: [
                       Expanded(
                         child: Text(item.name, style: TextStyle(
-                          color: cs.onSurface, fontSize: 13, fontWeight: FontWeight.w600),
+                          color: cs.onSurface, fontSize: 14, fontWeight: FontWeight.w600),
                           maxLines: 1, overflow: TextOverflow.ellipsis),
                       ),
                       if (hasTotp) Container(
