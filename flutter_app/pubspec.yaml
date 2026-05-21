@@ -27,11 +27,6 @@ dependencies:
   path_provider: ^2.1.0
   uuid: ^4.0.0
 
-  # Modern UI Assets
-  lucide_icons: ^0.257.0
-  google_fonts: ^6.1.0
-  flutter_animate: ^4.2.0
-
   meta: ^1.11.0
 
 dev_dependencies:

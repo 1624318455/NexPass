@@ -163,11 +163,24 @@ class NexPassApp extends StatelessWidget {
     return MaterialApp(
       title: 'NexPass',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData.dark().copyWith(
-        scaffoldBackgroundColor: Colors.grey[950],
+      theme: ThemeData(
+        brightness: Brightness.dark,
+        scaffoldBackgroundColor: const Color(0xFF0D1117),
         colorScheme: const ColorScheme.dark(
-          primary: Colors.tealAccent,
-          surface: Color(0xFF0A0A0A),
+          primary: Color(0xFF2DD4BF),
+          onPrimary: Color(0xFF0D1117),
+          surface: Color(0xFF161B22),
+          onSurface: Colors.white,
+        ),
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Color(0xFF161B22),
+          elevation: 0,
+          iconTheme: IconThemeData(color: Color(0xFF8B949E)),
+        ),
+        iconTheme: const IconThemeData(color: Color(0xFF8B949E)),
+        snackBarTheme: const SnackBarThemeData(
+          backgroundColor: Color(0xFF161B22),
+          contentTextStyle: TextStyle(color: Colors.white),
         ),
       ),
       home: const MainScreen(),

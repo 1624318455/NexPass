@@ -27,228 +27,380 @@ class _MainScreenState extends ConsumerState<MainScreen> {
     return Stack(
       children: [
         Scaffold(
-          backgroundColor: Colors.grey[950],
+          backgroundColor: const Color(0xFF0D1117),
           appBar: AppBar(
-            title: const Text('NexPass Secure Vault',
-                style: TextStyle(
-                    fontWeight: FontWeight.bold, letterSpacing: -0.5)),
-            backgroundColor: Colors.grey[900],
-            foregroundColor: Colors.white,
-            actions: [
-              // Quick Paste button — visible when password is cached in RAM
-              if (clipState.isVisible)
-                IconButton(
-                  icon: const Icon(Icons.paste, color: Colors.greenAccent),
-                  onPressed: _handleQuickPaste,
-                  tooltip: 'Quick Paste (password from RAM)',
+            backgroundColor: const Color(0xFF161B22),
+            elevation: 0,
+            centerTitle: false,
+            title: Row(
+              children: [
+                _iconBadge('\u{1F6E1}', const Color(0xFF2DD4BF)),
+                const SizedBox(width: 10),
+                const Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('NexPass',
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white, letterSpacing: -0.3)),
+                    Text('Zero-Knowledge Vault',
+                        style: TextStyle(fontSize: 11, color: Color(0xFF8B949E))),
+                  ],
                 ),
-              IconButton(
-                icon: const Icon(Icons.shield, color: Colors.tealAccent),
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (_) => const SecurityAuditScreen()),
-                  );
-                },
-                tooltip: 'Security Audit',
-              ),
-              IconButton(
-                icon: const Icon(Icons.password, color: Colors.tealAccent),
-                onPressed: () => _showGeneratorDialog(context),
-                tooltip: 'Interactive Generator',
-              ),
+              ],
+            ),
+            actions: [
+              if (clipState.isVisible)
+                _iconBtn('\u{1F4CB}', const Color(0xFF3FB950), _handleQuickPaste, 'Quick Paste'),
+              _iconBtn('\u{1F6E1}', const Color(0xFF58A6FF), () => Navigator.push(context,
+                  MaterialPageRoute(builder: (_) => const SecurityAuditScreen())), 'Security Audit'),
+              _iconBtn('\u{1F510}', const Color(0xFF58A6FF), () => _showGeneratorDialog(context), 'Generator'),
             ],
           ),
           body: Column(
             children: [
-              // Search bar
-              Padding(
-                padding: const EdgeInsets.all(16.0),
+              // Search
+              Container(
+                margin: const EdgeInsets.fromLTRB(16, 12, 16, 8),
                 child: TextField(
                   controller: _searchController,
                   onChanged: vaultNotifier.setSearchQuery,
-                  style: const TextStyle(color: Colors.white),
+                  style: const TextStyle(color: Colors.white, fontSize: 14),
                   decoration: InputDecoration(
-                    hintText: 'Search zero-knowledge credentials...',
-                    hintStyle: TextStyle(color: Colors.grey[500]),
-                    prefixIcon:
-                        const Icon(Icons.search, color: Colors.tealAccent),
+                    hintText: 'Search vault...',
+                    hintStyle: const TextStyle(color: Color(0xFF484F58)),
+                    prefixIcon: const Padding(
+                      padding: EdgeInsets.only(left: 12, right: 8),
+                      child: Text('\u{1F50D}', style: TextStyle(fontSize: 16)),
+                    ),
+                    prefixIconConstraints: const BoxConstraints(minWidth: 40, minHeight: 0),
                     filled: true,
-                    fillColor: Colors.grey[900],
+                    fillColor: const Color(0xFF161B22),
+                    contentPadding: const EdgeInsets.symmetric(vertical: 0),
                     border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide.none),
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: const BorderSide(color: Color(0xFF21262D)),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: const BorderSide(color: Color(0xFF21262D)),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: const BorderSide(color: Color(0xFF2DD4BF), width: 1.5),
+                    ),
                   ),
                 ),
               ),
 
-              // Category tabs
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  _buildTabButton(
-                      ref, 'All Items', 0, vaultState.selectedTypeTab),
-                  _buildTabButton(
-                      ref, 'Logins', 1, vaultState.selectedTypeTab),
-                  _buildTabButton(
-                      ref, 'Cards', 2, vaultState.selectedTypeTab),
-                ],
+              // Tabs
+              Container(
+                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                child: Row(
+                  children: [
+                    _tabChip(ref, '\u{2714} All', 0, vaultState.selectedTypeTab),
+                    const SizedBox(width: 8),
+                    _tabChip(ref, '\u{1F464} Logins', 1, vaultState.selectedTypeTab),
+                    const SizedBox(width: 8),
+                    _tabChip(ref, '\u{1F4B3} Cards', 2, vaultState.selectedTypeTab),
+                    const SizedBox(width: 8),
+                    _tabChip(ref, '\u{1F4DD} Notes', 3, vaultState.selectedTypeTab),
+                  ],
+                ),
               ),
 
-              const SizedBox(height: 12),
+              const SizedBox(height: 8),
 
-              // Vault items list
+              // List
               Expanded(
                 child: vaultState.isLoading
-                    ? const Center(
-                        child: CircularProgressIndicator(
-                            color: Colors.tealAccent))
-                    : ListView.builder(
-                        itemCount: vaultState.items.length,
-                        itemBuilder: (context, idx) {
-                          final item = vaultState.items[idx];
-
-                          if (vaultState.selectedTypeTab != 0 &&
-                              item.type != vaultState.selectedTypeTab) {
-                            return const SizedBox.shrink();
-                          }
-
-                          return _VaultItemCard(
-                            item: item,
-                            onCopy: () => _handleCopyItem(item),
-                          );
-                        },
-                      ),
+                    ? const Center(child: CircularProgressIndicator(color: Color(0xFF2DD4BF)))
+                    : vaultState.items.isEmpty
+                        ? _emptyState()
+                        : _itemList(vaultState),
               ),
             ],
           ),
+          floatingActionButton: Container(
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(colors: [Color(0xFF2DD4BF), Color(0xFF0EA5E9)]),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: FloatingActionButton(
+              onPressed: () => _showAddDialog(context),
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              child: const Text('+', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white)),
+            ),
+          ),
         ),
-
-        // ── Dual clipboard overlay (renders on top of everything) ──
         const DualClipboardOverlay(),
       ],
     );
   }
 
-  // ── Copy handler with dual-clipboard routing ──────────────────────────
+  // ── Reusable icon helpers ────────────────────────────────────────────
 
-  Future<void> _handleCopyItem(dynamic item) async {
-    final notifier = ref.read(dualClipboardProvider.notifier);
-    final isDual = await notifier.copyItem(item);
-
-    if (!mounted) return;
-
-    if (!isDual) {
-      // Single-field copy — show standard SnackBar
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Password copied to clipboard'),
-          behavior: SnackBarBehavior.floating,
-          backgroundColor: Colors.grey[850],
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-          duration: const Duration(seconds: 2),
-        ),
-      );
-    }
-    // Dual path: overlay is shown automatically by DualClipboardNotifier
+  Widget _iconBadge(String emoji, Color bg) {
+    return Container(
+      width: 36, height: 36,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(colors: [bg, bg.withOpacity(0.7)]),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Center(child: Text(emoji, style: const TextStyle(fontSize: 18))),
+    );
   }
 
-  // ── Quick Paste: consume RAM-cached password ─────────────────────────
+  Widget _iconBtn(String emoji, Color color, VoidCallback onTap, String tooltip) {
+    return Tooltip(
+      message: tooltip,
+      child: GestureDetector(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+          child: Text(emoji, style: TextStyle(fontSize: 20, color: color)),
+        ),
+      ),
+    );
+  }
+
+  // ── Tab chip ─────────────────────────────────────────────────────────
+
+  Widget _tabChip(WidgetRef ref, String label, int index, int activeIndex) {
+    final isActive = index == activeIndex;
+    return Expanded(
+      child: GestureDetector(
+        onTap: () => ref.read(vaultStateProvider.notifier).setTab(index),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          decoration: BoxDecoration(
+            color: isActive ? const Color(0xFF1F6FEB).withOpacity(0.15) : const Color(0xFF161B22),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: isActive ? const Color(0xFF1F6FEB) : const Color(0xFF21262D)),
+          ),
+          child: Text(label,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
+                color: isActive ? const Color(0xFF58A6FF) : const Color(0xFF8B949E),
+              )),
+        ),
+      ),
+    );
+  }
+
+  // ── Empty state ──────────────────────────────────────────────────────
+
+  Widget _emptyState() {
+    return const Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text('\u{1F512}', style: TextStyle(fontSize: 48)),
+          SizedBox(height: 16),
+          Text('Your vault is empty', style: TextStyle(color: Color(0xFF8B949E), fontSize: 16, fontWeight: FontWeight.w500)),
+          SizedBox(height: 8),
+          Text('Tap + to add your first credential', style: TextStyle(color: Color(0xFF484F58), fontSize: 13)),
+        ],
+      ),
+    );
+  }
+
+  // ── Item list ────────────────────────────────────────────────────────
+
+  Widget _itemList(VaultState state) {
+    final filtered = state.items.where((item) {
+      if (state.selectedTypeTab != 0 && item.type != state.selectedTypeTab) return false;
+      return true;
+    }).toList();
+
+    if (filtered.isEmpty) return const Center(child: Text('No items in this category', style: TextStyle(color: Color(0xFF484F58))));
+
+    return ListView.builder(
+      padding: const EdgeInsets.only(bottom: 80),
+      itemCount: filtered.length,
+      itemBuilder: (context, idx) => _VaultItemCard(
+        item: filtered[idx],
+        onCopy: () => _handleCopyItem(filtered[idx]),
+        onDelete: () => _confirmDelete(filtered[idx]),
+      ),
+    );
+  }
+
+  // ── Handlers ─────────────────────────────────────────────────────────
+
+  Future<void> _handleCopyItem(dynamic item) async {
+    final isDual = await ref.read(dualClipboardProvider.notifier).copyItem(item);
+    if (!mounted) return;
+    if (!isDual) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: const Text('Password copied'), behavior: SnackBarBehavior.floating,
+            backgroundColor: const Color(0xFF161B22), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
+      );
+    }
+  }
 
   void _handleQuickPaste() {
     final notifier = ref.read(dualClipboardProvider.notifier);
     final password = notifier.consumePassword();
-
     if (password != null && mounted) {
-      // Copy password to system clipboard for the user's next paste
       Clipboard.setData(ClipboardData(text: password));
       notifier.dismiss();
-
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text(
-              'Password moved to clipboard — paste now! Buffer cleared.'),
-          behavior: SnackBarBehavior.floating,
-          backgroundColor: Colors.teal[900],
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-          duration: const Duration(seconds: 2),
-        ),
+        const SnackBar(content: Text('Password ready to paste'), behavior: SnackBarBehavior.floating),
       );
     }
   }
 
-  Widget _buildTabButton(
-      WidgetRef ref, String title, int index, int activeIndex) {
-    final notifier = ref.read(vaultStateProvider.notifier);
-    final isActive = index == activeIndex;
-    return ChoiceChip(
-      label: Text(title, style: TextStyle(
-        color: isActive ? Colors.white : Colors.grey,
-      )),
-      selected: isActive,
-      onSelected: (_) => notifier.setTab(index),
-      selectedColor: Colors.teal[800],
+  void _confirmDelete(dynamic item) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF161B22),
+        title: const Text('Delete item?', style: TextStyle(color: Colors.white)),
+        content: Text('Delete "${item.name}" permanently?', style: const TextStyle(color: Color(0xFF8B949E))),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel', style: TextStyle(color: Color(0xFF8B949E)))),
+          TextButton(
+            onPressed: () { Navigator.pop(ctx); ref.read(vaultStateProvider.notifier).deleteItem(item); },
+            child: const Text('Delete', style: TextStyle(color: Color(0xFFF85149))),
+          ),
+        ],
+      ),
     );
   }
+
+  // ── Add dialog ───────────────────────────────────────────────────────
+
+  void _showAddDialog(BuildContext context) {
+    final nameC = TextEditingController();
+    final userC = TextEditingController();
+    final passC = TextEditingController();
+    int type = 1;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setModalState) => AlertDialog(
+          backgroundColor: const Color(0xFF161B22),
+          title: const Text('Add Credential', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _field(nameC, 'Name'),
+                const SizedBox(height: 12),
+                _field(userC, 'Username / Email'),
+                const SizedBox(height: 12),
+                _field(passC, 'Password'),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    _typeBtn('Login', 1, type, (v) => setModalState(() => type = v)),
+                    const SizedBox(width: 8),
+                    _typeBtn('Card', 2, type, (v) => setModalState(() => type = v)),
+                    const SizedBox(width: 8),
+                    _typeBtn('Note', 3, type, (v) => setModalState(() => type = v)),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel', style: TextStyle(color: Color(0xFF8B949E)))),
+            FilledButton(
+              onPressed: () {
+                if (nameC.text.isNotEmpty && passC.text.isNotEmpty) {
+                  ref.read(vaultStateProvider.notifier).addNewCredential(
+                      title: nameC.text, itemType: type, username: userC.text, password: passC.text);
+                  Navigator.pop(ctx);
+                }
+              },
+              style: FilledButton.styleFrom(backgroundColor: const Color(0xFF2DD4BF)),
+              child: const Text('Add', style: TextStyle(color: Color(0xFF0D1117))),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _field(TextEditingController c, String hint) {
+    return TextField(
+      controller: c,
+      style: const TextStyle(color: Colors.white),
+      decoration: InputDecoration(
+        hintText: hint,
+        hintStyle: const TextStyle(color: Color(0xFF484F58)),
+        filled: true,
+        fillColor: const Color(0xFF0D1117),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFF21262D))),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFF21262D))),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      ),
+    );
+  }
+
+  Widget _typeBtn(String label, int value, int current, Function(int) onSelect) {
+    final isActive = value == current;
+    return GestureDetector(
+      onTap: () => onSelect(value),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: isActive ? const Color(0xFF1F6FEB).withOpacity(0.2) : Colors.transparent,
+          borderRadius: BorderRadius.circular(6),
+          border: Border.all(color: isActive ? const Color(0xFF1F6FEB) : const Color(0xFF21262D)),
+        ),
+        child: Text(label, style: TextStyle(fontSize: 12, color: isActive ? const Color(0xFF58A6FF) : const Color(0xFF8B949E))),
+      ),
+    );
+  }
+
+  // ── Generator ────────────────────────────────────────────────────────
 
   void _showGeneratorDialog(BuildContext context) {
     showDialog(
       context: context,
       builder: (context) {
-        String generatedPassword = _generator.generate(length: 16);
+        String gen = _generator.generate(length: 20);
         return StatefulBuilder(
           builder: (context, setModalState) {
+            final score = _generator.evaluateStrength(gen);
+            final label = score >= 0.85 ? 'Excellent' : score >= 0.6 ? 'Strong' : 'Fair';
+            final color = score >= 0.85 ? const Color(0xFF3FB950) : score >= 0.6 ? const Color(0xFF2DD4BF) : const Color(0xFFD29922);
             return AlertDialog(
-              backgroundColor: Colors.grey[900],
-              title: const Text('Secure Password Generator',
-                  style: TextStyle(color: Colors.white)),
+              backgroundColor: const Color(0xFF161B22),
+              title: const Text('Password Generator', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Container(
                     padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                        color: Colors.black,
-                        borderRadius: BorderRadius.circular(8)),
+                    decoration: BoxDecoration(color: const Color(0xFF0D1117), borderRadius: BorderRadius.circular(8), border: Border.all(color: const Color(0xFF21262D))),
                     child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Expanded(
-                          child: Text(
-                            generatedPassword,
-                            style: const TextStyle(
-                                color: Colors.tealAccent,
-                                fontFamily: 'monospace',
-                                fontSize: 16),
-                          ),
+                        Expanded(child: SelectableText(gen, style: const TextStyle(color: Color(0xFF2DD4BF), fontFamily: 'monospace', fontSize: 15))),
+                        GestureDetector(
+                          onTap: () { Clipboard.setData(ClipboardData(text: gen)); },
+                          child: const Text('\u{1F4CB}', style: TextStyle(fontSize: 16)),
                         ),
-                        IconButton(
-                          icon: const Icon(Icons.refresh,
-                              color: Colors.white),
-                          onPressed: () {
-                            setModalState(() {
-                              generatedPassword =
-                                  _generator.generate(length: 16);
-                            });
-                          },
-                        )
                       ],
                     ),
                   ),
                   const SizedBox(height: 12),
-                  const Text(
-                      'Customize criteria in real-time, security rate matches high performance indices.',
-                      style: TextStyle(color: Colors.grey, fontSize: 11)),
+                  Text('Strength: $label', style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.w600)),
                 ],
               ),
               actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('Close'),
-                )
+                TextButton(onPressed: () => Navigator.pop(context), child: const Text('Close', style: TextStyle(color: Color(0xFF8B949E)))),
+                FilledButton(
+                  onPressed: () => setModalState(() => gen = _generator.generate(length: 20)),
+                  style: FilledButton.styleFrom(backgroundColor: const Color(0xFF2DD4BF)),
+                  child: const Text('Regenerate', style: TextStyle(color: Color(0xFF0D1117))),
+                ),
               ],
             );
           },
@@ -258,78 +410,77 @@ class _MainScreenState extends ConsumerState<MainScreen> {
   }
 }
 
-// ── Vault item card widget ──────────────────────────────────────────────
+// ── Vault item card ────────────────────────────────────────────────────
 
 class _VaultItemCard extends StatelessWidget {
   final dynamic item;
   final VoidCallback onCopy;
+  final VoidCallback onDelete;
 
-  const _VaultItemCard({required this.item, required this.onCopy});
+  const _VaultItemCard({required this.item, required this.onCopy, required this.onDelete});
 
   @override
   Widget build(BuildContext context) {
-    // Determine icon based on item type
-    IconData icon;
+    String emoji;
+    Color bg;
     switch (item.type) {
-      case 1:
-        icon = Icons.login;
-        break;
-      case 2:
-        icon = Icons.credit_card;
-        break;
-      case 4:
-        icon = Icons.timer;
-        break;
-      default:
-        icon = Icons.key;
+      case 1: emoji = '\u{1F464}'; bg = const Color(0xFF1F6FEB); break;
+      case 2: emoji = '\u{1F4B3}'; bg = const Color(0xFF8B5CF6); break;
+      case 3: emoji = '\u{1F4DD}'; bg = const Color(0xFFD29922); break;
+      case 4: emoji = '\u{23F0}'; bg = const Color(0xFFF97583); break;
+      default: emoji = '\u{1F511}'; bg = const Color(0xFF2DD4BF);
     }
 
-    // Check if item has TOTP (for visual indicator)
-    final hasTotp = item.fields.any(
-        (f) => f.name == 'totpSecret' || f.fieldType == 3);
+    final hasTotp = item.fields.any((f) => f.name == 'totpSecret' || f.fieldType == 3);
 
-    return Card(
-      color: Colors.grey[900],
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      decoration: BoxDecoration(
+        color: const Color(0xFF161B22),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: const Color(0xFF21262D)),
+      ),
       child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: Colors.teal[900],
-          child: Icon(icon, color: Colors.tealAccent),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+        leading: Container(
+          width: 36, height: 36,
+          decoration: BoxDecoration(color: bg.withOpacity(0.15), borderRadius: BorderRadius.circular(8)),
+          child: Center(child: Text(emoji, style: const TextStyle(fontSize: 16))),
         ),
         title: Row(
           children: [
             Expanded(
               child: Text(item.name,
-                  style: const TextStyle(
-                      color: Colors.white, fontWeight: FontWeight.bold)),
+                  style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600),
+                  maxLines: 1, overflow: TextOverflow.ellipsis),
             ),
             if (hasTotp)
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                  color: Colors.tealAccent.withOpacity( 0.15),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: const Text(
-                  '2FA',
-                  style: TextStyle(
-                    color: Colors.tealAccent,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
+                margin: const EdgeInsets.only(left: 6),
+                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                decoration: BoxDecoration(color: const Color(0xFF2DD4BF).withOpacity(0.12), borderRadius: BorderRadius.circular(4)),
+                child: const Text('2FA', style: TextStyle(color: Color(0xFF2DD4BF), fontSize: 9, fontWeight: FontWeight.w700)),
               ),
           ],
         ),
-        subtitle: Text(item.username,
-            style: TextStyle(color: Colors.grey[400])),
+        subtitle: Text(item.username, style: const TextStyle(color: Color(0xFF8B949E), fontSize: 12),
+            maxLines: 1, overflow: TextOverflow.ellipsis),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            IconButton(
-              icon: const Icon(Icons.copy, color: Colors.grey),
-              onPressed: onCopy,
-              tooltip: hasTotp ? 'Dual copy (TOTP + Password)' : 'Copy password',
+            GestureDetector(
+              onTap: onCopy,
+              child: const Padding(
+                padding: EdgeInsets.all(6),
+                child: Text('\u{1F4CB}', style: TextStyle(fontSize: 16)),
+              ),
+            ),
+            GestureDetector(
+              onTap: onDelete,
+              child: const Padding(
+                padding: EdgeInsets.all(6),
+                child: Text('\u{1F5D1}', style: TextStyle(fontSize: 16)),
+              ),
             ),
           ],
         ),
