@@ -107,6 +107,39 @@ class AppLocalizations {
   String get severityWarning => get('severityWarning');
   String get generateStrongPassword => get('generateStrongPassword');
   String get healthLabel => get('healthLabel');
+
+  // Onboarding
+  String get onboardingSkip => get('onboardingSkip');
+  String get onboardingNext => get('onboardingNext');
+  String get onboardingStart => get('onboardingStart');
+  String get onboardingZeroKnowledgeTitle => get('onboardingZeroKnowledgeTitle');
+  String get onboardingZeroKnowledgeDesc => get('onboardingZeroKnowledgeDesc');
+  String get onboardingDualClipboardTitle => get('onboardingDualClipboardTitle');
+  String get onboardingDualClipboardDesc => get('onboardingDualClipboardDesc');
+  String get onboardingSyncTitle => get('onboardingSyncTitle');
+  String get onboardingSyncDesc => get('onboardingSyncDesc');
+  String get onboardingSecurityTitle => get('onboardingSecurityTitle');
+  String get onboardingSecurityDesc => get('onboardingSecurityDesc');
+
+  // Settings
+  String get settings => get('settings');
+  String get settingsGeneral => get('settingsGeneral');
+  String get settingsLanguage => get('settingsLanguage');
+  String get settingsSync => get('settingsSync');
+  String get settingsWebDAV => get('settingsWebDAV');
+  String get settingsWebDAVDesc => get('settingsWebDAVDesc');
+  String get settingsSyncNow => get('settingsSyncNow');
+  String get settingsSyncNowDesc => get('settingsSyncNowDesc');
+  String get settingsSecurity => get('settingsSecurity');
+  String get settingsLockVault => get('settingsLockVault');
+  String get settingsLockVaultDesc => get('settingsLockVaultDesc');
+  String get settingsSecurityAudit => get('settingsSecurityAudit');
+  String get settingsSecurityAuditDesc => get('settingsSecurityAuditDesc');
+  String get settingsAbout => get('settingsAbout');
+  String get settingsVersion => get('settingsVersion');
+  String get settingsGitHub => get('settingsGitHub');
+  String get tabVault => get('tabVault');
+  String get tabSettings => get('tabSettings');
 }
 
 class _AppLocalizationsDelegate

@@ -17,6 +17,7 @@ import 'services/sync_service.dart';
 import 'state/sync_state.dart';
 import 'state/vault_state_notifier.dart';
 import 'screens/main_screen.dart';
+import 'screens/onboarding_screen.dart';
 import 'screens/security_audit_screen.dart';
 
 void main() async {
@@ -162,6 +163,9 @@ NexField _field(String name, String value, int fieldType, bool sensitive) {
 /// Locale provider — controls the app language.
 final localeProvider = StateProvider<Locale>((ref) => const Locale('en'));
 
+/// Tracks whether the user has completed onboarding.
+final onboardingDoneProvider = StateProvider<bool>((ref) => false);
+
 class NexPassApp extends ConsumerWidget {
   const NexPassApp({super.key});
 
@@ -200,7 +204,7 @@ class NexPassApp extends ConsumerWidget {
           contentTextStyle: TextStyle(color: Colors.white),
         ),
       ),
-      home: const MainScreen(),
+      home: ref.watch(onboardingDoneProvider) ? const MainScreen() : const OnboardingScreen(),
     );
   }
 }
