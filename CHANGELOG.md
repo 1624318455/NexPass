@@ -1,5 +1,37 @@
 # Changelog
 
+## [0.3.0] — 2026-05-22
+
+### 新增 — UI 主题定版（MD3 浅色主题）
+
+#### 🎨 Material Design 3 浅色主题
+- 完整 MD3 浅色主题体系，设计参考稿匹配
+- 紫色/靛蓝强调色 `#5B21B6` — 品牌渐变色统一
+- 浅灰背景 `#F5F5F5` + 白色卡片 + MD3 组件（Card、FilledButton 等）
+- 强制 `ThemeMode.light`，彻底杜绝暗色模式冲突
+- 品牌渐变徽章：顶栏/分类标签/按钮统一渐变配色
+
+#### 📱 UI/UX 修复
+- 溢出问题全面修复：`SingleChildScrollView` + `FilterChip` 布局稳定
+- 空状态/加载态/错误态三态覆盖完成
+- 逻辑回归后状态管理正确性验证通过
+
+#### ✅ 验证
+- OPPO Android 15 真机验证通过
+- 主题切换无闪烁、无溢出、无暗色残留
+
+### Commits
+
+| Hash | 描述 |
+|------|------|
+| `ada2b3b` | feat: redesign UI with professional design system |
+| `889180b` | fix: resolve 5 critical feature gaps |
+| `2316fa2` | feat: apply Material Design 3 theme system |
+| `213572e` | fix: resolve overflow issues in filter chips and item cards |
+| `9599f15` | feat: apply purple/indigo MD3 theme matching reference design |
+
+---
+
 ## [0.2.4] — 2026-05-21
 
 ### 新增 — 引导流程与设置页

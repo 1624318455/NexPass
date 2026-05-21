@@ -9,6 +9,7 @@ import 'package:uuid/uuid.dart';
 import 'i18n/app_localizations.dart';
 import 'theme/nex_theme.dart';
 
+import 'models/app_settings.dart';
 import 'models/nex_item.dart';
 import 'repositories/vault_repository.dart';
 import 'services/crypto_utils.dart';
@@ -82,7 +83,10 @@ void main() async {
 
   await _seedDemoDataIfEmpty(repository, derivedKey);
 
-  // ── 8. Build sync service ──────────────────────────────────────────
+  // ── 8. Load app settings ──────────────────────────────────────────
+  final appSettings = await AppSettings.load(secureStorage);
+
+  // ── 9. Build sync service ──────────────────────────────────────────
   final syncService = SyncService(
     webDavUrl: webDavUrl,
     username: webDavUser,
@@ -97,6 +101,7 @@ void main() async {
         secureStorageProvider.overrideWithValue(secureStorage),
         keyManagerProvider.overrideWithValue(keyManager),
         onboardingDoneProvider.overrideWithValue(onboardingDone),
+        appSettingsProvider.overrideWithValue(appSettings),
         syncServiceProvider.overrideWithValue(syncService),
         syncStateProvider.overrideWith((ref) => SyncNotifier(
               syncService: ref.watch(syncServiceProvider),
@@ -183,6 +188,34 @@ final secureStorageProvider = Provider<SecureStorageService>((ref) {
 final keyManagerProvider = Provider<KeyManager>((ref) {
   throw UnimplementedError('Override at app startup');
 });
+
+/// AppSettings instance (injected at startup).
+final appSettingsProvider = Provider<AppSettings>((ref) {
+  throw UnimplementedError('Override at app startup');
+});
+
+/// Notifier for mutable app settings.
+final appSettingsNotifierProvider =
+    StateNotifierProvider<AppSettingsNotifier, AppSettings>((ref) {
+  return AppSettingsNotifier(
+    settings: ref.watch(appSettingsProvider),
+    secureStorage: ref.watch(secureStorageProvider),
+  );
+});
+
+class AppSettingsNotifier extends StateNotifier<AppSettings> {
+  final SecureStorageService _secureStorage;
+
+  AppSettingsNotifier({required AppSettings settings, required SecureStorageService secureStorage})
+      : _secureStorage = secureStorage,
+        super(settings);
+
+  Future<void> update(void Function(AppSettings) updater) async {
+    updater(state);
+    state = AppSettings.fromJson(state.toJson());
+    await state.save(_secureStorage);
+  }
+}
 
 class NexPassApp extends ConsumerWidget {
   const NexPassApp({super.key});

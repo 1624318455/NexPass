@@ -111,17 +111,6 @@ class AppLocalizations {
   // Onboarding
   String get onboardingSkip => get('onboardingSkip');
   String get onboardingNext => get('onboardingNext');
-  String get onboardingStart => get('onboardingStart');
-  String get onboardingZeroKnowledgeTitle => get('onboardingZeroKnowledgeTitle');
-  String get onboardingZeroKnowledgeDesc => get('onboardingZeroKnowledgeDesc');
-  String get onboardingDualClipboardTitle => get('onboardingDualClipboardTitle');
-  String get onboardingDualClipboardDesc => get('onboardingDualClipboardDesc');
-  String get onboardingSyncTitle => get('onboardingSyncTitle');
-  String get onboardingSyncDesc => get('onboardingSyncDesc');
-  String get onboardingSecurityTitle => get('onboardingSecurityTitle');
-  String get onboardingSecurityDesc => get('onboardingSecurityDesc');
-
-  // Settings
   String get settings => get('settings');
   String get settingsGeneral => get('settingsGeneral');
   String get settingsLanguage => get('settingsLanguage');
@@ -140,6 +129,51 @@ class AppLocalizations {
   String get settingsGitHub => get('settingsGitHub');
   String get tabVault => get('tabVault');
   String get tabSettings => get('tabSettings');
+  String get tabAuth => get('tabAuth');
+  String get tabPasskeys => get('tabPasskeys');
+
+  // Onboarding
+  String get onboardingPrev => get('onboardingPrev');
+  String get onboardingDone => get('onboardingDone');
+  String get onboardingQuickSetup => get('onboardingQuickSetup');
+  String get onboardingQuickSetupDesc => get('onboardingQuickSetupDesc');
+  String get onboardingQuickSetupHint => get('onboardingQuickSetupHint');
+  String get onboardingSecurityTitle => get('onboardingSecurityTitle');
+  String get onboardingMasterPassword => get('onboardingMasterPassword');
+  String get onboardingBiometric => get('onboardingBiometric');
+  String get onboardingRecovery => get('onboardingRecovery');
+  String get onboardingAutofillTitle => get('onboardingAutofillTitle');
+  String get onboardingAutofillDesc => get('onboardingAutofillDesc');
+  String get onboardingAutofillToggle => get('onboardingAutofillToggle');
+  String get onboardingAutofillOpenSettings => get('onboardingAutofillOpenSettings');
+  String get onboardingThemeTitle => get('onboardingThemeTitle');
+  String get onboardingThemeDesc => get('onboardingThemeDesc');
+  String get onboardingNavBarTitle => get('onboardingNavBarTitle');
+  String get onboardingNavBarDesc => get('onboardingNavBarDesc');
+  String get onboardingNavPasswords => get('onboardingNavPasswords');
+  String get onboardingNavAuthenticators => get('onboardingNavAuthenticators');
+  String get onboardingNavCards => get('onboardingNavCards');
+  String get onboardingNavPasskeys => get('onboardingNavPasskeys');
+  String get onboardingImportTitle => get('onboardingImportTitle');
+  String get onboardingImportDesc => get('onboardingImportDesc');
+  String get onboardingListTitle => get('onboardingListTitle');
+  String get onboardingListDesc => get('onboardingListDesc');
+  String get onboardingListRecent => get('onboardingListRecent');
+  String get onboardingCardTitle => get('onboardingCardTitle');
+  String get onboardingCardDesc => get('onboardingCardDesc');
+  String get onboardingCardUsername => get('onboardingCardUsername');
+  String get onboardingCardWebsite => get('onboardingCardWebsite');
+  String get onboardingCardLinkedAuth => get('onboardingCardLinkedAuth');
+  String get onboardingCardHideOther => get('onboardingCardHideOther');
+  String get onboardingAuthTitle => get('onboardingAuthTitle');
+  String get onboardingAuthDesc => get('onboardingAuthDesc');
+  String get onboardingAuthIssuer => get('onboardingAuthIssuer');
+  String get onboardingAuthAccount => get('onboardingAuthAccount');
+  String get onboardingAuthProgress => get('onboardingAuthProgress');
+  String get onboardingAuthSmooth => get('onboardingAuthSmooth');
+  String get onboardingComplete => get('onboardingComplete');
+  String get onboardingCompleteDesc => get('onboardingCompleteDesc');
+  String get onboardingLanguageSystem => get('onboardingLanguageSystem');
 }
 
 class _AppLocalizationsDelegate

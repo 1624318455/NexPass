@@ -33,7 +33,7 @@
 | 密钥存储 | flutter_secure_storage 9.0（Keychain/Keystore） |
 | 加密引擎 | pointycastle (Argon2id + PBKDF2) + cryptography (AES-GCM) |
 | 网络同步 | http (WebDAV 原子事务) |
-| UI | Material 3 暗色主题 + CustomPainter 动画环形图 |
+|| UI | Material 3 浅色主题（MD3 Light + #5B21B6 紫色/靛蓝强调色）+ CustomPainter 动画环形图 |
 | 原生桥接 | MethodChannel — AutofillService (Android) / CredentialProvider (iOS) |
 
 ### 密码学架构
