@@ -1,9 +1,15 @@
+import 'dart:convert';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../i18n/app_localizations.dart';
 import '../main.dart';
 import '../models/app_settings.dart';
+import '../repositories/vault_repository.dart';
+import '../services/crypto_utils.dart';
 import '../state/sync_state.dart';
+import '../services/sync_service.dart';
+import '../state/vault_state_notifier.dart';
 import '../state/unlock_state.dart';
 import '../theme/nex_theme.dart';
 import '../widgets/nex_icons.dart';
@@ -262,35 +268,138 @@ class SettingsScreen extends ConsumerWidget {
     final currentCtrl = TextEditingController();
     final newCtrl = TextEditingController();
     final confirmCtrl = TextEditingController();
+    bool loading = false;
+    String? error;
+
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Change Master Password'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _fieldCtrl(currentCtrl, 'Current password', obscure: true),
-              const SizedBox(height: 12),
-              _fieldCtrl(newCtrl, 'New password', obscure: true),
-              const SizedBox(height: 12),
-              _fieldCtrl(confirmCtrl, 'Confirm new password', obscure: true),
-            ],
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          title: const Text('Change Master Password'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _fieldCtrl(currentCtrl, 'Current password', obscure: true),
+                const SizedBox(height: 12),
+                _fieldCtrl(newCtrl, 'New password', obscure: true),
+                const SizedBox(height: 12),
+                _fieldCtrl(confirmCtrl, 'Confirm new password', obscure: true),
+                if (error != null) ...[
+                  const SizedBox(height: 8),
+                  Text(error!, style: TextStyle(color: Theme.of(ctx).colorScheme.error, fontSize: 12)),
+                ],
+              ],
+            ),
           ),
+          actions: [
+            TextButton(
+              onPressed: loading ? null : () => Navigator.pop(ctx),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: loading ? null : () async {
+                // Validate
+                if (currentCtrl.text.isEmpty) {
+                  setDialogState(() => error = 'Current password is required');
+                  return;
+                }
+                if (newCtrl.text.length < 8) {
+                  setDialogState(() => error = 'New password must be at least 8 characters');
+                  return;
+                }
+                if (newCtrl.text != confirmCtrl.text) {
+                  setDialogState(() => error = 'Passwords do not match');
+                  return;
+                }
+                if (newCtrl.text == currentCtrl.text) {
+                  setDialogState(() => error = 'New password must differ from current');
+                  return;
+                }
+
+                setDialogState(() { loading = true; error = null; });
+
+                try {
+                  final secureStorage = ref.read(secureStorageProvider);
+                  final cryptoService = ref.read(cryptoServiceProvider);
+                  final repository = ref.read(repositoryProvider);
+                  final unlockNotifier = ref.read(unlockStateProvider.notifier);
+                  final currentKey = ref.read(unlockStateProvider).derivedKey;
+
+                  // Derive key from current password
+                  final salt = await secureStorage.getOrCreateMasterSalt(
+                    () => base64Encode(generateSalt()),
+                  );
+                  final saltBytes = base64Decode(salt);
+                  final currentDerivedKey = await cryptoService.deriveKey(
+                    password: currentCtrl.text,
+                    salt: saltBytes,
+                  );
+
+                  // Verify current password
+                  if (currentKey != null && !_bytesEqual(currentDerivedKey, currentKey)) {
+                    setDialogState(() { loading = false; error = 'Current password is incorrect'; });
+                    return;
+                  }
+
+                  // Derive new key
+                  final newDerivedKey = await cryptoService.deriveKey(
+                    password: newCtrl.text,
+                    salt: saltBytes,
+                  );
+
+                  // Re-encrypt all items
+                  await repository.reEncryptAllItems(
+                    oldKey: currentDerivedKey,
+                    newKey: newDerivedKey,
+                  );
+
+                  // Store new key
+                  await secureStorage.storeDerivedKey(newDerivedKey);
+
+                  // Activate KeyManager with new key
+                  final km = KeyManager(
+                    sessionTimeout: const Duration(minutes: 5),
+                    onLock: () {
+                      if (context.mounted) {
+                        ref.read(appStateProvider.notifier).state = AppState.locked;
+                      }
+                    },
+                  );
+                  km.activate(newDerivedKey);
+
+                  // Update unlock state
+                  unlockNotifier.state = UnlockState(
+                    derivedKey: newDerivedKey,
+                    keyManager: km,
+                    isUnlocked: true,
+                  );
+
+                  if (ctx.mounted) Navigator.pop(ctx);
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Password changed successfully')));
+                  }
+                } catch (e) {
+                  setDialogState(() { loading = false; error = 'Error: $e'; });
+                }
+              },
+              child: loading
+                  ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                  : const Text('Save'),
+            ),
+          ],
         ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
-          FilledButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Password change coming soon')));
-            },
-            child: const Text('Save'),
-          ),
-        ],
       ),
     );
+  }
+
+  bool _bytesEqual(Uint8List a, Uint8List b) {
+    if (a.length != b.length) return false;
+    for (int i = 0; i < a.length; i++) {
+      if (a[i] != b[i]) return false;
+    }
+    return true;
   }
 
   void _showNavCustomizeDialog(BuildContext context, WidgetRef ref, AppSettings settings) {
@@ -517,6 +626,15 @@ class SettingsScreen extends ConsumerWidget {
               await secureStorage.write(key: 'webdav_url', value: urlCtrl.text);
               await secureStorage.write(key: 'webdav_user', value: userCtrl.text);
               await secureStorage.write(key: 'webdav_pass', value: passCtrl.text);
+
+              // Rebuild SyncService with new credentials
+              final newSyncService = SyncService(
+                webDavUrl: urlCtrl.text,
+                username: userCtrl.text,
+                password: passCtrl.text,
+              );
+              ref.read(syncServiceProvider.notifier).state = newSyncService;
+
               if (ctx.mounted) Navigator.pop(ctx);
             },
             child: const Text('Save'),

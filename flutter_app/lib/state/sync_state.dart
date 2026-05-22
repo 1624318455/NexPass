@@ -8,7 +8,7 @@ import 'vault_state_notifier.dart';
 // Providers (referenced by main.dart overrides)
 // ---------------------------------------------------------------------------
 
-final syncServiceProvider = Provider<SyncService>((ref) {
+final syncServiceProvider = StateProvider<SyncService>((ref) {
   throw UnimplementedError(
     'Override syncServiceProvider at app startup with a configured SyncService',
   );

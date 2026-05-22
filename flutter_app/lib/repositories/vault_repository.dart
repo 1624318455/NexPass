@@ -97,6 +97,45 @@ class VaultRepository {
     });
   }
 
+  /// Re-encrypt all vault items from [oldKey] to [newKey].
+  /// Returns the number of items re-encrypted.
+  Future<int> reEncryptAllItems({
+    required Uint8List oldKey,
+    required Uint8List newKey,
+  }) async {
+    final allItems = await _isar.nexItems.where().findAll();
+    int count = 0;
+
+    for (final item in allItems) {
+      // Decrypt sensitive fields with old key
+      for (final field in item.fields) {
+        if (field.isSensitive && field.value.isNotEmpty) {
+          try {
+            final encryptedBytes = base64Decode(field.value);
+            final decrypted = await _cryptoService.decrypt(
+              encryptedData: encryptedBytes,
+              secretKey: oldKey,
+            );
+            // Re-encrypt with new key
+            final reEncrypted = await _cryptoService.encrypt(
+              plaintext: decrypted,
+              secretKey: newKey,
+            );
+            field.value = base64Encode(reEncrypted);
+          } catch (_) {
+            // Field already corrupted or uses different key — skip
+          }
+        }
+      }
+      item.updatedAt = DateTime.now();
+      await _isar.writeTxn(() async {
+        await _isar.nexItems.put(item);
+      });
+      count++;
+    }
+    return count;
+  }
+
   // ── Decrypt fields (each call runs in its own Isolate via CryptoService) ──
 
   Future<void> _decryptFields(NexItem item, Uint8List derivedKey) async {
