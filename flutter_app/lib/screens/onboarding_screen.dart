@@ -5,7 +5,6 @@ import '../i18n/app_localizations.dart';
 import '../main.dart';
 import '../theme/nex_theme.dart';
 import '../widgets/nex_icons.dart';
-import 'main_screen.dart';
 
 class OnboardingScreen extends ConsumerStatefulWidget {
   const OnboardingScreen({super.key});
@@ -85,11 +84,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     final secureStorage = ref.read(secureStorageProvider);
     await secureStorage.write(key: 'onboarding_done', value: 'true');
 
-    if (mounted) {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => const MainScreen()),
-      );
-    }
+    // Update in-memory state — MaterialApp.build() will rebuild and
+    // switch home: from OnboardingScreen to MainScreen automatically.
+    ref.read(onboardingDoneProvider.notifier).state = true;
   }
 
   @override

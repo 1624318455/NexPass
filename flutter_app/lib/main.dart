@@ -58,7 +58,7 @@ void main() async {
         cryptoServiceProvider.overrideWithValue(cryptoService),
         biometricServiceProvider.overrideWithValue(biometricService),
         repositoryProvider.overrideWithValue(repository),
-        onboardingDoneProvider.overrideWithValue(onboardingDone),
+        onboardingDoneProvider.overrideWith((ref) => onboardingDone),
         appSettingsProvider.overrideWithValue(appSettings),
         syncServiceProvider.overrideWith((ref) => syncService),
         unlockStateProvider.overrideWith((ref) => UnlockNotifier(
@@ -140,8 +140,8 @@ final localeProvider = Provider<Locale>((ref) {
   return Locale(settings.language);
 });
 
-/// Tracks whether the user has completed onboarding (read-only after init).
-final onboardingDoneProvider = Provider<bool>((ref) => false);
+/// Tracks whether the user has completed onboarding.
+final onboardingDoneProvider = StateProvider<bool>((ref) => false);
 
 /// SecureStorageService instance (injected at startup).
 final secureStorageProvider = Provider<SecureStorageService>((ref) {
