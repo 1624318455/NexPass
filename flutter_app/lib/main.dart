@@ -292,7 +292,8 @@ class _NexPassAppState extends ConsumerState<NexPassApp> {
         GlobalCupertinoLocalizations.delegate,
       ],
       theme: NexTheme.lightThemeWith(seedColor),
-      themeMode: ThemeMode.light,
+      darkTheme: NexTheme.darkThemeWith(seedColor),
+      themeMode: ThemeMode.system,
       home: switch (appState) {
         AppState.initializing => const Scaffold(body: Center(child: CircularProgressIndicator())),
         AppState.locked => const LockScreen(),
