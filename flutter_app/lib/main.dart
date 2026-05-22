@@ -61,7 +61,7 @@ void main() async {
         repositoryProvider.overrideWithValue(repository),
         onboardingDoneProvider.overrideWithValue(onboardingDone),
         appSettingsProvider.overrideWithValue(appSettings),
-        syncServiceProvider.overrideWithValue(syncService),
+        syncServiceProvider.overrideWith((ref) => syncService),
         unlockStateProvider.overrideWith((ref) => UnlockNotifier(
               secureStorage: secureStorage,
               cryptoService: cryptoService,

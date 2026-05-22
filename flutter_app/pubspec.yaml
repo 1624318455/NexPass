@@ -32,6 +32,9 @@ dependencies:
   # Biometric Authentication
   local_auth: ^2.3.0
 
+  # Data Import
+  file_picker: ^8.0.0
+
   meta: ^1.11.0
 
 dev_dependencies:

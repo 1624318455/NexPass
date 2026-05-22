@@ -5,7 +5,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../i18n/app_localizations.dart';
 import '../main.dart';
 import '../models/app_settings.dart';
+import 'package:file_picker/file_picker.dart';
 import '../repositories/vault_repository.dart';
+import '../services/csv_import_service.dart';
 import '../services/crypto_utils.dart';
 import '../state/sync_state.dart';
 import '../services/sync_service.dart';
@@ -13,6 +15,7 @@ import '../state/vault_state_notifier.dart';
 import '../state/unlock_state.dart';
 import '../theme/nex_theme.dart';
 import '../widgets/nex_icons.dart';
+import 'import_preview_screen.dart';
 import 'security_audit_screen.dart';
 
 class SettingsScreen extends ConsumerWidget {
@@ -564,6 +567,8 @@ class SettingsScreen extends ConsumerWidget {
 
   void _showImportDialog(BuildContext context, WidgetRef ref) {
     final S = AppLocalizations.of(context);
+    final csvService = CsvImportService();
+
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -574,17 +579,29 @@ class SettingsScreen extends ConsumerWidget {
             ListTile(
               leading: const NexIcon(NexIconType.key, size: 20),
               title: Text(S.settingsBitwarden),
-              onTap: () { Navigator.pop(ctx); },
+              subtitle: const Text('CSV format', style: TextStyle(fontSize: 12)),
+              onTap: () async {
+                Navigator.pop(ctx);
+                await _pickAndImport(context, csvService, 'Bitwarden');
+              },
             ),
             ListTile(
               leading: const NexIcon(NexIconType.lock, size: 20),
               title: Text(S.settingsKeePass),
-              onTap: () { Navigator.pop(ctx); },
+              subtitle: const Text('CSV format', style: TextStyle(fontSize: 12)),
+              onTap: () async {
+                Navigator.pop(ctx);
+                await _pickAndImport(context, csvService, 'KeePass');
+              },
             ),
             ListTile(
               leading: const NexIcon(NexIconType.stickyNote, size: 20),
               title: Text(S.settingsCSV),
-              onTap: () { Navigator.pop(ctx); },
+              subtitle: const Text('Any CSV file', style: TextStyle(fontSize: 12)),
+              onTap: () async {
+                Navigator.pop(ctx);
+                await _pickAndImport(context, csvService, 'Generic CSV');
+              },
             ),
           ],
         ),
@@ -593,6 +610,50 @@ class SettingsScreen extends ConsumerWidget {
         ],
       ),
     );
+  }
+
+  Future<void> _pickAndImport(
+    BuildContext context,
+    CsvImportService csvService,
+    String formatName,
+  ) async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['csv'],
+    );
+
+    if (result == null || result.files.isEmpty || !context.mounted) return;
+
+    final filePath = result.files.first.path;
+    if (filePath == null) return;
+
+    try {
+      final importResult = await csvService.importFromCsv(filePath);
+      if (!context.mounted) return;
+
+      if (importResult.items.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No valid credentials found in file')),
+        );
+        return;
+      }
+
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => ImportPreviewScreen(
+            items: importResult.items,
+            formatName: importResult.format.name,
+          ),
+        ),
+      );
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Import failed: $e')),
+        );
+      }
+    }
   }
 
   void _showWebDAVDialog(BuildContext context, WidgetRef ref) async {
