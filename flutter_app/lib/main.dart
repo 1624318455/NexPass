@@ -212,17 +212,6 @@ class _NexPassAppState extends ConsumerState<NexPassApp> {
     if (_bootstrapped) return;
     _bootstrapped = true;
 
-    // Listen for onboarding completion — when the provider flips to true,
-    // Navigator must be explicitly told to replace the route. Flutter's
-    // Navigator ignores `home:` changes when it already has a route stack.
-    ref.listen(onboardingDoneProvider, (prev, done) {
-      if (done && mounted) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const MainScreen()),
-        );
-      }
-    });
-
     final unlockNotifier = ref.read(unlockStateProvider.notifier);
 
     if (widget.biometricEnabled) {

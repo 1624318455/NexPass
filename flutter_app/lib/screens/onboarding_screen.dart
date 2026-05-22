@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../i18n/app_localizations.dart';
 import '../main.dart';
-import '../services/biometric_service.dart';
 import '../theme/nex_theme.dart';
 import '../widgets/nex_icons.dart';
 
