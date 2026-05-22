@@ -48,7 +48,7 @@ class _DualClipboardOverlayState extends ConsumerState<DualClipboardOverlay>
       child: SlideTransition(
         position: _slide,
         child: Positioned(
-          top: MediaQuery.of(context).padding.top + 8,
+          top: MediaQuery.of(context).padding.top + NexTheme.sm,
           left: NexTheme.lg, right: NexTheme.lg,
           child: Material(
             color: Colors.transparent,

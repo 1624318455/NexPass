@@ -136,7 +136,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
             // Bottom: indicators + navigation
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 0, 20, 32),
+              padding: const EdgeInsets.fromLTRB(NexTheme.xl, 0, NexTheme.xl, NexTheme.xxxl),
               child: Row(
                 children: [
                   // Step indicator

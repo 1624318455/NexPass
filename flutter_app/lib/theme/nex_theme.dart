@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 /// Material Design 3 theme system for NexPass.
 /// Uses ColorScheme.fromSeed() for MD3-compliant dynamic color.
@@ -51,6 +52,7 @@ class NexTheme {
   static const double lg = 16;
   static const double xl = 20;
   static const double xxl = 24;
+  static const double xxxl = 32;
 
   // ── MD3 Shape tokens ───────────────────────────────────────────────
 
@@ -87,6 +89,10 @@ class NexTheme {
         backgroundColor: colorScheme.surface,
         foregroundColor: colorScheme.onSurface,
         surfaceTintColor: colorScheme.surfaceTint,
+        systemOverlayStyle: const SystemUiOverlayStyle(
+          statusBarColor: Colors.transparent,
+          statusBarIconBrightness: Brightness.dark,
+        ),
       ),
 
       inputDecorationTheme: InputDecorationTheme(
@@ -307,6 +313,10 @@ class NexTheme {
         backgroundColor: colorScheme.surface,
         foregroundColor: colorScheme.onSurface,
         surfaceTintColor: colorScheme.surfaceTint,
+        systemOverlayStyle: const SystemUiOverlayStyle(
+          statusBarColor: Colors.transparent,
+          statusBarIconBrightness: Brightness.light,
+        ),
       ),
 
       inputDecorationTheme: InputDecorationTheme(

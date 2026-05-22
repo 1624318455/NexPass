@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
@@ -26,6 +27,7 @@ import 'screens/onboarding_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
 
   final cryptoService = CryptoService();
   final secureStorage = SecureStorageService();
@@ -279,28 +281,36 @@ class _NexPassAppState extends ConsumerState<NexPassApp> {
     final seedColor = NexTheme.themePresets[settings.themeColorIndex];
     final appState = ref.watch(appStateProvider);
 
-    return MaterialApp(
-      key: ValueKey('app-${settings.themeColorIndex}-${settings.language}'),
-      title: 'NexPass',
-      debugShowCheckedModeBanner: false,
-      locale: locale,
-      supportedLocales: AppLocalizations.supportedLocales,
-      localizationsDelegates: const [
-        AppLocalizations.delegate,
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-      ],
-      theme: NexTheme.lightThemeWith(seedColor),
-      darkTheme: NexTheme.darkThemeWith(seedColor),
-      themeMode: ThemeMode.system,
-      home: switch (appState) {
-        AppState.initializing => const Scaffold(body: Center(child: CircularProgressIndicator())),
-        AppState.locked => const LockScreen(),
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.dark,
+        systemNavigationBarColor: Colors.transparent,
+        systemNavigationBarIconBrightness: Brightness.dark,
+      ),
+      child: MaterialApp(
+        key: ValueKey('app-${settings.themeColorIndex}-${settings.language}'),
+        title: 'NexPass',
+        debugShowCheckedModeBanner: false,
+        locale: locale,
+        supportedLocales: AppLocalizations.supportedLocales,
+        localizationsDelegates: const [
+          AppLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        theme: NexTheme.lightThemeWith(seedColor),
+        darkTheme: NexTheme.darkThemeWith(seedColor),
+        themeMode: ThemeMode.system,
+        home: switch (appState) {
+          AppState.initializing => const Scaffold(body: Center(child: CircularProgressIndicator())),
+          AppState.locked => const LockScreen(),
         AppState.ready => ref.watch(onboardingDoneProvider)
             ? const MainScreen()
             : const OnboardingScreen(),
-      },
+        },
+      ),
     );
   }
 }

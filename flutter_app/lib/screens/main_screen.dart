@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../i18n/app_localizations.dart';
 import '../main.dart';
@@ -41,191 +40,15 @@ class _MainScreenState extends ConsumerState<MainScreen> {
               NavigationDestination(icon: NexIcon(NexIconType.gear, size: 22), label: S.tabSettings),
             ],
           ),
+          floatingActionButton: _navIndex == 0
+              ? FloatingActionButton(
+                  onPressed: () => _showAddDialog(context),
+                  child: const NexIcon(NexIconType.plus, size: 24),
+                )
+              : null,
         ),
         const DualClipboardOverlay(),
       ],
-    );
-  }
-}
-
-// ── Vault page ────────────────────────────────────────────────────────
-
-class _VaultPage extends ConsumerStatefulWidget {
-  final TextEditingController searchController;
-  const _VaultPage({required this.searchController});
-
-  @override
-  ConsumerState<_VaultPage> createState() => _VaultPageState();
-}
-
-class _VaultPageState extends ConsumerState<_VaultPage> {
-  @override
-  Widget build(BuildContext context) {
-    final vaultState = ref.watch(vaultStateProvider);
-    final vaultNotifier = ref.read(vaultStateProvider.notifier);
-    final S = AppLocalizations.of(context);
-
-    final cs = Theme.of(context).colorScheme;
-
-    return Stack(
-      children: [
-        CustomScrollView(
-          slivers: [
-        // ── Header ──────────────────────────────────────
-        SliverToBoxAdapter(
-          child: Container(
-            padding: EdgeInsets.fromLTRB(NexTheme.lg, MediaQuery.of(context).padding.top + 12, NexTheme.lg, NexTheme.lg),
-            child: Row(
-              children: [
-                Container(
-                  width: 32, height: 32,
-                  decoration: BoxDecoration(
-                    color: cs.primary,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Center(child: NexIcon(NexIconType.shield, size: 18, color: cs.onPrimary)),
-                ),
-                const SizedBox(width: 10),
-                Text(S.appTitle, style: TextStyle(
-                  fontSize: 17, fontWeight: FontWeight.w700, color: cs.onSurface, letterSpacing: -0.3)),
-                const Spacer(),
-                GestureDetector(
-                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SecurityAuditScreen())),
-                  child: NexIcon(NexIconType.shield, size: 20, color: cs.onSurfaceVariant),
-                ),
-              ],
-            ),
-          ),
-        ),
-
-        // ── Search ──────────────────────────────────────
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(NexTheme.lg, NexTheme.lg, NexTheme.lg, NexTheme.sm),
-            child: TextField(
-              controller: widget.searchController,
-              onChanged: vaultNotifier.setSearchQuery,
-              style: TextStyle(color: cs.onSurface, fontSize: 14),
-              decoration: InputDecoration(
-                hintText: S.searchHint,
-                prefixIcon: Padding(
-                  padding: const EdgeInsets.only(left: 12, right: 8),
-                  child: NexIcon(NexIconType.search, size: 18, color: cs.onSurfaceVariant),
-                ),
-                prefixIconConstraints: const BoxConstraints(minWidth: 40, minHeight: 0),
-              ),
-            ),
-          ),
-        ),
-
-        // ── Tabs ────────────────────────────────────────
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: NexTheme.lg, vertical: NexTheme.xs),
-            child: _buildTabs(ref, S, vaultState),
-          ),
-        ),
-
-        // ── Items ───────────────────────────────────────
-        if (vaultState.isLoading)
-          const SliverFillRemaining(
-            child: const Center(child: CircularProgressIndicator()),
-          )
-        else if (vaultState.items.isEmpty)
-          SliverFillRemaining(child: _emptyState(S))
-        else
-          _itemSliverList(vaultState, S),
-      ],
-        ),
-
-        Positioned(
-          bottom: 16, right: 16,
-          child: FloatingActionButton(
-            onPressed: () => _showAddDialog(context),
-            child: const NexIcon(NexIconType.plus, size: 24),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _tabChip(WidgetRef ref, String label, int index, int activeIndex) {
-    final isActive = index == activeIndex;
-    final cs = Theme.of(ref.context).colorScheme;
-    return FilterChip(
-      label: Text(label, style: TextStyle(
-        fontSize: 12, fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
-      )),
-      selected: isActive,
-      onSelected: (_) => ref.read(vaultStateProvider.notifier).setTab(index),
-      selectedColor: cs.primaryContainer,
-      checkmarkColor: cs.onPrimaryContainer,
-      side: BorderSide(color: isActive ? cs.primary : cs.outline),
-      visualDensity: VisualDensity.compact,
-    );
-  }
-
-  Widget _emptyState(S) {
-    final cs = Theme.of(context).colorScheme;
-    return Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
-      NexIcon(NexIconType.lock, size: 56, color: cs.outline),
-      const SizedBox(height: NexTheme.xl),
-      Text(S.vaultEmpty, style: TextStyle(color: cs.onSurfaceVariant, fontSize: 16, fontWeight: FontWeight.w600)),
-      const SizedBox(height: NexTheme.sm),
-      Text(S.vaultEmptyHint, style: TextStyle(color: cs.outline, fontSize: 13)),
-    ]));
-  }
-
-  Widget _itemSliverList(VaultState state, S) {
-    final filtered = state.items.where((item) {
-      if (state.selectedTypeTab != 0 && item.type != state.selectedTypeTab) return false;
-      return true;
-    }).toList();
-    if (filtered.isEmpty) {
-      final cs = Theme.of(context).colorScheme;
-      return SliverFillRemaining(child: Center(
-        child: Text(S.noItemsInCategory, style: TextStyle(color: cs.outline))));
-    }
-    return SliverPadding(
-      padding: const EdgeInsets.fromLTRB(NexTheme.lg, NexTheme.sm, NexTheme.lg, 80),
-      sliver: SliverList.builder(
-        itemCount: filtered.length,
-        itemBuilder: (context, idx) => _VaultItemCard(
-          item: filtered[idx],
-          onCopy: () => _handleCopyItem(filtered[idx]),
-          onDelete: () => _confirmDelete(filtered[idx]),
-        ),
-      ),
-    );
-  }
-
-  Future<void> _handleCopyItem(NexItem item) async {
-    final S = AppLocalizations.of(context);
-    final isDual = await ref.read(dualClipboardProvider.notifier).copyItem(item);
-    if (!mounted) return;
-    if (!isDual) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(S.passwordCopied)),
-      );
-    }
-  }
-
-  void _confirmDelete(NexItem item) {
-    final S = AppLocalizations.of(context);
-    final cs = Theme.of(context).colorScheme;
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(S.deleteTitle),
-        content: Text(S.deleteConfirm(item.name), style: TextStyle(color: cs.onSurfaceVariant)),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: Text(S.cancel, style: TextStyle(color: cs.onSurfaceVariant))),
-          TextButton(
-            onPressed: () { Navigator.pop(ctx); ref.read(vaultStateProvider.notifier).deleteItem(item); },
-            child: Text(S.delete, style: TextStyle(color: cs.error)),
-          ),
-        ],
-      ),
     );
   }
 
@@ -304,6 +127,176 @@ class _VaultPageState extends ConsumerState<_VaultPage> {
         ),
         child: Text(label, style: TextStyle(fontSize: 12,
             color: isActive ? cs.primary : cs.onSurfaceVariant)),
+      ),
+    );
+  }
+}
+
+// ── Vault page ────────────────────────────────────────────────────────
+
+class _VaultPage extends ConsumerStatefulWidget {
+  final TextEditingController searchController;
+  const _VaultPage({required this.searchController});
+
+  @override
+  ConsumerState<_VaultPage> createState() => _VaultPageState();
+}
+
+class _VaultPageState extends ConsumerState<_VaultPage> {
+  @override
+  Widget build(BuildContext context) {
+    final vaultState = ref.watch(vaultStateProvider);
+    final vaultNotifier = ref.read(vaultStateProvider.notifier);
+    final S = AppLocalizations.of(context);
+
+    final cs = Theme.of(context).colorScheme;
+
+    return CustomScrollView(
+      slivers: [
+        // ── Header ──────────────────────────────────────
+        SliverToBoxAdapter(
+          child: Container(
+            padding: EdgeInsets.fromLTRB(NexTheme.lg, MediaQuery.of(context).viewPadding.top + NexTheme.lg, NexTheme.lg, NexTheme.lg),
+            child: Row(
+              children: [
+                Container(
+                  width: 32, height: 32,
+                  decoration: BoxDecoration(
+                    color: cs.primary,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Center(child: NexIcon(NexIconType.shield, size: 18, color: cs.onPrimary)),
+                ),
+                const SizedBox(width: NexTheme.sm),
+                Text(S.appTitle, style: TextStyle(
+                  fontSize: 17, fontWeight: FontWeight.w700, color: cs.onSurface, letterSpacing: -0.3)),
+                const Spacer(),
+                GestureDetector(
+                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SecurityAuditScreen())),
+                  child: NexIcon(NexIconType.shield, size: 20, color: cs.onSurfaceVariant),
+                ),
+              ],
+            ),
+          ),
+        ),
+
+        // ── Search ──────────────────────────────────────
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(NexTheme.lg, NexTheme.lg, NexTheme.lg, NexTheme.sm),
+            child: TextField(
+              controller: widget.searchController,
+              onChanged: vaultNotifier.setSearchQuery,
+              style: TextStyle(color: cs.onSurface, fontSize: 14),
+              decoration: InputDecoration(
+                hintText: S.searchHint,
+                prefixIcon: Padding(
+                  padding: const EdgeInsets.only(left: 12, right: 8),
+                  child: NexIcon(NexIconType.search, size: 18, color: cs.onSurfaceVariant),
+                ),
+                prefixIconConstraints: const BoxConstraints(minWidth: 40, minHeight: 0),
+              ),
+            ),
+          ),
+        ),
+
+        // ── Tabs ────────────────────────────────────────
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: NexTheme.lg, vertical: NexTheme.xs),
+            child: _buildTabs(ref, S, vaultState),
+          ),
+        ),
+
+        // ── Items ───────────────────────────────────────
+        if (vaultState.isLoading)
+          const SliverFillRemaining(
+            child: Center(child: CircularProgressIndicator()),
+          )
+        else if (vaultState.items.isEmpty)
+          SliverFillRemaining(child: _emptyState(S))
+        else
+          _itemSliverList(vaultState, S),
+      ],
+    );
+  }
+
+  Widget _tabChip(WidgetRef ref, String label, int index, int activeIndex) {
+    final isActive = index == activeIndex;
+    final cs = Theme.of(ref.context).colorScheme;
+    return FilterChip(
+      label: Text(label, style: TextStyle(
+        fontSize: 12, fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
+      )),
+      selected: isActive,
+      onSelected: (_) => ref.read(vaultStateProvider.notifier).setTab(index),
+      selectedColor: cs.primaryContainer,
+      checkmarkColor: cs.onPrimaryContainer,
+      side: BorderSide(color: isActive ? cs.primary : cs.outline),
+      visualDensity: VisualDensity.compact,
+    );
+  }
+
+  Widget _emptyState(S) {
+    final cs = Theme.of(context).colorScheme;
+    return Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
+      NexIcon(NexIconType.lock, size: 56, color: cs.outline),
+      const SizedBox(height: NexTheme.xl),
+      Text(S.vaultEmpty, style: TextStyle(color: cs.onSurfaceVariant, fontSize: 16, fontWeight: FontWeight.w600)),
+      const SizedBox(height: NexTheme.sm),
+      Text(S.vaultEmptyHint, style: TextStyle(color: cs.outline, fontSize: 13)),
+    ]));
+  }
+
+  Widget _itemSliverList(VaultState state, S) {
+    final filtered = state.items.where((item) {
+      if (state.selectedTypeTab != 0 && item.type != state.selectedTypeTab) return false;
+      return true;
+    }).toList();
+    if (filtered.isEmpty) {
+      final cs = Theme.of(context).colorScheme;
+      return SliverFillRemaining(child: Center(
+        child: Text(S.noItemsInCategory, style: TextStyle(color: cs.outline))));
+    }
+    return SliverPadding(
+      padding: EdgeInsets.fromLTRB(NexTheme.lg, NexTheme.sm, NexTheme.lg, 120 + MediaQuery.of(context).padding.bottom),
+      sliver: SliverList.builder(
+        itemCount: filtered.length,
+        itemBuilder: (context, idx) => _VaultItemCard(
+          item: filtered[idx],
+          onCopy: () => _handleCopyItem(filtered[idx]),
+          onDelete: () => _confirmDelete(filtered[idx]),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _handleCopyItem(NexItem item) async {
+    final S = AppLocalizations.of(context);
+    final isDual = await ref.read(dualClipboardProvider.notifier).copyItem(item);
+    if (!mounted) return;
+    if (!isDual) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(S.passwordCopied)),
+      );
+    }
+  }
+
+  void _confirmDelete(NexItem item) {
+    final S = AppLocalizations.of(context);
+    final cs = Theme.of(context).colorScheme;
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(S.deleteTitle),
+        content: Text(S.deleteConfirm(item.name), style: TextStyle(color: cs.onSurfaceVariant)),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: Text(S.cancel, style: TextStyle(color: cs.onSurfaceVariant))),
+          TextButton(
+            onPressed: () { Navigator.pop(ctx); ref.read(vaultStateProvider.notifier).deleteItem(item); },
+            child: Text(S.delete, style: TextStyle(color: cs.error)),
+          ),
+        ],
       ),
     );
   }

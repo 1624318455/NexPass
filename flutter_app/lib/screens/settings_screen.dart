@@ -28,10 +28,10 @@ class SettingsScreen extends ConsumerWidget {
     final settings = ref.watch(appSettingsNotifierProvider);
 
     return ListView(
-      padding: EdgeInsets.fromLTRB(0, MediaQuery.of(context).padding.top + 12, 0, 80),
+      padding: EdgeInsets.fromLTRB(0, MediaQuery.of(context).viewPadding.top + NexTheme.lg, 0, MediaQuery.of(context).padding.bottom + 64),
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+          padding: const EdgeInsets.fromLTRB(NexTheme.xl, 0, NexTheme.xl, NexTheme.sm),
           child: Text(S.settings, style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w700)),
         ),
 
@@ -113,7 +113,7 @@ class SettingsScreen extends ConsumerWidget {
 
         const SizedBox(height: 8),
         Padding(
-          padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+          padding: const EdgeInsets.fromLTRB(NexTheme.xl, 0, NexTheme.xl, NexTheme.sm),
           child: FilledButton.icon(
             onPressed: () => _confirmLock(context, ref),
             icon: const NexIcon(NexIconType.lock, size: 18, color: Colors.white),
@@ -139,7 +139,7 @@ class SettingsScreen extends ConsumerWidget {
 
   Widget _sectionHeader(BuildContext context, String title) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 24, 20, 4),
+      padding: const EdgeInsets.fromLTRB(NexTheme.xl, NexTheme.xxl, NexTheme.xl, NexTheme.xs),
       child: Text(title, style: TextStyle(
           color: Theme.of(context).colorScheme.outline, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 0.8)),
     );
@@ -156,7 +156,7 @@ class SettingsScreen extends ConsumerWidget {
       subtitle: Text(subtitle, style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
       trailing: trailing ?? NexIcon(NexIconType.chevronRight, size: 16, color: theme.colorScheme.outline),
       onTap: onTap,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 2),
+      contentPadding: const EdgeInsets.symmetric(horizontal: NexTheme.xl, vertical: 2),
     );
   }
 
@@ -171,7 +171,7 @@ class SettingsScreen extends ConsumerWidget {
       subtitle: Text(subtitle, style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
       value: value,
       onChanged: onChanged,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 2),
+      contentPadding: const EdgeInsets.symmetric(horizontal: NexTheme.xl, vertical: 2),
     );
   }
 
