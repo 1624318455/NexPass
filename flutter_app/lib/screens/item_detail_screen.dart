@@ -23,11 +23,93 @@ class ItemDetailScreen extends ConsumerStatefulWidget {
 
 class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
   late NexItem _item;
+  bool _editing = false;
+  final Map<String, TextEditingController> _editControllers = {};
 
   @override
   void initState() {
     super.initState();
     _item = widget.item;
+  }
+
+  @override
+  void dispose() {
+    for (final c in _editControllers.values) {
+      c.dispose();
+    }
+    super.dispose();
+  }
+
+  void _enterEdit() {
+    _editControllers.clear();
+    _editControllers['name'] = TextEditingController(text: _item.name);
+    _editControllers['username'] = TextEditingController(text: _item.username);
+    final pwField = _item.fields.where((f) => f.name == 'password' || f.fieldType == 2).firstOrNull;
+    _editControllers['password'] = TextEditingController(
+      text: pwField?.decryptedValue ?? pwField?.value ?? '');
+    _editControllers['website'] = TextEditingController(text: _item.website);
+    for (final f in _item.fields) {
+      if (f.name != 'username' && f.name != 'password' && f.name != 'totpSecret' &&
+          f.name.toLowerCase() != 'website' && f.name.toLowerCase() != 'url' &&
+          f.fieldType != 2 && f.fieldType != 3) {
+        _editControllers[f.name] = TextEditingController(text: f.decryptedValue ?? f.value);
+      }
+    }
+    final notesFields = _item.fields.where((f) =>
+        f.fieldType == 3 && f.name != 'totpSecret').toList();
+    for (int i = 0; i < notesFields.length; i++) {
+      _editControllers['notes_$i'] = TextEditingController(
+        text: notesFields[i].decryptedValue ?? notesFields[i].value);
+    }
+    setState(() => _editing = true);
+  }
+
+  void _saveEdit() {
+    _item.name = _editControllers['name']?.text ?? _item.name;
+    final usernameC = _editControllers['username'];
+    if (usernameC != null) {
+      final uf = _item.fields.firstWhere(
+        (f) => f.name == 'username', orElse: () => NexField()..name = 'username');
+      uf.value = usernameC.text;
+      uf.decryptedValue = usernameC.text;
+      if (!_item.fields.any((f) => f.name == 'username')) _item.fields.add(uf);
+    }
+    final pwC = _editControllers['password'];
+    if (pwC != null) {
+      final pf = _item.fields.firstWhere(
+        (f) => f.name == 'password' || f.fieldType == 2,
+        orElse: () => NexField()..name = 'password'..fieldType = 2);
+      pf.value = pwC.text;
+      pf.decryptedValue = pwC.text;
+      if (!_item.fields.any((f) => f.name == 'password' || f.fieldType == 2)) _item.fields.add(pf);
+    }
+    final webC = _editControllers['website'];
+    if (webC != null) {
+      final wf = _item.fields.firstWhere(
+        (f) => f.name.toLowerCase() == 'website' || f.name.toLowerCase() == 'url',
+        orElse: () => NexField()..name = 'website');
+      wf.value = webC.text;
+      wf.decryptedValue = webC.text;
+      if (!_item.fields.any((f) => f.name.toLowerCase() == 'website' || f.name.toLowerCase() == 'url')) {
+        _item.fields.add(wf);
+      }
+    }
+    for (final f in _item.fields) {
+      if (f.name != 'username' && f.name != 'password' && f.name != 'totpSecret' &&
+          f.name.toLowerCase() != 'website' && f.name.toLowerCase() != 'url' &&
+          f.fieldType != 2 && f.fieldType != 3) {
+        final c = _editControllers[f.name];
+        if (c != null) {
+          f.value = c.text;
+          f.decryptedValue = c.text;
+        }
+      }
+    }
+    _item.updatedAt = DateTime.now();
+    ref.read(vaultStateProvider.notifier).updateItem(_item);
+    for (final c in _editControllers.values) c.dispose();
+    _editControllers.clear();
+    setState(() => _editing = false);
   }
 
   NexIconType _iconForType(int type) {
@@ -72,6 +154,8 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
     final username = _item.username;
     final passwordField = _item.fields.where((f) => f.name == 'password' || f.fieldType == 2).firstOrNull;
     final website = _item.website;
+    final notesFields = _item.fields.where((f) =>
+        f.fieldType == 3 && f.name != 'totpSecret').toList();
     final otherFields = _item.fields.where((f) =>
         f.name != 'username' && f.name != 'password' && f.name.toLowerCase() != 'website' &&
         f.name.toLowerCase() != 'url' && f.name != 'totpSecret' && f.fieldType != 2 && f.fieldType != 3
@@ -107,8 +191,15 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(_item.name, style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w700)),
+                          _editing
+                            ? TextField(
+                                controller: _editControllers['name'],
+                                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.w700),
+                                decoration: const InputDecoration(isDense: true, border: InputBorder.none),
+                              )
+                            : Text(_item.name, style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.w700)),
                           const SizedBox(height: 2),
                           Text(_labelForType(_item.type), style: Theme.of(context).textTheme.bodySmall?.copyWith(
                             color: cs.onSurfaceVariant)),
@@ -120,27 +211,43 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
               ),
 
               // ── 2. Account ──────────────────────────
-              if (username.isNotEmpty)
-                _FieldCard(
-                  label: S.usernameLabel,
-                  value: username,
-                  onCopy: () => _copyValue(username),
-                ),
+              if (username.isNotEmpty || _editing)
+                _editing
+                  ? _EditFieldCard(
+                      label: S.usernameLabel,
+                      controller: _editControllers['username']!,
+                    )
+                  : _FieldCard(
+                      label: S.usernameLabel,
+                      value: username,
+                      onCopy: () => _copyValue(username),
+                    ),
 
               // ── 3. Password ─────────────────────────
-              if (passwordField != null)
-                _PasswordFieldCard(
-                  field: passwordField,
-                  onCopy: () => _copyValue(passwordField.decryptedValue ?? passwordField.value),
-                ),
+              if (passwordField != null || _editing)
+                _editing
+                  ? _EditFieldCard(
+                      label: S.passwordLabel,
+                      controller: _editControllers['password']!,
+                      obscure: true,
+                    )
+                  : _PasswordFieldCard(
+                      field: passwordField!,
+                      onCopy: () => _copyValue(passwordField.decryptedValue ?? passwordField.value),
+                    ),
 
               // ── 4. Security status ──────────────────
-              if (passwordField != null)
+              if (passwordField != null && !_editing)
                 _SecurityCard(password: passwordField.decryptedValue ?? passwordField.value),
 
               // ── 5. Website ──────────────────────────
-              if (website.isNotEmpty)
-                _WebsiteCard(url: website),
+              if (website.isNotEmpty || _editing)
+                _editing
+                  ? _EditFieldCard(
+                      label: 'Website',
+                      controller: _editControllers['website']!,
+                    )
+                  : _WebsiteCard(url: website),
 
               // ── 9. TOTP ─────────────────────────────
               if (_item.hasTotp)
@@ -149,14 +256,31 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
                   orElse: () => NexField(),
                 ).decryptedValue ?? _item.totpSecret),
 
-              // ── 6. Other fields (notes, custom) ─────
-              for (final f in otherFields)
-                _FieldCard(
-                  label: f.name,
-                  value: f.decryptedValue ?? f.value,
-                  isSensitive: f.isSensitive,
-                  onCopy: f.isSensitive ? () => _copyValue(f.decryptedValue ?? f.value) : null,
+              // ── 10. Related notes ───────────────────
+              if (notesFields.isNotEmpty)
+                _NotesCard(
+                  notesFields: notesFields,
+                  indexOffset: 0,
+                  editing: _editing,
+                  editControllers: _editControllers,
                 ),
+
+              // ── 6. Other fields (custom) ────────────
+              for (int i = 0; i < otherFields.length; i++)
+                _editing
+                  ? _EditFieldCard(
+                      label: otherFields[i].name,
+                      controller: _editControllers[otherFields[i].name]!,
+                      sensitive: otherFields[i].isSensitive,
+                    )
+                  : _FieldCard(
+                      label: otherFields[i].name,
+                      value: otherFields[i].decryptedValue ?? otherFields[i].value,
+                      isSensitive: otherFields[i].isSensitive,
+                      onCopy: otherFields[i].isSensitive
+                          ? () => _copyValue(otherFields[i].decryptedValue ?? otherFields[i].value)
+                          : null,
+                    ),
 
               // ── 7. Storage info ─────────────────────
               _SectionCard(
@@ -198,7 +322,9 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
             bottom: MediaQuery.of(context).padding.bottom + NexTheme.lg,
             child: _BottomActionBar(
               isFavorite: _item.isFavorite,
+              isEditing: _editing,
               onToggleFavorite: _toggleFavorite,
+              onEdit: _editing ? _saveEdit : _enterEdit,
               onExport: _showExportPlaceholder,
               onDelete: _confirmDelete,
             ),
@@ -461,7 +587,12 @@ class _WebsiteCard extends StatelessWidget {
               color: cs.primary), maxLines: 2, overflow: TextOverflow.ellipsis),
           ),
           IconButton(
-            onPressed: () => launchUrl(Uri.parse(displayUrl)),
+            onPressed: () async {
+              final uri = Uri.parse(displayUrl);
+              if (await canLaunchUrl(uri)) {
+                await launchUrl(uri, mode: LaunchMode.externalApplication);
+              }
+            },
             icon: NexIcon(NexIconType.chevronRight, size: 18, color: cs.onSurfaceVariant),
           ),
         ],
@@ -640,17 +771,111 @@ class _TotpCardState extends State<_TotpCard> {
   }
 }
 
+// ── 10. Related notes card ─────────────────────────────────────────
+
+class _NotesCard extends StatelessWidget {
+  final List<NexField> notesFields;
+  final int indexOffset;
+  final bool editing;
+  final Map<String, TextEditingController> editControllers;
+
+  const _NotesCard({
+    required this.notesFields,
+    required this.indexOffset,
+    required this.editing,
+    required this.editControllers,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return _SectionCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Notes', style: Theme.of(context).textTheme.labelLarge?.copyWith(
+            color: cs.onSurfaceVariant, fontWeight: FontWeight.w600)),
+          const SizedBox(height: NexTheme.sm),
+          for (int i = 0; i < notesFields.length; i++) ...[
+            if (i > 0) const SizedBox(height: NexTheme.sm),
+            if (editing)
+              TextField(
+                controller: editControllers['notes_${indexOffset + i}'],
+                maxLines: 3,
+                decoration: InputDecoration(
+                  hintText: 'Note ${i + 1}',
+                  border: const OutlineInputBorder(),
+                  isDense: true,
+                ),
+                style: Theme.of(context).textTheme.bodyMedium,
+              )
+            else
+              Text(notesFields[i].decryptedValue ?? notesFields[i].value,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: cs.onSurface),
+                maxLines: 5, overflow: TextOverflow.ellipsis),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+// ── Edit mode field card ────────────────────────────────────────────
+
+class _EditFieldCard extends StatelessWidget {
+  final String label;
+  final TextEditingController controller;
+  final bool obscure;
+  final bool sensitive;
+
+  const _EditFieldCard({
+    required this.label,
+    required this.controller,
+    this.obscure = false,
+    this.sensitive = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return _SectionCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: Theme.of(context).textTheme.labelLarge?.copyWith(
+            color: cs.onSurfaceVariant, fontWeight: FontWeight.w600)),
+          const SizedBox(height: NexTheme.xs),
+          TextField(
+            controller: controller,
+            obscureText: obscure,
+            maxLines: sensitive ? 1 : null,
+            decoration: const InputDecoration(
+              border: OutlineInputBorder(),
+              isDense: true,
+            ),
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 // ── Bottom floating action bar ──────────────────────────────────────
 
 class _BottomActionBar extends StatelessWidget {
   final bool isFavorite;
+  final bool isEditing;
   final VoidCallback onToggleFavorite;
+  final VoidCallback onEdit;
   final VoidCallback onExport;
   final VoidCallback onDelete;
 
   const _BottomActionBar({
     required this.isFavorite,
+    required this.isEditing,
     required this.onToggleFavorite,
+    required this.onEdit,
     required this.onExport,
     required this.onDelete,
   });
@@ -678,9 +903,9 @@ class _BottomActionBar extends StatelessWidget {
                 onTap: onToggleFavorite,
               ),
               _BarIconButton(
-                icon: NexIconType.pencil,
-                color: cs.onSurfaceVariant,
-                onTap: () {}, // Placeholder
+                icon: isEditing ? NexIconType.check : NexIconType.pencil,
+                color: isEditing ? cs.primary : cs.onSurfaceVariant,
+                onTap: onEdit,
               ),
               _BarIconButton(
                 icon: NexIconType.download,
