@@ -430,40 +430,57 @@ class SettingsScreen extends ConsumerWidget {
     final S = AppLocalizations.of(context);
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(S.settingsBottomNav),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            SwitchListTile(
-              title: Text(S.onboardingNavPasswords),
-              value: settings.navPasswords,
-              onChanged: (v) => ref.read(appSettingsNotifierProvider.notifier).update((s) => s.navPasswords = v),
-              contentPadding: EdgeInsets.zero,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) {
+          final s = ref.read(appSettingsNotifierProvider);
+          return AlertDialog(
+            title: Text(S.settingsBottomNav),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SwitchListTile(
+                  title: Text(S.onboardingNavPasswords),
+                  value: s.navPasswords,
+                  onChanged: (v) {
+                    ref.read(appSettingsNotifierProvider.notifier).update((s) => s.navPasswords = v);
+                    setDialogState(() {});
+                  },
+                  contentPadding: EdgeInsets.zero,
+                ),
+                SwitchListTile(
+                  title: Text(S.onboardingNavAuthenticators),
+                  value: s.navAuthenticators,
+                  onChanged: (v) {
+                    ref.read(appSettingsNotifierProvider.notifier).update((s) => s.navAuthenticators = v);
+                    setDialogState(() {});
+                  },
+                  contentPadding: EdgeInsets.zero,
+                ),
+                SwitchListTile(
+                  title: Text(S.onboardingNavCards),
+                  value: s.navCards,
+                  onChanged: (v) {
+                    ref.read(appSettingsNotifierProvider.notifier).update((s) => s.navCards = v);
+                    setDialogState(() {});
+                  },
+                  contentPadding: EdgeInsets.zero,
+                ),
+                SwitchListTile(
+                  title: Text(S.onboardingNavPasskeys),
+                  value: s.navPasskeys,
+                  onChanged: (v) {
+                    ref.read(appSettingsNotifierProvider.notifier).update((s) => s.navPasskeys = v);
+                    setDialogState(() {});
+                  },
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ],
             ),
-            SwitchListTile(
-              title: Text(S.onboardingNavAuthenticators),
-              value: settings.navAuthenticators,
-              onChanged: (v) => ref.read(appSettingsNotifierProvider.notifier).update((s) => s.navAuthenticators = v),
-              contentPadding: EdgeInsets.zero,
-            ),
-            SwitchListTile(
-              title: Text(S.onboardingNavCards),
-              value: settings.navCards,
-              onChanged: (v) => ref.read(appSettingsNotifierProvider.notifier).update((s) => s.navCards = v),
-              contentPadding: EdgeInsets.zero,
-            ),
-            SwitchListTile(
-              title: Text(S.onboardingNavPasskeys),
-              value: settings.navPasskeys,
-              onChanged: (v) => ref.read(appSettingsNotifierProvider.notifier).update((s) => s.navPasskeys = v),
-              contentPadding: EdgeInsets.zero,
-            ),
-          ],
-        ),
-        actions: [
-          FilledButton(onPressed: () => Navigator.pop(ctx), child: const Text('Done')),
-        ],
+            actions: [
+              FilledButton(onPressed: () => Navigator.pop(ctx), child: const Text('Done')),
+            ],
+          );
+        },
       ),
     );
   }
@@ -472,28 +489,39 @@ class SettingsScreen extends ConsumerWidget {
     final S = AppLocalizations.of(context);
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(S.settingsPasswordList),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            SwitchListTile(
-              title: Text(S.settingsShowRecent),
-              value: settings.showRecentShortcuts,
-              onChanged: (v) => ref.read(appSettingsNotifierProvider.notifier).update((s) => s.showRecentShortcuts = v),
-              contentPadding: EdgeInsets.zero,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) {
+          final s = ref.read(appSettingsNotifierProvider);
+          return AlertDialog(
+            title: Text(S.settingsPasswordList),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SwitchListTile(
+                  title: Text(S.settingsShowRecent),
+                  value: s.showRecentShortcuts,
+                  onChanged: (v) {
+                    ref.read(appSettingsNotifierProvider.notifier).update((s) => s.showRecentShortcuts = v);
+                    setDialogState(() {});
+                  },
+                  contentPadding: EdgeInsets.zero,
+                ),
+                SwitchListTile(
+                  title: Text(S.settingsShowFavorites),
+                  value: s.showFavorites,
+                  onChanged: (v) {
+                    ref.read(appSettingsNotifierProvider.notifier).update((s) => s.showFavorites = v);
+                    setDialogState(() {});
+                  },
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ],
             ),
-            SwitchListTile(
-              title: Text(S.settingsShowFavorites),
-              value: settings.showFavorites,
-              onChanged: (v) => ref.read(appSettingsNotifierProvider.notifier).update((s) => s.showFavorites = v),
-              contentPadding: EdgeInsets.zero,
-            ),
-          ],
-        ),
-        actions: [
-          FilledButton(onPressed: () => Navigator.pop(ctx), child: const Text('Done')),
-        ],
+            actions: [
+              FilledButton(onPressed: () => Navigator.pop(ctx), child: const Text('Done')),
+            ],
+          );
+        },
       ),
     );
   }
@@ -502,42 +530,59 @@ class SettingsScreen extends ConsumerWidget {
     final S = AppLocalizations.of(context);
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(S.settingsPasswordCards),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              SwitchListTile(
-                title: Text(S.onboardingCardUsername),
-                value: settings.cardShowUsername,
-                onChanged: (v) => ref.read(appSettingsNotifierProvider.notifier).update((s) => s.cardShowUsername = v),
-                contentPadding: EdgeInsets.zero,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) {
+          final s = ref.read(appSettingsNotifierProvider);
+          return AlertDialog(
+            title: Text(S.settingsPasswordCards),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  SwitchListTile(
+                    title: Text(S.onboardingCardUsername),
+                    value: s.cardShowUsername,
+                    onChanged: (v) {
+                      ref.read(appSettingsNotifierProvider.notifier).update((s) => s.cardShowUsername = v);
+                      setDialogState(() {});
+                    },
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                  SwitchListTile(
+                    title: Text(S.onboardingCardWebsite),
+                    value: s.cardShowWebsite,
+                    onChanged: (v) {
+                      ref.read(appSettingsNotifierProvider.notifier).update((s) => s.cardShowWebsite = v);
+                      setDialogState(() {});
+                    },
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                  SwitchListTile(
+                    title: Text(S.onboardingCardLinkedAuth),
+                    value: s.cardShowLinkedAuth,
+                    onChanged: (v) {
+                      ref.read(appSettingsNotifierProvider.notifier).update((s) => s.cardShowLinkedAuth = v);
+                      setDialogState(() {});
+                    },
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                  SwitchListTile(
+                    title: Text(S.onboardingCardHideOther),
+                    value: s.cardHideOtherWhenAuth,
+                    onChanged: (v) {
+                      ref.read(appSettingsNotifierProvider.notifier).update((s) => s.cardHideOtherWhenAuth = v);
+                      setDialogState(() {});
+                    },
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                ],
               ),
-              SwitchListTile(
-                title: Text(S.onboardingCardWebsite),
-                value: settings.cardShowWebsite,
-                onChanged: (v) => ref.read(appSettingsNotifierProvider.notifier).update((s) => s.cardShowWebsite = v),
-                contentPadding: EdgeInsets.zero,
-              ),
-              SwitchListTile(
-                title: Text(S.onboardingCardLinkedAuth),
-                value: settings.cardShowLinkedAuth,
-                onChanged: (v) => ref.read(appSettingsNotifierProvider.notifier).update((s) => s.cardShowLinkedAuth = v),
-                contentPadding: EdgeInsets.zero,
-              ),
-              SwitchListTile(
-                title: Text(S.onboardingCardHideOther),
-                value: settings.cardHideOtherWhenAuth,
-                onChanged: (v) => ref.read(appSettingsNotifierProvider.notifier).update((s) => s.cardHideOtherWhenAuth = v),
-                contentPadding: EdgeInsets.zero,
-              ),
+            ),
+            actions: [
+              FilledButton(onPressed: () => Navigator.pop(ctx), child: const Text('Done')),
             ],
-          ),
-        ),
-        actions: [
-          FilledButton(onPressed: () => Navigator.pop(ctx), child: const Text('Done')),
-        ],
+          );
+        },
       ),
     );
   }
@@ -546,42 +591,59 @@ class SettingsScreen extends ConsumerWidget {
     final S = AppLocalizations.of(context);
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(S.settingsAuthDisplay),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              SwitchListTile(
-                title: Text(S.onboardingAuthIssuer),
-                value: settings.authShowIssuer,
-                onChanged: (v) => ref.read(appSettingsNotifierProvider.notifier).update((s) => s.authShowIssuer = v),
-                contentPadding: EdgeInsets.zero,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) {
+          final s = ref.read(appSettingsNotifierProvider);
+          return AlertDialog(
+            title: Text(S.settingsAuthDisplay),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  SwitchListTile(
+                    title: Text(S.onboardingAuthIssuer),
+                    value: s.authShowIssuer,
+                    onChanged: (v) {
+                      ref.read(appSettingsNotifierProvider.notifier).update((s) => s.authShowIssuer = v);
+                      setDialogState(() {});
+                    },
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                  SwitchListTile(
+                    title: Text(S.onboardingAuthAccount),
+                    value: s.authShowAccount,
+                    onChanged: (v) {
+                      ref.read(appSettingsNotifierProvider.notifier).update((s) => s.authShowAccount = v);
+                      setDialogState(() {});
+                    },
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                  SwitchListTile(
+                    title: Text(S.onboardingAuthProgress),
+                    value: s.authShowProgressBar,
+                    onChanged: (v) {
+                      ref.read(appSettingsNotifierProvider.notifier).update((s) => s.authShowProgressBar = v);
+                      setDialogState(() {});
+                    },
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                  SwitchListTile(
+                    title: Text(S.onboardingAuthSmooth),
+                    value: s.authSmoothAnimation,
+                    onChanged: (v) {
+                      ref.read(appSettingsNotifierProvider.notifier).update((s) => s.authSmoothAnimation = v);
+                      setDialogState(() {});
+                    },
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                ],
               ),
-              SwitchListTile(
-                title: Text(S.onboardingAuthAccount),
-                value: settings.authShowAccount,
-                onChanged: (v) => ref.read(appSettingsNotifierProvider.notifier).update((s) => s.authShowAccount = v),
-                contentPadding: EdgeInsets.zero,
-              ),
-              SwitchListTile(
-                title: Text(S.onboardingAuthProgress),
-                value: settings.authShowProgressBar,
-                onChanged: (v) => ref.read(appSettingsNotifierProvider.notifier).update((s) => s.authShowProgressBar = v),
-                contentPadding: EdgeInsets.zero,
-              ),
-              SwitchListTile(
-                title: Text(S.onboardingAuthSmooth),
-                value: settings.authSmoothAnimation,
-                onChanged: (v) => ref.read(appSettingsNotifierProvider.notifier).update((s) => s.authSmoothAnimation = v),
-                contentPadding: EdgeInsets.zero,
-              ),
+            ),
+            actions: [
+              FilledButton(onPressed: () => Navigator.pop(ctx), child: const Text('Done')),
             ],
-          ),
-        ),
-        actions: [
-          FilledButton(onPressed: () => Navigator.pop(ctx), child: const Text('Done')),
-        ],
+          );
+        },
       ),
     );
   }
