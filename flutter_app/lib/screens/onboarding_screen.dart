@@ -5,6 +5,8 @@ import '../main.dart';
 import 'package:file_picker/file_picker.dart';
 import '../services/autofill_engine.dart';
 import '../services/csv_import_service.dart';
+import '../services/sync_service.dart';
+import '../state/sync_state.dart';
 import '../theme/nex_theme.dart';
 import 'import_preview_screen.dart';
 import '../widgets/nex_icons.dart';
@@ -377,10 +379,22 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           Text(S.onboardingNavBarDesc, style: TextStyle(color: cs.onSurfaceVariant, fontSize: 14)),
           const SizedBox(height: 24),
 
-          _toggleTile(S.onboardingNavPasswords, _navPasswords, (v) => setState(() => _navPasswords = v)),
-          _toggleTile(S.onboardingNavAuthenticators, _navAuthenticators, (v) => setState(() => _navAuthenticators = v)),
-          _toggleTile(S.onboardingNavCards, _navCards, (v) => setState(() => _navCards = v)),
-          _toggleTile(S.onboardingNavPasskeys, _navPasskeys, (v) => setState(() => _navPasskeys = v)),
+          _toggleTile(S.onboardingNavPasswords, _navPasswords, (v) {
+            setState(() => _navPasswords = v);
+            ref.read(appSettingsNotifierProvider.notifier).update((s) => s.navPasswords = v);
+          }),
+          _toggleTile(S.onboardingNavAuthenticators, _navAuthenticators, (v) {
+            setState(() => _navAuthenticators = v);
+            ref.read(appSettingsNotifierProvider.notifier).update((s) => s.navAuthenticators = v);
+          }),
+          _toggleTile(S.onboardingNavCards, _navCards, (v) {
+            setState(() => _navCards = v);
+            ref.read(appSettingsNotifierProvider.notifier).update((s) => s.navCards = v);
+          }),
+          _toggleTile(S.onboardingNavPasskeys, _navPasskeys, (v) {
+            setState(() => _navPasskeys = v);
+            ref.read(appSettingsNotifierProvider.notifier).update((s) => s.navPasskeys = v);
+          }),
 
           const SizedBox(height: 24),
 
@@ -424,7 +438,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
           _importOption(NexIconType.key, 'Bitwarden', 'Import from Bitwarden vault', cs,
               onTap: () => _pickAndImport('Bitwarden')),
-          _importOption(NexIconType.cloud, 'WebDAV', 'Connect to WebDAV server', cs),
+          _importOption(NexIconType.cloud, 'WebDAV', 'Connect to WebDAV server', cs,
+              onTap: () => _showWebDAVDialog()),
           _importOption(NexIconType.lock, 'KeePass', 'Import from KeePass database', cs,
               onTap: () => _pickAndImport('KeePass')),
           _importOption(NexIconType.stickyNote, 'CSV / File', 'Import from CSV or JSON file', cs,
@@ -806,6 +821,79 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         );
       }
     }
+  }
+
+  Future<void> _showWebDAVDialog() async {
+    final secureStorage = ref.read(secureStorageProvider);
+    final urlCtrl = TextEditingController(text: await secureStorage.read('webdav_url') ?? '');
+    final userCtrl = TextEditingController(text: await secureStorage.read('webdav_user') ?? '');
+    final passCtrl = TextEditingController(text: await secureStorage.read('webdav_pass') ?? '');
+
+    if (!context.mounted) return;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('WebDAV Configuration'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: urlCtrl,
+                decoration: InputDecoration(
+                  hintText: 'URL (https://dav.example.com/dav)',
+                  filled: true,
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(NexTheme.rSm)),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: userCtrl,
+                decoration: InputDecoration(
+                  hintText: 'Username',
+                  filled: true,
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(NexTheme.rSm)),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: passCtrl,
+                obscureText: true,
+                decoration: InputDecoration(
+                  hintText: 'Password',
+                  filled: true,
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(NexTheme.rSm)),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          FilledButton(
+            onPressed: () async {
+              await secureStorage.write(key: 'webdav_url', value: urlCtrl.text);
+              await secureStorage.write(key: 'webdav_user', value: userCtrl.text);
+              await secureStorage.write(key: 'webdav_pass', value: passCtrl.text);
+
+              final newSyncService = SyncService(
+                webDavUrl: urlCtrl.text,
+                username: userCtrl.text,
+                password: passCtrl.text,
+              );
+              ref.read(syncServiceProvider.notifier).state = newSyncService;
+
+              if (ctx.mounted) Navigator.pop(ctx);
+            },
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
   }
 
   String _langName(String code) => switch (code) {
