@@ -133,7 +133,26 @@ class VaultNotifier extends StateNotifier<VaultState> {
 
   /// Re-saves an existing item (used by security audit to update passwords).
   Future<void> updateItem(NexItem item) async {
-    await _repository.saveItem(item: item, derivedKey: _masterKey);
+    // Deep-copy: saveItem encrypts sensitive fields in-place, which would
+    // corrupt the in-memory item used by the detail screen.
+    final copy = NexItem()
+      ..uuid = item.uuid
+      ..vaultId = item.vaultId
+      ..type = item.type
+      ..name = item.name
+      ..iconKey = item.iconKey
+      ..tags = List<String>.from(item.tags)
+      ..isFavorite = item.isFavorite
+      ..updatedAt = item.updatedAt
+      ..lastUsedAt = item.lastUsedAt
+      ..fields = item.fields.map((f) => NexField()
+        ..name = f.name
+        ..value = f.value
+        ..fieldType = f.fieldType
+        ..isSensitive = f.isSensitive
+      ).toList();
+    await _repository.saveItem(item: copy, derivedKey: _masterKey);
+    await loadVault();
   }
 
   /// Returns items with weak passwords (length < [minimumSecureLength]).

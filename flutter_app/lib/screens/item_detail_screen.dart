@@ -49,7 +49,8 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
       text: pwField?.decryptedValue ?? pwField?.value ?? '');
     _editControllers['website'] = TextEditingController(text: _item.website);
     for (final f in _item.fields) {
-      if (f.name != 'username' && f.name != 'password' && f.name != 'totpSecret' &&
+      if (f.name.isNotEmpty &&
+          f.name != 'username' && f.name != 'password' && f.name != 'totpSecret' &&
           f.name.toLowerCase() != 'website' && f.name.toLowerCase() != 'url' &&
           f.fieldType != 2 && f.fieldType != 3) {
         _editControllers[f.name] = TextEditingController(text: f.decryptedValue ?? f.value);
@@ -95,7 +96,8 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
       }
     }
     for (final f in _item.fields) {
-      if (f.name != 'username' && f.name != 'password' && f.name != 'totpSecret' &&
+      if (f.name.isNotEmpty &&
+          f.name != 'username' && f.name != 'password' && f.name != 'totpSecret' &&
           f.name.toLowerCase() != 'website' && f.name.toLowerCase() != 'url' &&
           f.fieldType != 2 && f.fieldType != 3) {
         final c = _editControllers[f.name];
