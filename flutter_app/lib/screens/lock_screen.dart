@@ -134,7 +134,7 @@ class _LockScreenState extends ConsumerState<LockScreen> {
                   const CircularProgressIndicator(),
                   const SizedBox(height: 16),
                   Text('Initializing...',
-                      style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13)),
+                      style: theme.textTheme.bodySmall?.copyWith(color: cs.onSurfaceVariant)),
                 ]
 
                 // Biometric button
@@ -145,13 +145,10 @@ class _LockScreenState extends ConsumerState<LockScreen> {
                     child: FilledButton.icon(
                       onPressed: _loading ? null : _tryBiometric,
                       icon: _loading
-                          ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                          : const NexIcon(NexIconType.shield, size: 20, color: Colors.white),
+                          ? SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: cs.onPrimary))
+                          : NexIcon(NexIconType.shield, size: 20, color: cs.onPrimary),
                       label: Text(_loading ? 'Authenticating...' : 'Use Biometrics',
                           style: const TextStyle(fontSize: 16)),
-                      style: FilledButton.styleFrom(
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(NexTheme.rMd)),
-                      ),
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -177,7 +174,7 @@ class _LockScreenState extends ConsumerState<LockScreen> {
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(_error!,
-                                style: TextStyle(color: cs.onErrorContainer, fontSize: 13)),
+                                style: theme.textTheme.bodySmall?.copyWith(color: cs.onErrorContainer)),
                           ),
                         ],
                       ),
@@ -202,11 +199,8 @@ class _LockScreenState extends ConsumerState<LockScreen> {
                     child: FilledButton(
                       onPressed: _loading ? null : _unlockWithPassword,
                       child: _loading
-                          ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                          ? SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: cs.onPrimary))
                           : const Text('Unlock', style: TextStyle(fontSize: 16)),
-                      style: FilledButton.styleFrom(
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(NexTheme.rMd)),
-                      ),
                     ),
                   ),
                   if (_bioAvailable) ...[

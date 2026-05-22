@@ -182,9 +182,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const SizedBox(height: 20),
-          Text(S.onboardingQuickSetup, style: TextStyle(fontSize: 28, fontWeight: FontWeight.w800, color: cs.onSurface)),
+          Text(S.onboardingQuickSetup, style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w800)),
           const SizedBox(height: 8),
-          Text(S.onboardingQuickSetupDesc, style: TextStyle(color: cs.onSurfaceVariant, fontSize: 14)),
+          Text(S.onboardingQuickSetupDesc, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant)),
           const SizedBox(height: 32),
 
           // Language setting
@@ -196,7 +196,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           ),
 
           const SizedBox(height: 16),
-          Text(S.onboardingQuickSetupHint, style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13)),
+          Text(S.onboardingQuickSetupHint, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: cs.onSurfaceVariant)),
         ],
       ),
     );
@@ -213,7 +213,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const SizedBox(height: 20),
-          Text(S.onboardingSecurityTitle, style: TextStyle(fontSize: 28, fontWeight: FontWeight.w800, color: cs.onSurface)),
+          Text(S.onboardingSecurityTitle, style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w800)),
           const SizedBox(height: 24),
 
           // Step 1: Master password (already set)
@@ -272,9 +272,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const SizedBox(height: 20),
-          Text(S.onboardingAutofillTitle, style: TextStyle(fontSize: 28, fontWeight: FontWeight.w800, color: cs.onSurface)),
+          Text(S.onboardingAutofillTitle, style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w800)),
           const SizedBox(height: 12),
-          Text(S.onboardingAutofillDesc, style: TextStyle(color: cs.onSurfaceVariant, fontSize: 14)),
+          Text(S.onboardingAutofillDesc, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant)),
           const SizedBox(height: 32),
 
           _settingTile(
@@ -310,9 +310,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const SizedBox(height: 20),
-          Text(S.onboardingThemeTitle, style: TextStyle(fontSize: 28, fontWeight: FontWeight.w800, color: cs.onSurface)),
+          Text(S.onboardingThemeTitle, style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w800)),
           const SizedBox(height: 12),
-          Text(S.onboardingThemeDesc, style: TextStyle(color: cs.onSurfaceVariant, fontSize: 14)),
+          Text(S.onboardingThemeDesc, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant)),
           const SizedBox(height: 32),
 
           // Color presets grid
@@ -350,7 +350,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                           decoration: BoxDecoration(color: color, shape: BoxShape.circle),
                         ),
                         const SizedBox(height: 6),
-                        Text(_themeName(i), style: TextStyle(fontSize: 11, color: cs.onSurface)),
+                        Text(_themeName(i), style: Theme.of(context).textTheme.labelSmall?.copyWith(color: cs.onSurface)),
                       ],
                     ),
                   ),
@@ -374,9 +374,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const SizedBox(height: 20),
-          Text(S.onboardingNavBarTitle, style: TextStyle(fontSize: 28, fontWeight: FontWeight.w800, color: cs.onSurface)),
+          Text(S.onboardingNavBarTitle, style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w800)),
           const SizedBox(height: 12),
-          Text(S.onboardingNavBarDesc, style: TextStyle(color: cs.onSurfaceVariant, fontSize: 14)),
+          Text(S.onboardingNavBarDesc, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant)),
           const SizedBox(height: 24),
 
           _toggleTile(S.onboardingNavPasswords, _navPasswords, (v) {
@@ -431,9 +431,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const SizedBox(height: 20),
-          Text(S.onboardingImportTitle, style: TextStyle(fontSize: 28, fontWeight: FontWeight.w800, color: cs.onSurface)),
+          Text(S.onboardingImportTitle, style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w800)),
           const SizedBox(height: 12),
-          Text(S.onboardingImportDesc, style: TextStyle(color: cs.onSurfaceVariant, fontSize: 14)),
+          Text(S.onboardingImportDesc, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant)),
           const SizedBox(height: 24),
 
           _importOption(NexIconType.key, 'Bitwarden', 'Import from Bitwarden vault', cs,
@@ -460,9 +460,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const SizedBox(height: 20),
-          Text(S.onboardingListTitle, style: TextStyle(fontSize: 28, fontWeight: FontWeight.w800, color: cs.onSurface)),
+          Text(S.onboardingListTitle, style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w800)),
           const SizedBox(height: 12),
-          Text(S.onboardingListDesc, style: TextStyle(color: cs.onSurfaceVariant, fontSize: 14)),
+          Text(S.onboardingListDesc, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant)),
           const SizedBox(height: 24),
 
           _toggleTile(S.onboardingListRecent, _showRecent, (v) => setState(() => _showRecent = v)),
@@ -483,9 +483,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const SizedBox(height: 20),
-          Text(S.onboardingCardTitle, style: TextStyle(fontSize: 28, fontWeight: FontWeight.w800, color: cs.onSurface)),
+          Text(S.onboardingCardTitle, style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w800)),
           const SizedBox(height: 12),
-          Text(S.onboardingCardDesc, style: TextStyle(color: cs.onSurfaceVariant, fontSize: 14)),
+          Text(S.onboardingCardDesc, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant)),
           const SizedBox(height: 24),
 
           _toggleTile(S.onboardingCardUsername, _cardShowUsername, (v) => setState(() => _cardShowUsername = v)),
@@ -513,9 +513,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const SizedBox(height: 20),
-          Text(S.onboardingAuthTitle, style: TextStyle(fontSize: 28, fontWeight: FontWeight.w800, color: cs.onSurface)),
+          Text(S.onboardingAuthTitle, style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w800)),
           const SizedBox(height: 12),
-          Text(S.onboardingAuthDesc, style: TextStyle(color: cs.onSurfaceVariant, fontSize: 14)),
+          Text(S.onboardingAuthDesc, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant)),
           const SizedBox(height: 24),
 
           _toggleTile(S.onboardingAuthIssuer, _authShowIssuer, (v) => setState(() => _authShowIssuer = v)),
@@ -552,9 +552,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               child: Center(child: NexIcon(NexIconType.check, size: 36, color: cs.onPrimaryContainer)),
             ),
             const SizedBox(height: 24),
-            Text(S.onboardingComplete, style: TextStyle(fontSize: 28, fontWeight: FontWeight.w800, color: cs.onSurface)),
+            Text(S.onboardingComplete, style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w800)),
             const SizedBox(height: 12),
-            Text(S.onboardingCompleteDesc, style: TextStyle(color: cs.onSurfaceVariant, fontSize: 14, height: 1.6), textAlign: TextAlign.center),
+            Text(S.onboardingCompleteDesc, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant, height: 1.6), textAlign: TextAlign.center),
           ],
         ),
       ),
@@ -569,7 +569,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     final cs = Theme.of(context).colorScheme;
     return ListTile(
       leading: NexIcon(icon, size: 20, color: cs.onSurfaceVariant),
-      title: Text(title, style: TextStyle(color: cs.onSurface, fontSize: 14)),
+      title: Text(title, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: cs.onSurface)),
       trailing: trailing,
       onTap: onTap,
       contentPadding: EdgeInsets.zero,
@@ -594,12 +594,12 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             ),
             child: Center(
               child: completed
-                  ? const NexIcon(NexIconType.check, size: 14, color: Colors.white)
-                  : Text('$step', style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12, fontWeight: FontWeight.w600)),
+                  ? NexIcon(NexIconType.check, size: 14, color: cs.onPrimary)
+                  : Text('$step', style: Theme.of(context).textTheme.labelMedium?.copyWith(color: cs.onSurfaceVariant, fontWeight: FontWeight.w600)),
             ),
           ),
           const SizedBox(width: 12),
-          Expanded(child: Text(label, style: TextStyle(color: cs.onSurface, fontSize: 14))),
+          Expanded(child: Text(label, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: cs.onSurface))),
           if (trailing != null) trailing,
         ],
       ),
@@ -618,7 +618,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         ),
         child: Row(
           children: [
-            Expanded(child: Text(label, style: TextStyle(color: cs.onSurface, fontSize: 14))),
+            Expanded(child: Text(label, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: cs.onSurface))),
             Switch(key: ValueKey('$label-$value'), value: value, onChanged: onChanged),
           ],
         ),
@@ -632,16 +632,17 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       children: [
         NexIcon(icon, size: 20, color: cs.onSurfaceVariant),
         const SizedBox(height: 4),
-        Text(label, style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant)),
+        Text(label, style: Theme.of(context).textTheme.labelSmall?.copyWith(color: cs.onSurfaceVariant)),
       ],
     );
   }
 
   Widget _importOption(NexIconType icon, String title, String subtitle, ColorScheme cs, {VoidCallback? onTap}) {
-    return GestureDetector(
+    return InkWell(
       onTap: onTap,
+      borderRadius: BorderRadius.circular(NexTheme.rMd),
       child: Container(
-        margin: const EdgeInsets.only(bottom: 10),
+        margin: const EdgeInsets.only(bottom: NexTheme.md),
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
           color: cs.surfaceContainerHighest,
@@ -655,8 +656,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title, style: TextStyle(color: cs.onSurface, fontSize: 14, fontWeight: FontWeight.w600)),
-                  Text(subtitle, style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12)),
+                  Text(title, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: cs.onSurface, fontWeight: FontWeight.w600)),
+                  Text(subtitle, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: cs.onSurfaceVariant)),
                 ],
               ),
             ),
@@ -681,23 +682,23 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             children: [
               NexIcon(NexIconType.key, size: 18, color: cs.primary),
               const SizedBox(width: 8),
-              const Text('Example Password', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+              Text('Example Password', style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600)),
             ],
           ),
           if (_cardShowUsername) ...[
             const SizedBox(height: 6),
-            Text('user@example.com', style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12)),
+            Text('user@example.com', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: cs.onSurfaceVariant)),
           ],
           if (_cardShowWebsite) ...[
             const SizedBox(height: 4),
-            Text('https://example.com', style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12)),
+            Text('https://example.com', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: cs.onSurfaceVariant)),
           ],
           if (_cardShowAuth) ...[
             const SizedBox(height: 4),
             Row(children: [
               NexIcon(NexIconType.clock, size: 12, color: cs.primary),
               const SizedBox(width: 4),
-              Text('Authenticator linked', style: TextStyle(color: cs.primary, fontSize: 11)),
+              Text('Authenticator linked', style: Theme.of(context).textTheme.labelSmall?.copyWith(color: cs.primary)),
             ]),
           ],
         ],
@@ -716,11 +717,11 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (_authShowIssuer) ...[
-            Text('Google', style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12)),
+            Text('Google', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: cs.onSurfaceVariant)),
             const SizedBox(height: 2),
           ],
           if (_authShowAccount) ...[
-            Text('user@gmail.com', style: TextStyle(color: cs.onSurface, fontSize: 14, fontWeight: FontWeight.w600)),
+            Text('user@gmail.com', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: cs.onSurface, fontWeight: FontWeight.w600)),
             const SizedBox(height: 8),
           ],
           Container(

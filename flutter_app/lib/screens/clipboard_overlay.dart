@@ -78,11 +78,11 @@ class _DualClipboardOverlayState extends ConsumerState<DualClipboardOverlay>
                           const SizedBox(width: NexTheme.sm),
                           Expanded(
                             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                              Text(S.dualClipboardActive, style: TextStyle(
-                                color: cs.primary, fontSize: 12, fontWeight: FontWeight.w700, letterSpacing: 0.3)),
+                              Text(S.dualClipboardActive, style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                                color: cs.primary, fontWeight: FontWeight.w700, letterSpacing: 0.3)),
                               const SizedBox(height: 2),
-                              Text(clipState.itemName, style: TextStyle(
-                                color: cs.onSurface, fontSize: 14, fontWeight: FontWeight.w600),
+                              Text(clipState.itemName, style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                color: cs.onSurface, fontWeight: FontWeight.w600),
                                 maxLines: 1, overflow: TextOverflow.ellipsis),
                             ]),
                           ),
@@ -97,7 +97,7 @@ class _DualClipboardOverlayState extends ConsumerState<DualClipboardOverlay>
                         Row(children: [
                           NexIcon(NexIconType.clock, size: 14, color: cs.outline),
                           const SizedBox(width: NexTheme.sm),
-                          Text(S.totpToClipboard, style: TextStyle(color: cs.onSurfaceVariant, fontSize: 11, fontWeight: FontWeight.w600)),
+                          Text(S.totpToClipboard, style: Theme.of(context).textTheme.labelSmall?.copyWith(color: cs.onSurfaceVariant, fontWeight: FontWeight.w600)),
                           const Spacer(),
                           GestureDetector(
                             onTap: () => Clipboard.setData(ClipboardData(text: clipState.totpCode)),
@@ -109,8 +109,8 @@ class _DualClipboardOverlayState extends ConsumerState<DualClipboardOverlay>
                                 border: Border.all(color: cs.outlineVariant),
                               ),
                               child: Row(mainAxisSize: MainAxisSize.min, children: [
-                                Text(clipState.totpCode, style: TextStyle(
-                                  color: cs.primary, fontFamily: 'monospace', fontSize: 14, fontWeight: FontWeight.w700, letterSpacing: 1.5)),
+                                Text(clipState.totpCode, style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                  color: cs.primary, fontFamily: 'monospace', fontWeight: FontWeight.w700, letterSpacing: 1.5)),
                                 const SizedBox(width: NexTheme.sm),
                                 NexIcon(NexIconType.copy, size: 12, color: cs.primary),
                               ]),
@@ -123,7 +123,7 @@ class _DualClipboardOverlayState extends ConsumerState<DualClipboardOverlay>
                         Row(children: [
                           NexIcon(NexIconType.brain, size: 14, color: cs.outline),
                           const SizedBox(width: NexTheme.sm),
-                          Text(S.passwordToRam, style: TextStyle(color: cs.onSurfaceVariant, fontSize: 11, fontWeight: FontWeight.w600)),
+                          Text(S.passwordToRam, style: Theme.of(context).textTheme.labelSmall?.copyWith(color: cs.onSurfaceVariant, fontWeight: FontWeight.w600)),
                           const Spacer(),
                           Container(
                             width: 8, height: 8,
@@ -133,9 +133,9 @@ class _DualClipboardOverlayState extends ConsumerState<DualClipboardOverlay>
                             ),
                           ),
                           const SizedBox(width: NexTheme.sm),
-                          Text('${remaining}s', style: TextStyle(
+                          Text('${remaining}s', style: Theme.of(context).textTheme.bodySmall?.copyWith(
                             color: remaining > 10 ? NexTheme.success : remaining > 5 ? NexTheme.warning : NexTheme.danger,
-                            fontFamily: 'monospace', fontSize: 13, fontWeight: FontWeight.w700)),
+                            fontFamily: 'monospace', fontWeight: FontWeight.w700)),
                         ]),
 
                         const SizedBox(height: NexTheme.md),
@@ -151,7 +151,7 @@ class _DualClipboardOverlayState extends ConsumerState<DualClipboardOverlay>
                             const SizedBox(width: NexTheme.sm),
                             Expanded(
                               child: Text(S.clipboardCountdown(remaining),
-                                style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12, height: 1.5)),
+                                style: Theme.of(context).textTheme.bodySmall?.copyWith(color: cs.onSurfaceVariant, height: 1.5)),
                             ),
                           ]),
                         ),
@@ -180,8 +180,8 @@ class _DualClipboardOverlayState extends ConsumerState<DualClipboardOverlay>
                               children: [
                                 NexIcon(NexIconType.copy, size: 14, color: cs.surface),
                                 const SizedBox(width: NexTheme.sm),
-                                Text(S.quickPaste, style: TextStyle(
-                                  color: cs.surface, fontSize: 13, fontWeight: FontWeight.w600)),
+                                Text(S.quickPaste, style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                  color: cs.surface, fontWeight: FontWeight.w600)),
                               ],
                             ),
                           ),

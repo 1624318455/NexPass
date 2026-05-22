@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/nex_item.dart';
 import '../state/unlock_state.dart';
 import '../state/vault_state_notifier.dart';
-import '../theme/nex_theme.dart';
 import '../widgets/nex_icons.dart';
 
 class ImportPreviewScreen extends ConsumerStatefulWidget {
@@ -96,7 +95,7 @@ class _ImportPreviewScreenState extends ConsumerState<ImportPreviewScreen> {
                 Expanded(
                   child: Text(
                     '${_selectedIndices.length} of ${widget.items.length} items selected',
-                    style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13),
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(color: cs.onSurfaceVariant),
                   ),
                 ),
               ],
@@ -126,7 +125,7 @@ class _ImportPreviewScreenState extends ConsumerState<ImportPreviewScreen> {
                         .where((f) => f.name == 'username')
                         .map((f) => f.value)
                         .firstOrNull ?? '',
-                    style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12),
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(color: cs.onSurfaceVariant),
                   ),
                   secondary: SizedBox(
                     width: 40, height: 40,
@@ -152,17 +151,15 @@ class _ImportPreviewScreenState extends ConsumerState<ImportPreviewScreen> {
                 ? null
                 : _importSelected,
             icon: _importing
-                ? const SizedBox(
+                ? SizedBox(
                     width: 18, height: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                : const NexIcon(NexIconType.plus, size: 18, color: Colors.white),
+                    child: CircularProgressIndicator(strokeWidth: 2, color: cs.onPrimary))
+                : NexIcon(NexIconType.plus, size: 18, color: cs.onPrimary),
             label: Text(_importing
                 ? 'Importing...'
                 : 'Import ${_selectedIndices.length} items'),
             style: FilledButton.styleFrom(
               minimumSize: const Size.fromHeight(48),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(NexTheme.rMd)),
             ),
           ),
         ),

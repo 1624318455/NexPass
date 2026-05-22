@@ -125,7 +125,7 @@ class _MainScreenState extends ConsumerState<MainScreen> {
           borderRadius: BorderRadius.circular(NexTheme.rSm),
           border: Border.all(color: isActive ? cs.primary : cs.outline),
         ),
-        child: Text(label, style: TextStyle(fontSize: 12,
+        child: Text(label, style: Theme.of(context).textTheme.labelSmall?.copyWith(
             color: isActive ? cs.primary : cs.onSurfaceVariant)),
       ),
     );
@@ -168,8 +168,8 @@ class _VaultPageState extends ConsumerState<_VaultPage> {
                   child: Center(child: NexIcon(NexIconType.shield, size: 18, color: cs.onPrimary)),
                 ),
                 const SizedBox(width: NexTheme.sm),
-                Text(S.appTitle, style: TextStyle(
-                  fontSize: 17, fontWeight: FontWeight.w700, color: cs.onSurface, letterSpacing: -0.3)),
+                Text(S.appTitle, style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w700, letterSpacing: -0.3)),
                 const Spacer(),
                 GestureDetector(
                   onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SecurityAuditScreen())),
@@ -187,7 +187,7 @@ class _VaultPageState extends ConsumerState<_VaultPage> {
             child: TextField(
               controller: widget.searchController,
               onChanged: vaultNotifier.setSearchQuery,
-              style: TextStyle(color: cs.onSurface, fontSize: 14),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: cs.onSurface),
               decoration: InputDecoration(
                 hintText: S.searchHint,
                 prefixIcon: Padding(
@@ -225,8 +225,8 @@ class _VaultPageState extends ConsumerState<_VaultPage> {
     final isActive = index == activeIndex;
     final cs = Theme.of(ref.context).colorScheme;
     return FilterChip(
-      label: Text(label, style: TextStyle(
-        fontSize: 12, fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
+      label: Text(label, style: Theme.of(context).textTheme.labelSmall?.copyWith(
+        fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
       )),
       selected: isActive,
       onSelected: (_) => ref.read(vaultStateProvider.notifier).setTab(index),
@@ -242,9 +242,9 @@ class _VaultPageState extends ConsumerState<_VaultPage> {
     return Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
       NexIcon(NexIconType.lock, size: 56, color: cs.outline),
       const SizedBox(height: NexTheme.xl),
-      Text(S.vaultEmpty, style: TextStyle(color: cs.onSurfaceVariant, fontSize: 16, fontWeight: FontWeight.w600)),
+      Text(S.vaultEmpty, style: Theme.of(context).textTheme.titleMedium?.copyWith(color: cs.onSurfaceVariant, fontWeight: FontWeight.w600)),
       const SizedBox(height: NexTheme.sm),
-      Text(S.vaultEmptyHint, style: TextStyle(color: cs.outline, fontSize: 13)),
+      Text(S.vaultEmptyHint, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: cs.outline)),
     ]));
   }
 
@@ -384,8 +384,8 @@ class _VaultItemCard extends ConsumerWidget {
                   Row(
                     children: [
                       Expanded(
-                        child: Text(item.name, style: TextStyle(
-                          color: cs.onSurface, fontSize: 14, fontWeight: FontWeight.w600),
+                        child: Text(item.name, style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: cs.onSurface, fontWeight: FontWeight.w600),
                           maxLines: 1, overflow: TextOverflow.ellipsis),
                       ),
                       if (showLinkedAuth) Container(
@@ -394,18 +394,18 @@ class _VaultItemCard extends ConsumerWidget {
                           color: cs.primaryContainer,
                           borderRadius: BorderRadius.circular(3),
                         ),
-                        child: Text('TOTP', style: TextStyle(
-                          color: cs.onPrimaryContainer, fontSize: 9, fontWeight: FontWeight.w700, letterSpacing: 0.5)),
+                        child: Text('TOTP', style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          color: cs.onPrimaryContainer, fontWeight: FontWeight.w700, letterSpacing: 0.5)),
                       ),
                     ],
                   ),
                   if (!hideOtherWhenAuth) ...[
                     const SizedBox(height: 2),
                     if (settings.cardShowUsername)
-                      Text(item.username, style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12),
+                      Text(item.username, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: cs.onSurfaceVariant),
                           maxLines: 1, overflow: TextOverflow.ellipsis),
                     if (settings.cardShowWebsite && websiteField != null)
-                      Text(websiteField.value, style: TextStyle(color: cs.onSurfaceVariant, fontSize: 11),
+                      Text(websiteField.value, style: Theme.of(context).textTheme.labelSmall?.copyWith(color: cs.onSurfaceVariant),
                           maxLines: 1, overflow: TextOverflow.ellipsis),
                   ],
                 ],

@@ -116,12 +116,11 @@ class SettingsScreen extends ConsumerWidget {
           padding: const EdgeInsets.fromLTRB(NexTheme.xl, 0, NexTheme.xl, NexTheme.sm),
           child: FilledButton.icon(
             onPressed: () => _confirmLock(context, ref),
-            icon: const NexIcon(NexIconType.lock, size: 18, color: Colors.white),
-            label: Text(S.settingsLockVault, style: const TextStyle(color: Colors.white)),
+            icon: NexIcon(NexIconType.lock, size: 18, color: Theme.of(context).colorScheme.onError),
+            label: Text(S.settingsLockVault, style: TextStyle(color: Theme.of(context).colorScheme.onError)),
             style: FilledButton.styleFrom(
               backgroundColor: Theme.of(context).colorScheme.error,
               minimumSize: const Size.fromHeight(48),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(NexTheme.rMd)),
             ),
           ),
         ),
@@ -140,8 +139,8 @@ class SettingsScreen extends ConsumerWidget {
   Widget _sectionHeader(BuildContext context, String title) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(NexTheme.xl, NexTheme.xxl, NexTheme.xl, NexTheme.xs),
-      child: Text(title, style: TextStyle(
-          color: Theme.of(context).colorScheme.outline, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 0.8)),
+      child: Text(title, style: Theme.of(context).textTheme.labelSmall?.copyWith(
+          color: Theme.of(context).colorScheme.outline, fontWeight: FontWeight.w700, letterSpacing: 0.8)),
     );
   }
 
@@ -315,7 +314,7 @@ class SettingsScreen extends ConsumerWidget {
                 _fieldCtrl(confirmCtrl, 'Confirm new password', obscure: true),
                 if (error != null) ...[
                   const SizedBox(height: 8),
-                  Text(error!, style: TextStyle(color: Theme.of(ctx).colorScheme.error, fontSize: 12)),
+                  Text(error!, style: Theme.of(ctx).textTheme.bodySmall?.copyWith(color: Theme.of(ctx).colorScheme.error)),
                 ],
               ],
             ),
@@ -662,7 +661,7 @@ class SettingsScreen extends ConsumerWidget {
             ListTile(
               leading: const NexIcon(NexIconType.key, size: 20),
               title: Text(S.settingsBitwarden),
-              subtitle: const Text('CSV format', style: TextStyle(fontSize: 12)),
+              subtitle: const Text('CSV format'),
               onTap: () async {
                 Navigator.pop(ctx);
                 await _pickAndImport(context, csvService, 'Bitwarden');
@@ -671,7 +670,7 @@ class SettingsScreen extends ConsumerWidget {
             ListTile(
               leading: const NexIcon(NexIconType.lock, size: 20),
               title: Text(S.settingsKeePass),
-              subtitle: const Text('CSV format', style: TextStyle(fontSize: 12)),
+              subtitle: const Text('CSV format'),
               onTap: () async {
                 Navigator.pop(ctx);
                 await _pickAndImport(context, csvService, 'KeePass');
@@ -680,7 +679,7 @@ class SettingsScreen extends ConsumerWidget {
             ListTile(
               leading: const NexIcon(NexIconType.stickyNote, size: 20),
               title: Text(S.settingsCSV),
-              subtitle: const Text('Any CSV file', style: TextStyle(fontSize: 12)),
+              subtitle: const Text('Any CSV file'),
               onTap: () async {
                 Navigator.pop(ctx);
                 await _pickAndImport(context, csvService, 'Generic CSV');

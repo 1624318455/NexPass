@@ -28,22 +28,6 @@ class NexTheme {
   static const success = Color(0xFF22C55E);
   static const successDim = Color(0xFFF0FDF4);
 
-  // ── Legacy color aliases (mapped to MD3) ────────────────────────────
-  // These allow existing screen code to compile without changes.
-  // TODO: Migrate screens to use ColorScheme from Theme instead.
-
-  static const background = Color(0xFFF5F5F5);
-  static const surface = Color(0xFFFFFFFF);
-  static const surfaceElevated = Color(0xFFF1F5F9);
-  static const border = Color(0xFFE2E8F0);
-  static const borderLight = Color(0xFFF1F5F9);
-  static const textPrimary = Color(0xFF0F172A);
-  static const textSecondary = Color(0xFF64748B);
-  static const textMuted = Color(0xFF94A3B8);
-  static const primary = Color(0xFF3B82F6);
-  static const primaryDim = Color(0xFFEFF6FF);
-  static const primaryGlow = Color(0xFFDBEAFE);
-
   // ── MD3 Spacing (8dp grid) ─────────────────────────────────────────
 
   static const double xs = 4;
@@ -281,6 +265,33 @@ class NexTheme {
         circularTrackColor: colorScheme.surfaceContainerHighest,
       ),
 
+      listTileTheme: ListTileThemeData(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+        titleTextStyle: TextStyle(fontSize: 16, color: colorScheme.onSurface),
+        subtitleTextStyle: TextStyle(fontSize: 14, color: colorScheme.onSurfaceVariant),
+      ),
+
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          foregroundColor: colorScheme.primary,
+        ),
+      ),
+
+      checkboxTheme: CheckboxThemeData(
+        fillColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) return colorScheme.primary;
+          return Colors.transparent;
+        }),
+        side: BorderSide(color: colorScheme.outline),
+      ),
+
+      radioTheme: RadioThemeData(
+        fillColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) return colorScheme.primary;
+          return colorScheme.outline;
+        }),
+      ),
+
       scaffoldBackgroundColor: colorScheme.surface,
     );
   }
@@ -501,6 +512,33 @@ class NexTheme {
         color: colorScheme.primary,
         linearTrackColor: colorScheme.surfaceContainerHighest,
         circularTrackColor: colorScheme.surfaceContainerHighest,
+      ),
+
+      listTileTheme: ListTileThemeData(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+        titleTextStyle: TextStyle(fontSize: 16, color: colorScheme.onSurface),
+        subtitleTextStyle: TextStyle(fontSize: 14, color: colorScheme.onSurfaceVariant),
+      ),
+
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          foregroundColor: colorScheme.primary,
+        ),
+      ),
+
+      checkboxTheme: CheckboxThemeData(
+        fillColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) return colorScheme.primary;
+          return Colors.transparent;
+        }),
+        side: BorderSide(color: colorScheme.outline),
+      ),
+
+      radioTheme: RadioThemeData(
+        fillColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) return colorScheme.primary;
+          return colorScheme.outline;
+        }),
       ),
 
       scaffoldBackgroundColor: colorScheme.surface,

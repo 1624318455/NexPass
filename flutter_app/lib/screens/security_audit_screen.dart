@@ -97,16 +97,17 @@ class _SecurityAuditScreenState extends ConsumerState<SecurityAuditScreen> {
     final label = score >= 0.9 ? S.excellent : score >= 0.8 ? S.good : score >= 0.6 ? S.fair : score >= 0.35 ? S.poor : S.critical;
     final color = _scoreColor(score, cs);
     final desc = score >= 0.9 ? S.healthExcellent : score >= 0.8 ? S.healthGood : score >= 0.6 ? S.healthFair : score >= 0.35 ? S.healthPoor : S.healthCritical;
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: NexTheme.xxl),
-      decoration: BoxDecoration(color: cs.surface, borderRadius: BorderRadius.circular(NexTheme.rXl), border: Border.all(color: cs.outlineVariant)),
-      child: Column(children: [
-        HealthRingChart(score: score, size: 180, strokeWidth: 14, label: S.healthLabel),
-        const SizedBox(height: NexTheme.lg),
-        Text(label, style: TextStyle(color: color, fontSize: 16, fontWeight: FontWeight.w700)),
-        const SizedBox(height: NexTheme.xs),
-        Text(desc, style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13)),
-      ]),
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: NexTheme.xxl),
+        child: Column(children: [
+          HealthRingChart(score: score, size: 180, strokeWidth: 14, label: S.healthLabel),
+          const SizedBox(height: NexTheme.lg),
+          Text(label, style: TextStyle(color: color, fontSize: 16, fontWeight: FontWeight.w700)),
+          const SizedBox(height: NexTheme.xs),
+          Text(desc, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: cs.onSurfaceVariant)),
+        ]),
+      ),
     );
   }
 
@@ -124,32 +125,34 @@ class _SecurityAuditScreenState extends ConsumerState<SecurityAuditScreen> {
 
   Widget _statTile(NexIconType icon, String value, String label, Color color, ColorScheme cs) {
     return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 14),
-        decoration: BoxDecoration(color: cs.surface, borderRadius: BorderRadius.circular(NexTheme.rMd), border: Border.all(color: cs.outlineVariant)),
-        child: Column(children: [
-          NexIcon(icon, size: 18, color: color),
-          const SizedBox(height: NexTheme.sm),
-          Text(value, style: TextStyle(color: color, fontSize: 22, fontWeight: FontWeight.w800)),
-          const SizedBox(height: NexTheme.xs),
-          Text(label, style: TextStyle(color: cs.outline, fontSize: 11, fontWeight: FontWeight.w600)),
-        ]),
+      child: Card(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          child: Column(children: [
+            NexIcon(icon, size: 18, color: color),
+            const SizedBox(height: NexTheme.sm),
+            Text(value, style: TextStyle(color: color, fontSize: 22, fontWeight: FontWeight.w800)),
+            const SizedBox(height: NexTheme.xs),
+            Text(label, style: Theme.of(context).textTheme.labelSmall?.copyWith(color: cs.outline, fontWeight: FontWeight.w600)),
+          ]),
+        ),
       ),
     );
   }
 
   Widget _issuesSection(S, ColorScheme cs) {
     if (_result!.issues.isEmpty) {
-      return Container(
-        padding: const EdgeInsets.all(32),
-        decoration: BoxDecoration(color: cs.surface, borderRadius: BorderRadius.circular(NexTheme.rXl), border: Border.all(color: cs.outlineVariant)),
-        child: Column(children: [
-          const NexIcon(NexIconType.check, size: 48, color: NexTheme.success),
-          const SizedBox(height: NexTheme.lg),
-          Text(S.allClear, style: TextStyle(color: cs.onSurface, fontSize: 18, fontWeight: FontWeight.w700)),
-          const SizedBox(height: NexTheme.xs),
-          Text(S.noIssuesFound, style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13)),
-        ]),
+      return Card(
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(children: [
+            NexIcon(NexIconType.check, size: 48, color: NexTheme.success),
+            const SizedBox(height: NexTheme.lg),
+            Text(S.allClear, style: TextStyle(color: cs.onSurface, fontSize: 18, fontWeight: FontWeight.w700)),
+            const SizedBox(height: NexTheme.xs),
+            Text(S.noIssuesFound, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: cs.onSurfaceVariant)),
+          ]),
+        ),
       );
     }
     return Column(
@@ -174,53 +177,55 @@ class _SecurityAuditScreenState extends ConsumerState<SecurityAuditScreen> {
     final isCrit = issue.severity == AuditSeverity.critical;
     final color = isCrit ? NexTheme.danger : NexTheme.warning;
     final dimColor = isCrit ? cs.errorContainer : cs.tertiaryContainer;
-    return Container(
+    return Card(
       margin: const EdgeInsets.only(bottom: NexTheme.md),
-      padding: const EdgeInsets.all(NexTheme.md),
-      decoration: BoxDecoration(color: cs.surface, borderRadius: BorderRadius.circular(NexTheme.rMd), border: Border.all(color: color.withValues(alpha: 0.2))),
-      child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Container(
-          padding: const EdgeInsets.all(6),
-          decoration: BoxDecoration(color: dimColor, borderRadius: BorderRadius.circular(NexTheme.rSm)),
-          child: NexIcon(isCrit ? NexIconType.alertCircle : NexIconType.warning, size: 16, color: color),
-        ),
-        const SizedBox(width: NexTheme.md),
-        Expanded(
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Row(children: [
-              Expanded(child: Text(issue.item.name, style: TextStyle(color: cs.onSurface, fontSize: 13, fontWeight: FontWeight.w600))),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-                decoration: BoxDecoration(color: dimColor, borderRadius: BorderRadius.circular(3)),
-                child: Text(isCrit ? S.severityCritical : S.severityWarning,
-                    style: TextStyle(color: color, fontSize: 9, fontWeight: FontWeight.w800, letterSpacing: 0.5)),
+      child: Padding(
+        padding: const EdgeInsets.all(NexTheme.md),
+        child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(color: dimColor, borderRadius: BorderRadius.circular(NexTheme.rSm)),
+            child: NexIcon(isCrit ? NexIconType.alertCircle : NexIconType.warning, size: 16, color: color),
+          ),
+          const SizedBox(width: NexTheme.md),
+          Expanded(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Row(children: [
+                Expanded(child: Text(issue.item.name, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: cs.onSurface, fontWeight: FontWeight.w600))),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                  decoration: BoxDecoration(color: dimColor, borderRadius: BorderRadius.circular(3)),
+                  child: Text(isCrit ? S.severityCritical : S.severityWarning,
+                      style: TextStyle(color: color, fontSize: 9, fontWeight: FontWeight.w800, letterSpacing: 0.5)),
+                ),
+              ]),
+              const SizedBox(height: NexTheme.xs),
+              Text(issue.message, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: cs.onSurfaceVariant, height: 1.4)),
+              const SizedBox(height: NexTheme.md),
+              InkWell(
+                onTap: onFix,
+                borderRadius: BorderRadius.circular(NexTheme.rSm),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: cs.primaryContainer,
+                    borderRadius: BorderRadius.circular(NexTheme.rSm),
+                    border: Border.all(color: cs.primary.withValues(alpha: 0.3)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      NexIcon(NexIconType.refresh, size: 12, color: cs.primary),
+                      const SizedBox(width: 6),
+                      Text(S.generateStrongPassword, style: TextStyle(color: cs.primary, fontSize: 11, fontWeight: FontWeight.w600)),
+                    ],
+                  ),
+                ),
               ),
             ]),
-            const SizedBox(height: NexTheme.xs),
-            Text(issue.message, style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12, height: 1.4)),
-            const SizedBox(height: NexTheme.md),
-            GestureDetector(
-              onTap: onFix,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: cs.primaryContainer,
-                  borderRadius: BorderRadius.circular(NexTheme.rSm),
-                  border: Border.all(color: cs.primary.withValues(alpha: 0.3)),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    NexIcon(NexIconType.refresh, size: 12, color: cs.primary),
-                    const SizedBox(width: 6),
-                    Text(S.generateStrongPassword, style: TextStyle(color: cs.primary, fontSize: 11, fontWeight: FontWeight.w600)),
-                  ],
-                ),
-              ),
-            ),
-          ]),
-        ),
-      ]),
+          ),
+        ]),
+      ),
     );
   }
 
