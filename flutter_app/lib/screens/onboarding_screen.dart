@@ -2,7 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../i18n/app_localizations.dart';
 import '../main.dart';
+import 'package:file_picker/file_picker.dart';
+import '../services/autofill_engine.dart';
+import '../services/csv_import_service.dart';
 import '../theme/nex_theme.dart';
+import 'import_preview_screen.dart';
 import '../widgets/nex_icons.dart';
 
 class OnboardingScreen extends ConsumerStatefulWidget {
@@ -27,6 +31,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   bool _navCards = true;
   bool _navPasskeys = true;
   bool _showRecent = true;
+  bool _showFavorites = true;
   bool _cardShowUsername = true;
   bool _cardShowWebsite = true;
   bool _cardShowAuth = false;
@@ -68,6 +73,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       s.navCards = _navCards;
       s.navPasskeys = _navPasskeys;
       s.showRecentShortcuts = _showRecent;
+      s.showFavorites = _showFavorites;
       s.cardShowUsername = _cardShowUsername;
       s.cardShowWebsite = _cardShowWebsite;
       s.cardShowLinkedAuth = _cardShowAuth;
@@ -281,10 +287,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           if (_autofillEnabled) ...[
             const SizedBox(height: 16),
             FilledButton.icon(
-              onPressed: () {
-                // Open system autofill settings
-                // In production: MethodChannel to open Android autofill settings
-              },
+              onPressed: () => AutofillEngine.openSystemSettings(),
               icon: const NexIcon(NexIconType.gear, size: 18),
               label: Text(S.onboardingAutofillOpenSettings),
             ),
@@ -416,10 +419,13 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           Text(S.onboardingImportDesc, style: TextStyle(color: cs.onSurfaceVariant, fontSize: 14)),
           const SizedBox(height: 24),
 
-          _importOption(NexIconType.key, 'Bitwarden', 'Import from Bitwarden vault', cs),
+          _importOption(NexIconType.key, 'Bitwarden', 'Import from Bitwarden vault', cs,
+              onTap: () => _pickAndImport('Bitwarden')),
           _importOption(NexIconType.cloud, 'WebDAV', 'Connect to WebDAV server', cs),
-          _importOption(NexIconType.lock, 'KeePass', 'Import from KeePass database', cs),
-          _importOption(NexIconType.stickyNote, 'CSV / File', 'Import from CSV or JSON file', cs),
+          _importOption(NexIconType.lock, 'KeePass', 'Import from KeePass database', cs,
+              onTap: () => _pickAndImport('KeePass')),
+          _importOption(NexIconType.stickyNote, 'CSV / File', 'Import from CSV or JSON file', cs,
+              onTap: () => _pickAndImport('Generic CSV')),
         ],
       ),
     );
@@ -442,6 +448,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           const SizedBox(height: 24),
 
           _toggleTile(S.onboardingListRecent, _showRecent, (v) => setState(() => _showRecent = v)),
+          _toggleTile(S.settingsShowFavorites, _showFavorites, (v) => setState(() => _showFavorites = v)),
         ],
       ),
     );
@@ -612,29 +619,32 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     );
   }
 
-  Widget _importOption(NexIconType icon, String title, String subtitle, ColorScheme cs) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: cs.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        children: [
-          NexIcon(icon, size: 20, color: cs.onSurfaceVariant),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title, style: TextStyle(color: cs.onSurface, fontSize: 14, fontWeight: FontWeight.w600)),
-                Text(subtitle, style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12)),
-              ],
+  Widget _importOption(NexIconType icon, String title, String subtitle, ColorScheme cs, {VoidCallback? onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 10),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: cs.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          children: [
+            NexIcon(icon, size: 20, color: cs.onSurfaceVariant),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: TextStyle(color: cs.onSurface, fontSize: 14, fontWeight: FontWeight.w600)),
+                  Text(subtitle, style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12)),
+                ],
+              ),
             ),
-          ),
-          NexIcon(NexIconType.chevronRight, size: 16, color: cs.onSurfaceVariant),
-        ],
+            NexIcon(NexIconType.chevronRight, size: 16, color: cs.onSurfaceVariant),
+          ],
+        ),
       ),
     );
   }
@@ -751,6 +761,47 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _pickAndImport(String formatName) async {
+    final csvService = CsvImportService();
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['csv'],
+    );
+
+    if (result == null || result.files.isEmpty || !context.mounted) return;
+
+    final filePath = result.files.first.path;
+    if (filePath == null) return;
+
+    try {
+      final importResult = await csvService.importFromCsv(filePath);
+      if (!context.mounted) return;
+
+      if (importResult.items.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No valid credentials found in file')),
+        );
+        return;
+      }
+
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => ImportPreviewScreen(
+            items: importResult.items,
+            formatName: importResult.format.name,
+          ),
+        ),
+      );
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Import failed: $e')),
+        );
+      }
+    }
   }
 
   String _langName(String code) => switch (code) {
