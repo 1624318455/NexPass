@@ -90,20 +90,24 @@ Future<void> _seedDemoDataIfEmpty(
     _item(uuid.v4(), 'Dev Account (Login)', 1, [
       _field('username', 'demo_user', 1, false),
       _field('password', 'D3m0!Str0ng#Pass_2026', 2, true),
+      _field('website', 'https://github.com', 1, false),
     ]),
     _item(uuid.v4(), 'Virtual Card (Card)', 2, [
       _field('cardholder', 'DEMO USER', 1, false),
       _field('cardNumber', '4111 0000 0000 0001', 1, true),
       _field('cvv', '123', 4, true),
+      _field('website', 'https://stripe.com', 1, false),
     ]),
     _item(uuid.v4(), 'MFA Account (TOTP)', 4, [
       _field('account', 'demo@mfa.example', 1, false),
       _field('password', 'T0tp!Demo#Key_2026', 2, true),
       _field('totpSecret', 'JBSWY3DPEHPK3PXP', 3, true),
+      _field('website', 'https://auth.example.com', 1, false),
     ]),
     _item(uuid.v4(), 'Weak Password Test', 1, [
       _field('username', 'audit_test', 1, false),
       _field('password', 'short', 2, true),
+      _field('website', 'https://test.example.com', 1, false),
     ]),
   ];
 

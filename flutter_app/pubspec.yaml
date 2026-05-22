@@ -35,6 +35,9 @@ dependencies:
   # Data Import
   file_picker: ^8.0.0
 
+  # URL Launcher
+  url_launcher: ^6.3.0
+
   meta: ^1.11.0
 
 dev_dependencies:

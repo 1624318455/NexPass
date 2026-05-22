@@ -8,6 +8,7 @@ import '../services/clipboard_service.dart';
 import '../theme/nex_theme.dart';
 import '../widgets/nex_icons.dart';
 import 'clipboard_overlay.dart';
+import 'item_detail_screen.dart';
 import 'security_audit_screen.dart';
 import 'settings_screen.dart';
 
@@ -278,34 +279,62 @@ class _VaultPageState extends ConsumerState<_VaultPage> {
       padding: EdgeInsets.fromLTRB(NexTheme.lg, NexTheme.sm, NexTheme.lg, 120 + MediaQuery.of(context).padding.bottom),
       sliver: SliverList(
         delegate: SliverChildListDelegate([
-          if (favoriteItems.isNotEmpty) ...[
-            _sectionHeader(S.settingsShowFavorites, cs),
-            for (final item in favoriteItems)
-              _VaultItemCard(
-                item: item,
-                onCopy: () => _handleCopyItem(item),
-                onDelete: () => _confirmDelete(item),
-                onToggleFavorite: () => ref.read(vaultStateProvider.notifier).toggleFavorite(item),
+          if (favoriteItems.isNotEmpty)
+            Container(
+              margin: const EdgeInsets.only(bottom: NexTheme.sm),
+              padding: const EdgeInsets.all(NexTheme.md),
+              decoration: BoxDecoration(
+                color: cs.primaryContainer.withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(NexTheme.rMd),
               ),
-            const SizedBox(height: NexTheme.sm),
-          ],
-          if (recentItems.isNotEmpty) ...[
-            _sectionHeader(S.settingsShowRecent, cs),
-            for (final item in recentItems)
-              _VaultItemCard(
-                item: item,
-                onCopy: () => _handleCopyItem(item),
-                onDelete: () => _confirmDelete(item),
-                onToggleFavorite: () => ref.read(vaultStateProvider.notifier).toggleFavorite(item),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _sectionHeader(S.settingsShowFavorites, cs),
+                  for (final item in favoriteItems)
+                    _VaultItemCard(
+                      item: item,
+                      onCopy: () => _handleCopyItem(item),
+                      onDelete: () => _confirmDelete(item),
+                      onToggleFavorite: () => ref.read(vaultStateProvider.notifier).toggleFavorite(item),
+                      onTap: () => Navigator.push(context, MaterialPageRoute(
+                        builder: (_) => ItemDetailScreen(item: item))),
+                    ),
+                ],
               ),
-            const SizedBox(height: NexTheme.sm),
-          ],
+            ),
+          if (recentItems.isNotEmpty)
+            Container(
+              margin: const EdgeInsets.only(bottom: NexTheme.sm),
+              padding: const EdgeInsets.all(NexTheme.md),
+              decoration: BoxDecoration(
+                color: cs.tertiaryContainer.withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(NexTheme.rMd),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _sectionHeader(S.settingsShowRecent, cs),
+                  for (final item in recentItems)
+                    _VaultItemCard(
+                      item: item,
+                      onCopy: () => _handleCopyItem(item),
+                      onDelete: () => _confirmDelete(item),
+                      onToggleFavorite: () => ref.read(vaultStateProvider.notifier).toggleFavorite(item),
+                      onTap: () => Navigator.push(context, MaterialPageRoute(
+                        builder: (_) => ItemDetailScreen(item: item))),
+                    ),
+                ],
+              ),
+            ),
           for (final item in filtered)
             _VaultItemCard(
               item: item,
               onCopy: () => _handleCopyItem(item),
               onDelete: () => _confirmDelete(item),
               onToggleFavorite: () => ref.read(vaultStateProvider.notifier).toggleFavorite(item),
+              onTap: () => Navigator.push(context, MaterialPageRoute(
+                builder: (_) => ItemDetailScreen(item: item))),
             ),
         ]),
       ),
@@ -392,8 +421,9 @@ class _VaultItemCard extends ConsumerWidget {
   final VoidCallback onCopy;
   final VoidCallback onDelete;
   final VoidCallback? onToggleFavorite;
+  final VoidCallback? onTap;
 
-  const _VaultItemCard({required this.item, required this.onCopy, required this.onDelete, this.onToggleFavorite});
+  const _VaultItemCard({required this.item, required this.onCopy, required this.onDelete, this.onToggleFavorite, this.onTap});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -414,9 +444,12 @@ class _VaultItemCard extends ConsumerWidget {
     final hideOtherWhenAuth = settings.cardHideOtherWhenAuth && showLinkedAuth;
 
     return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(NexTheme.md),
-        child: Row(
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(NexTheme.md),
+          child: Row(
           children: [
             Container(
               width: 36, height: 36,
@@ -496,6 +529,7 @@ class _VaultItemCard extends ConsumerWidget {
             ),
           ],
         ),
+      ),
       ),
     );
   }

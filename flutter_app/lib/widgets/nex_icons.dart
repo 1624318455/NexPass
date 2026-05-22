@@ -7,7 +7,7 @@ enum NexIconType {
   copy, trash, plus, refresh, language,
   warning, check, info, alertCircle,
   clipboard, brain, cloud,
-  creditCard, heart,
+  creditCard, heart, pencil, download,
 }
 
 class NexIcon extends StatelessWidget {
@@ -97,6 +97,10 @@ class _NexIconPainter extends CustomPainter {
         _drawCreditCard(canvas, paint, s, cx, cy, r);
       case NexIconType.heart:
         _drawHeart(canvas, paint, s, cx, cy, r);
+      case NexIconType.pencil:
+        _drawPencil(canvas, paint, s, cx, cy, r);
+      case NexIconType.download:
+        _drawDownload(canvas, paint, s, cx, cy, r);
     }
   }
 
@@ -318,6 +322,33 @@ class _NexIconPainter extends CustomPainter {
       ..quadraticBezierTo(cx + r * 0.25, cy - r * 0.65, cx + r * 0.5, cy - r * 0.3)
       ..quadraticBezierTo(cx + r * 0.8, cy + r * 0.05, cx, cy + r * 0.55);
     c.drawPath(path, p);
+  }
+
+  void _drawPencil(Canvas c, Paint p, double s, double cx, double cy, double r) {
+    c.save();
+    c.translate(cx, cy);
+    c.rotate(-pi / 4);
+    c.drawRRect(RRect.fromRectAndRadius(
+      Rect.fromCenter(center: Offset.zero, width: r * 0.5, height: r * 1.4),
+      const Radius.circular(2),
+    ), p);
+    final tipPath = Path()
+      ..moveTo(-r * 0.25, r * 0.7)
+      ..lineTo(0, r * 0.95)
+      ..lineTo(r * 0.25, r * 0.7)
+      ..close();
+    c.drawPath(tipPath, p);
+    c.restore();
+  }
+
+  void _drawDownload(Canvas c, Paint p, double s, double cx, double cy, double r) {
+    c.drawLine(Offset(cx, cy - r * 0.55), Offset(cx, cy + r * 0.25), p);
+    final arrowPath = Path()
+      ..moveTo(cx - r * 0.35, cy - r * 0.05)
+      ..lineTo(cx, cy + r * 0.25)
+      ..lineTo(cx + r * 0.35, cy - r * 0.05);
+    c.drawPath(arrowPath, p);
+    c.drawLine(Offset(cx - r * 0.55, cy + r * 0.6), Offset(cx + r * 0.55, cy + r * 0.6), p);
   }
 
   @override
