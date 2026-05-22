@@ -619,7 +619,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         child: Row(
           children: [
             Expanded(child: Text(label, style: TextStyle(color: cs.onSurface, fontSize: 14))),
-            Switch(value: value, onChanged: onChanged),
+            Switch(key: ValueKey('$label-$value'), value: value, onChanged: onChanged),
           ],
         ),
       ),
