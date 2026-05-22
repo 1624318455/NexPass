@@ -325,7 +325,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               final color = NexTheme.themePresets[i];
               final isSelected = i == _themeIndex;
               return GestureDetector(
-                onTap: () => setState(() => _themeIndex = i),
+                onTap: () {
+                  setState(() => _themeIndex = i);
+                  ref.read(appSettingsNotifierProvider.notifier).update((s) => s.themeColorIndex = i);
+                },
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 200),
                   decoration: BoxDecoration(
@@ -754,6 +757,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               trailing: selected ? NexIcon(NexIconType.check, size: 18, color: cs.primary) : null,
               onTap: () {
                 setState(() => _language = l.$1);
+                ref.read(appSettingsNotifierProvider.notifier).update((s) => s.language = l.$1);
                 Navigator.pop(ctx);
               },
             );
