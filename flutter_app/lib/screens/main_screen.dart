@@ -4,7 +4,6 @@ import '../i18n/app_localizations.dart';
 import '../main.dart';
 import '../models/nex_item.dart';
 import '../state/vault_state_notifier.dart';
-import '../services/clipboard_service.dart';
 import '../theme/nex_theme.dart';
 import '../widgets/nex_icons.dart';
 import 'clipboard_overlay.dart';
@@ -294,9 +293,6 @@ class _VaultPageState extends ConsumerState<_VaultPage> {
                   for (final item in favoriteItems)
                     _VaultItemCard(
                       item: item,
-                      onCopy: () => _handleCopyItem(item),
-                      onDelete: () => _confirmDelete(item),
-                      onToggleFavorite: () => ref.read(vaultStateProvider.notifier).toggleFavorite(item),
                       onTap: () => Navigator.push(context, MaterialPageRoute(
                         builder: (_) => ItemDetailScreen(item: item))),
                     ),
@@ -318,9 +314,6 @@ class _VaultPageState extends ConsumerState<_VaultPage> {
                   for (final item in recentItems)
                     _VaultItemCard(
                       item: item,
-                      onCopy: () => _handleCopyItem(item),
-                      onDelete: () => _confirmDelete(item),
-                      onToggleFavorite: () => ref.read(vaultStateProvider.notifier).toggleFavorite(item),
                       onTap: () => Navigator.push(context, MaterialPageRoute(
                         builder: (_) => ItemDetailScreen(item: item))),
                     ),
@@ -330,9 +323,6 @@ class _VaultPageState extends ConsumerState<_VaultPage> {
           for (final item in filtered)
             _VaultItemCard(
               item: item,
-              onCopy: () => _handleCopyItem(item),
-              onDelete: () => _confirmDelete(item),
-              onToggleFavorite: () => ref.read(vaultStateProvider.notifier).toggleFavorite(item),
               onTap: () => Navigator.push(context, MaterialPageRoute(
                 builder: (_) => ItemDetailScreen(item: item))),
             ),
@@ -348,37 +338,6 @@ class _VaultPageState extends ConsumerState<_VaultPage> {
         title,
         style: Theme.of(context).textTheme.labelLarge?.copyWith(
           color: cs.onSurfaceVariant, fontWeight: FontWeight.w600),
-      ),
-    );
-  }
-
-  Future<void> _handleCopyItem(NexItem item) async {
-    final S = AppLocalizations.of(context);
-    final isDual = await ref.read(dualClipboardProvider.notifier).copyItem(item);
-    ref.read(vaultStateProvider.notifier).markUsed(item);
-    if (!mounted) return;
-    if (!isDual) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(S.passwordCopied)),
-      );
-    }
-  }
-
-  void _confirmDelete(NexItem item) {
-    final S = AppLocalizations.of(context);
-    final cs = Theme.of(context).colorScheme;
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(S.deleteTitle),
-        content: Text(S.deleteConfirm(item.name), style: TextStyle(color: cs.onSurfaceVariant)),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: Text(S.cancel, style: TextStyle(color: cs.onSurfaceVariant))),
-          TextButton(
-            onPressed: () { Navigator.pop(ctx); ref.read(vaultStateProvider.notifier).deleteItem(item); },
-            child: Text(S.delete, style: TextStyle(color: cs.error)),
-          ),
-        ],
       ),
     );
   }
@@ -418,12 +377,9 @@ class _VaultPageState extends ConsumerState<_VaultPage> {
 
 class _VaultItemCard extends ConsumerWidget {
   final NexItem item;
-  final VoidCallback onCopy;
-  final VoidCallback onDelete;
-  final VoidCallback? onToggleFavorite;
   final VoidCallback? onTap;
 
-  const _VaultItemCard({required this.item, required this.onCopy, required this.onDelete, this.onToggleFavorite, this.onTap});
+  const _VaultItemCard({required this.item, this.onTap});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -502,30 +458,6 @@ class _VaultItemCard extends ConsumerWidget {
                   ],
                 ],
               ),
-            ),
-            const SizedBox(width: NexTheme.sm),
-            if (onToggleFavorite != null)
-              IconButton(
-                onPressed: onToggleFavorite,
-                icon: NexIcon(NexIconType.heart, size: 16,
-                    color: item.isFavorite ? cs.error : cs.outline),
-                iconSize: 16,
-                padding: const EdgeInsets.all(6),
-                constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-              ),
-            IconButton(
-              onPressed: onCopy,
-              icon: NexIcon(NexIconType.copy, size: 16, color: cs.onSurfaceVariant),
-              iconSize: 16,
-              padding: const EdgeInsets.all(6),
-              constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-            ),
-            IconButton(
-              onPressed: onDelete,
-              icon: NexIcon(NexIconType.trash, size: 16, color: cs.error.withValues(alpha: 0.6)),
-              iconSize: 16,
-              padding: const EdgeInsets.all(6),
-              constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
             ),
           ],
         ),
