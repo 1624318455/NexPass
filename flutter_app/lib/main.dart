@@ -216,11 +216,45 @@ class _NexPassAppState extends ConsumerState<NexPassApp> {
 
     final unlockNotifier = ref.read(unlockStateProvider.notifier);
 
+    // Always derive & store the key first (needed for biometric recovery).
+    await _ensureKeyStored();
+
     if (widget.biometricEnabled) {
       ref.read(appStateProvider.notifier).state = AppState.locked;
     } else {
       await _autoUnlock(unlockNotifier);
     }
+  }
+
+  /// Derive the master key from the password and store it in secure storage.
+  /// This ensures biometric unlock can recover the key later.
+  Future<void> _ensureKeyStored() async {
+    final secureStorage = ref.read(secureStorageProvider);
+    final cryptoService = ref.read(cryptoServiceProvider);
+
+    // If key already stored, nothing to do.
+    final existing = await secureStorage.recoverDerivedKey();
+    if (existing != null) return;
+
+    final salt = await secureStorage.getOrCreateMasterSalt(
+      () => base64Encode(generateSalt()),
+    );
+    final saltBytes = base64Decode(salt);
+
+    var masterPassword = const String.fromEnvironment(
+      'NEXPASS_MASTER_PASSWORD',
+      defaultValue: '',
+    );
+    if (masterPassword.isEmpty) {
+      masterPassword = 'debug_master_key_2026';
+    }
+
+    final derivedKey = await cryptoService.deriveKey(
+      password: masterPassword,
+      salt: saltBytes,
+    );
+
+    await secureStorage.storeDerivedKey(derivedKey);
   }
 
   Future<void> _autoUnlock(UnlockNotifier notifier) async {

@@ -171,12 +171,20 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     );
   }
 
+  /// Wraps page content in a scrollable container that adjusts for keyboard.
+  Widget _pageScroll(Widget child) {
+    return SingleChildScrollView(
+      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      child: child,
+    );
+  }
+
   // ════════════════════════════════════════════════════════════════════
   // Page 1: Quick Setup
   // ════════════════════════════════════════════════════════════════════
 
   Widget _page1QuickSetup(S, ColorScheme cs) {
-    return Padding(
+    return _pageScroll(Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -199,7 +207,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           Text(S.onboardingQuickSetupHint, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: cs.onSurfaceVariant)),
         ],
       ),
-    );
+    ));
   }
 
   // ════════════════════════════════════════════════════════════════════
@@ -207,7 +215,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   // ════════════════════════════════════════════════════════════════════
 
   Widget _page2Security(S, ColorScheme cs) {
-    return Padding(
+    return _pageScroll(Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -258,7 +266,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           _stepTile(3, S.onboardingRecovery, false, cs),
         ],
       ),
-    );
+    ));
   }
 
   // ════════════════════════════════════════════════════════════════════
@@ -266,7 +274,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   // ════════════════════════════════════════════════════════════════════
 
   Widget _page3Autofill(S, ColorScheme cs) {
-    return Padding(
+    return _pageScroll(Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -296,7 +304,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           ],
         ],
       ),
-    );
+    ));
   }
 
   // ════════════════════════════════════════════════════════════════════
@@ -304,7 +312,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   // ════════════════════════════════════════════════════════════════════
 
   Widget _page4Theme(S, ColorScheme cs) {
-    return Padding(
+    return _pageScroll(Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -360,7 +368,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           ),
         ],
       ),
-    );
+    ));
   }
 
   // ════════════════════════════════════════════════════════════════════
@@ -368,7 +376,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   // ════════════════════════════════════════════════════════════════════
 
   Widget _page5NavBar(S, ColorScheme cs) {
-    return Padding(
+    return _pageScroll(Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -417,7 +425,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           ),
         ],
       ),
-    );
+    ));
   }
 
   // ════════════════════════════════════════════════════════════════════
@@ -425,7 +433,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   // ════════════════════════════════════════════════════════════════════
 
   Widget _page6Import(S, ColorScheme cs) {
-    return Padding(
+    return _pageScroll(Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -446,7 +454,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               onTap: () => _pickAndImport('Generic CSV')),
         ],
       ),
-    );
+    ));
   }
 
   // ════════════════════════════════════════════════════════════════════
@@ -454,7 +462,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   // ════════════════════════════════════════════════════════════════════
 
   Widget _page7ListAdjust(S, ColorScheme cs) {
-    return Padding(
+    return _pageScroll(Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -469,7 +477,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           _toggleTile(S.settingsShowFavorites, _showFavorites, (v) => setState(() => _showFavorites = v)),
         ],
       ),
-    );
+    ));
   }
 
   // ════════════════════════════════════════════════════════════════════
@@ -477,7 +485,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   // ════════════════════════════════════════════════════════════════════
 
   Widget _page8CardAdjust(S, ColorScheme cs) {
-    return Padding(
+    return _pageScroll(Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -499,7 +507,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           _cardPreview(cs),
         ],
       ),
-    );
+    ));
   }
 
   // ════════════════════════════════════════════════════════════════════
@@ -507,7 +515,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   // ════════════════════════════════════════════════════════════════════
 
   Widget _page9AuthAdjust(S, ColorScheme cs) {
-    return Padding(
+    return _pageScroll(Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -529,7 +537,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           _authPreview(cs),
         ],
       ),
-    );
+    ));
   }
 
   // ════════════════════════════════════════════════════════════════════
@@ -537,7 +545,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   // ════════════════════════════════════════════════════════════════════
 
   Widget _page10Complete(S, ColorScheme cs) {
-    return Center(
+    return _pageScroll(Center(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 40),
         child: Column(
@@ -558,7 +566,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           ],
         ),
       ),
-    );
+    ));
   }
 
   // ════════════════════════════════════════════════════════════════════

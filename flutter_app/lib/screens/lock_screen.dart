@@ -103,8 +103,8 @@ class _LockScreenState extends ConsumerState<LockScreen> {
     return Scaffold(
       body: SafeArea(
         child: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(32),
+          child: SingleChildScrollView(
+            padding: EdgeInsets.fromLTRB(32, 32, 32, MediaQuery.of(context).viewInsets.bottom + 32),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
