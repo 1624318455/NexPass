@@ -16,6 +16,8 @@ class LockScreen extends ConsumerStatefulWidget {
 
 class _LockScreenState extends ConsumerState<LockScreen> {
   bool _usePassword = false;
+  bool _bioAvailable = false;
+  bool _checkingBio = true;
   final _passwordCtrl = TextEditingController();
   bool _loading = false;
   String? _error;
@@ -23,21 +25,48 @@ class _LockScreenState extends ConsumerState<LockScreen> {
   @override
   void initState() {
     super.initState();
-    // Auto-attempt biometric on first show.
-    WidgetsBinding.instance.addPostFrameCallback((_) => _tryBiometric());
+    WidgetsBinding.instance.addPostFrameCallback((_) => _initBiometric());
+  }
+
+  Future<void> _initBiometric() async {
+    final bioService = ref.read(biometricServiceProvider);
+    final supported = await bioService.isDeviceSupported();
+    final canCheck = await bioService.canCheckBiometrics();
+
+    if (!mounted) return;
+
+    _bioAvailable = supported && canCheck;
+    _checkingBio = false;
+
+    if (_bioAvailable) {
+      // Auto-attempt biometric unlock
+      _tryBiometric();
+    } else {
+      // No biometrics available — show password directly
+      setState(() => _usePassword = true);
+    }
   }
 
   Future<void> _tryBiometric() async {
-    final bioService = ref.read(biometricServiceProvider);
-    final supported = await bioService.isDeviceSupported();
-    if (!supported || !mounted) return;
+    if (!_bioAvailable || !mounted) return;
 
+    setState(() => _loading = true);
+
+    final bioService = ref.read(biometricServiceProvider);
     final notifier = ref.read(unlockStateProvider.notifier);
     final success = await notifier.unlockWithBiometric(
       authenticate: (reason) => bioService.authenticate(reason: reason),
     );
-    if (!success && mounted) {
-      setState(() => _usePassword = true);
+
+    if (!mounted) return;
+
+    setState(() => _loading = false);
+
+    if (!success) {
+      setState(() {
+        _usePassword = true;
+        _error = 'Biometric authentication failed. Please use your master password.';
+      });
     }
   }
 
@@ -69,6 +98,7 @@ class _LockScreenState extends ConsumerState<LockScreen> {
   Widget build(BuildContext context) {
     final S = AppLocalizations.of(context);
     final theme = Theme.of(context);
+    final cs = theme.colorScheme;
 
     return Scaffold(
       body: SafeArea(
@@ -85,13 +115,30 @@ class _LockScreenState extends ConsumerState<LockScreen> {
                   style: theme.textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w700),
                 ),
                 const SizedBox(height: 8),
-                Text(
-                  _usePassword ? S.passwordLabel : 'Authenticate to unlock',
-                  style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-                ),
+
+                // Status text
+                if (_checkingBio)
+                  Text('Checking biometric status...',
+                      style: theme.textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant))
+                else if (_usePassword)
+                  Text(S.passwordLabel,
+                      style: theme.textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant))
+                else
+                  Text('Authenticate to unlock',
+                      style: theme.textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant)),
+
                 const SizedBox(height: 40),
 
-                if (!_usePassword) ...[
+                // Loading indicator while checking biometrics
+                if (_checkingBio) ...[
+                  const CircularProgressIndicator(),
+                  const SizedBox(height: 16),
+                  Text('Initializing...',
+                      style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13)),
+                ]
+
+                // Biometric button
+                else if (!_usePassword) ...[
                   SizedBox(
                     width: double.infinity,
                     height: 52,
@@ -100,7 +147,8 @@ class _LockScreenState extends ConsumerState<LockScreen> {
                       icon: _loading
                           ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                           : const NexIcon(NexIconType.shield, size: 20, color: Colors.white),
-                      label: Text('Use Biometrics', style: const TextStyle(fontSize: 16)),
+                      label: Text(_loading ? 'Authenticating...' : 'Use Biometrics',
+                          style: const TextStyle(fontSize: 16)),
                       style: FilledButton.styleFrom(
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(NexTheme.rMd)),
                       ),
@@ -111,9 +159,31 @@ class _LockScreenState extends ConsumerState<LockScreen> {
                     onPressed: () => setState(() => _usePassword = true),
                     child: const Text('Use Master Password'),
                   ),
-                ],
+                ]
 
-                if (_usePassword) ...[
+                // Password input
+                else ...[
+                  if (_error != null) ...[
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: cs.errorContainer,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        children: [
+                          NexIcon(NexIconType.shield, size: 16, color: cs.onErrorContainer),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(_error!,
+                                style: TextStyle(color: cs.onErrorContainer, fontSize: 13)),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                  ],
                   TextField(
                     controller: _passwordCtrl,
                     obscureText: true,
@@ -121,7 +191,6 @@ class _LockScreenState extends ConsumerState<LockScreen> {
                     decoration: InputDecoration(
                       hintText: S.passwordLabel,
                       prefixIcon: const NexIcon(NexIconType.lock, size: 20),
-                      errorText: _error,
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(NexTheme.rSm)),
                     ),
                     onSubmitted: (_) => _unlockWithPassword(),
@@ -140,14 +209,16 @@ class _LockScreenState extends ConsumerState<LockScreen> {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 16),
-                  TextButton(
-                    onPressed: () => setState(() {
-                      _usePassword = false;
-                      _error = null;
-                    }),
-                    child: const Text('Use Biometrics'),
-                  ),
+                  if (_bioAvailable) ...[
+                    const SizedBox(height: 16),
+                    TextButton(
+                      onPressed: () => setState(() {
+                        _usePassword = false;
+                        _error = null;
+                      }),
+                      child: const Text('Use Biometrics'),
+                    ),
+                  ],
                 ],
               ],
             ),
