@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../i18n/app_localizations.dart';
 import '../main.dart';
+import '../services/biometric_service.dart';
 import '../theme/nex_theme.dart';
 import '../widgets/nex_icons.dart';
 
@@ -217,7 +217,33 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           _stepTile(2, S.onboardingBiometric, _biometricEnabled, cs,
               trailing: Switch(
                 value: _biometricEnabled,
-                onChanged: (v) => setState(() => _biometricEnabled = v),
+                onChanged: (v) async {
+                  if (v) {
+                    // Turning ON: verify device supports biometrics
+                    final bioService = ref.read(biometricServiceProvider);
+                    final supported = await bioService.isDeviceSupported();
+                    final canCheck = await bioService.canCheckBiometrics();
+                    if (!supported || !canCheck) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('This device does not support biometric authentication')),
+                        );
+                      }
+                      return;
+                    }
+                    // Try authenticating to verify enrollment
+                    final authenticated = await bioService.authenticate(reason: 'Verify biometric enrollment');
+                    if (!authenticated) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Biometric verification failed')),
+                        );
+                      }
+                      return;
+                    }
+                  }
+                  setState(() => _biometricEnabled = v);
+                },
               )),
           const SizedBox(height: 12),
 
