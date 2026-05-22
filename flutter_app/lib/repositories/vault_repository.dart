@@ -97,6 +97,16 @@ class VaultRepository {
     });
   }
 
+  Future<void> toggleFavorite({required NexItem item}) async {
+    item.isFavorite = !item.isFavorite;
+    await _isar.writeTxn(() async => _isar.nexItems.put(item));
+  }
+
+  Future<void> markUsed({required NexItem item}) async {
+    item.lastUsedAt = DateTime.now();
+    await _isar.writeTxn(() async => _isar.nexItems.put(item));
+  }
+
   /// Re-encrypt all vault items from [oldKey] to [newKey].
   /// Returns the number of items re-encrypted.
   Future<int> reEncryptAllItems({

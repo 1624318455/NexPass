@@ -122,6 +122,15 @@ class VaultNotifier extends StateNotifier<VaultState> {
     await loadVault();
   }
 
+  Future<void> toggleFavorite(NexItem item) async {
+    await _repository.toggleFavorite(item: item);
+    await loadVault();
+  }
+
+  void markUsed(NexItem item) {
+    _repository.markUsed(item: item);
+  }
+
   /// Re-saves an existing item (used by security audit to update passwords).
   Future<void> updateItem(NexItem item) async {
     await _repository.saveItem(item: item, derivedKey: _masterKey);

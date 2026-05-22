@@ -23,49 +23,69 @@ const NexItemSchema = CollectionSchema(
       type: IsarType.objectList,
       target: r'NexField',
     ),
-    r'iconKey': PropertySchema(
+    r'hasTotp': PropertySchema(
       id: 1,
+      name: r'hasTotp',
+      type: IsarType.bool,
+    ),
+    r'iconKey': PropertySchema(
+      id: 2,
       name: r'iconKey',
       type: IsarType.string,
     ),
     r'isFavorite': PropertySchema(
-      id: 2,
+      id: 3,
       name: r'isFavorite',
       type: IsarType.bool,
     ),
+    r'lastUsedAt': PropertySchema(
+      id: 4,
+      name: r'lastUsedAt',
+      type: IsarType.dateTime,
+    ),
     r'name': PropertySchema(
-      id: 3,
+      id: 5,
       name: r'name',
       type: IsarType.string,
     ),
     r'tags': PropertySchema(
-      id: 4,
+      id: 6,
       name: r'tags',
       type: IsarType.stringList,
     ),
+    r'totpSecret': PropertySchema(
+      id: 7,
+      name: r'totpSecret',
+      type: IsarType.string,
+    ),
     r'type': PropertySchema(
-      id: 5,
+      id: 8,
       name: r'type',
       type: IsarType.long,
     ),
     r'updatedAt': PropertySchema(
-      id: 6,
+      id: 9,
       name: r'updatedAt',
       type: IsarType.dateTime,
     ),
     r'username': PropertySchema(
-      id: 7,
+      id: 10,
       name: r'username',
       type: IsarType.string,
     ),
     r'uuid': PropertySchema(
-      id: 8,
+      id: 11,
       name: r'uuid',
       type: IsarType.string,
     ),
     r'vaultId': PropertySchema(
-      id: 9,
+      id: 12,
       name: r'vaultId',
+      type: IsarType.string,
+    ),
+    r'website': PropertySchema(
+      id: 13,
+      name: r'website',
       type: IsarType.string,
     )
   },
@@ -151,6 +171,7 @@ int _nexItemEstimateSize(
       bytesCount += value.length * 3;
     }
   }
+  bytesCount += 3 + object.totpSecret.length * 3;
   bytesCount += 3 + object.username.length * 3;
   {
     final value = object.uuid;
@@ -164,6 +185,7 @@ int _nexItemEstimateSize(
       bytesCount += 3 + value.length * 3;
     }
   }
+  bytesCount += 3 + object.website.length * 3;
   return bytesCount;
 }
 
@@ -179,15 +201,19 @@ void _nexItemSerialize(
     NexFieldSchema.serialize,
     object.fields,
   );
-  writer.writeString(offsets[1], object.iconKey);
-  writer.writeBool(offsets[2], object.isFavorite);
-  writer.writeString(offsets[3], object.name);
-  writer.writeStringList(offsets[4], object.tags);
-  writer.writeLong(offsets[5], object.type);
-  writer.writeDateTime(offsets[6], object.updatedAt);
-  writer.writeString(offsets[7], object.username);
-  writer.writeString(offsets[8], object.uuid);
-  writer.writeString(offsets[9], object.vaultId);
+  writer.writeBool(offsets[1], object.hasTotp);
+  writer.writeString(offsets[2], object.iconKey);
+  writer.writeBool(offsets[3], object.isFavorite);
+  writer.writeDateTime(offsets[4], object.lastUsedAt);
+  writer.writeString(offsets[5], object.name);
+  writer.writeStringList(offsets[6], object.tags);
+  writer.writeString(offsets[7], object.totpSecret);
+  writer.writeLong(offsets[8], object.type);
+  writer.writeDateTime(offsets[9], object.updatedAt);
+  writer.writeString(offsets[10], object.username);
+  writer.writeString(offsets[11], object.uuid);
+  writer.writeString(offsets[12], object.vaultId);
+  writer.writeString(offsets[13], object.website);
 }
 
 NexItem _nexItemDeserialize(
@@ -204,15 +230,16 @@ NexItem _nexItemDeserialize(
         NexField(),
       ) ??
       [];
-  object.iconKey = reader.readStringOrNull(offsets[1]);
+  object.iconKey = reader.readStringOrNull(offsets[2]);
   object.id = id;
-  object.isFavorite = reader.readBool(offsets[2]);
-  object.name = reader.readString(offsets[3]);
-  object.tags = reader.readStringList(offsets[4]) ?? [];
-  object.type = reader.readLong(offsets[5]);
-  object.updatedAt = reader.readDateTime(offsets[6]);
-  object.uuid = reader.readStringOrNull(offsets[8]);
-  object.vaultId = reader.readStringOrNull(offsets[9]);
+  object.isFavorite = reader.readBool(offsets[3]);
+  object.lastUsedAt = reader.readDateTimeOrNull(offsets[4]);
+  object.name = reader.readString(offsets[5]);
+  object.tags = reader.readStringList(offsets[6]) ?? [];
+  object.type = reader.readLong(offsets[8]);
+  object.updatedAt = reader.readDateTime(offsets[9]);
+  object.uuid = reader.readStringOrNull(offsets[11]);
+  object.vaultId = reader.readStringOrNull(offsets[12]);
   return object;
 }
 
@@ -232,23 +259,31 @@ P _nexItemDeserializeProp<P>(
           ) ??
           []) as P;
     case 1:
-      return (reader.readStringOrNull(offset)) as P;
-    case 2:
       return (reader.readBool(offset)) as P;
+    case 2:
+      return (reader.readStringOrNull(offset)) as P;
     case 3:
-      return (reader.readString(offset)) as P;
+      return (reader.readBool(offset)) as P;
     case 4:
-      return (reader.readStringList(offset) ?? []) as P;
+      return (reader.readDateTimeOrNull(offset)) as P;
     case 5:
-      return (reader.readLong(offset)) as P;
+      return (reader.readString(offset)) as P;
     case 6:
-      return (reader.readDateTime(offset)) as P;
+      return (reader.readStringList(offset) ?? []) as P;
     case 7:
       return (reader.readString(offset)) as P;
     case 8:
-      return (reader.readStringOrNull(offset)) as P;
+      return (reader.readLong(offset)) as P;
     case 9:
+      return (reader.readDateTime(offset)) as P;
+    case 10:
+      return (reader.readString(offset)) as P;
+    case 11:
       return (reader.readStringOrNull(offset)) as P;
+    case 12:
+      return (reader.readStringOrNull(offset)) as P;
+    case 13:
+      return (reader.readString(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
   }
@@ -784,6 +819,16 @@ extension NexItemQueryFilter
     });
   }
 
+  QueryBuilder<NexItem, NexItem, QAfterFilterCondition> hasTotpEqualTo(
+      bool value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'hasTotp',
+        value: value,
+      ));
+    });
+  }
+
   QueryBuilder<NexItem, NexItem, QAfterFilterCondition> iconKeyIsNull() {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(const FilterCondition.isNull(
@@ -988,6 +1033,75 @@ extension NexItemQueryFilter
       return query.addFilterCondition(FilterCondition.equalTo(
         property: r'isFavorite',
         value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<NexItem, NexItem, QAfterFilterCondition> lastUsedAtIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'lastUsedAt',
+      ));
+    });
+  }
+
+  QueryBuilder<NexItem, NexItem, QAfterFilterCondition> lastUsedAtIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'lastUsedAt',
+      ));
+    });
+  }
+
+  QueryBuilder<NexItem, NexItem, QAfterFilterCondition> lastUsedAtEqualTo(
+      DateTime? value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'lastUsedAt',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<NexItem, NexItem, QAfterFilterCondition> lastUsedAtGreaterThan(
+    DateTime? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'lastUsedAt',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<NexItem, NexItem, QAfterFilterCondition> lastUsedAtLessThan(
+    DateTime? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'lastUsedAt',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<NexItem, NexItem, QAfterFilterCondition> lastUsedAtBetween(
+    DateTime? lower,
+    DateTime? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'lastUsedAt',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
       ));
     });
   }
@@ -1334,6 +1448,136 @@ extension NexItemQueryFilter
         upper,
         includeUpper,
       );
+    });
+  }
+
+  QueryBuilder<NexItem, NexItem, QAfterFilterCondition> totpSecretEqualTo(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'totpSecret',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<NexItem, NexItem, QAfterFilterCondition> totpSecretGreaterThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'totpSecret',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<NexItem, NexItem, QAfterFilterCondition> totpSecretLessThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'totpSecret',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<NexItem, NexItem, QAfterFilterCondition> totpSecretBetween(
+    String lower,
+    String upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'totpSecret',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<NexItem, NexItem, QAfterFilterCondition> totpSecretStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'totpSecret',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<NexItem, NexItem, QAfterFilterCondition> totpSecretEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'totpSecret',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<NexItem, NexItem, QAfterFilterCondition> totpSecretContains(
+      String value,
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'totpSecret',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<NexItem, NexItem, QAfterFilterCondition> totpSecretMatches(
+      String pattern,
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'totpSecret',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<NexItem, NexItem, QAfterFilterCondition> totpSecretIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'totpSecret',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<NexItem, NexItem, QAfterFilterCondition> totpSecretIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'totpSecret',
+        value: '',
+      ));
     });
   }
 
@@ -1863,6 +2107,136 @@ extension NexItemQueryFilter
       ));
     });
   }
+
+  QueryBuilder<NexItem, NexItem, QAfterFilterCondition> websiteEqualTo(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'website',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<NexItem, NexItem, QAfterFilterCondition> websiteGreaterThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'website',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<NexItem, NexItem, QAfterFilterCondition> websiteLessThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'website',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<NexItem, NexItem, QAfterFilterCondition> websiteBetween(
+    String lower,
+    String upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'website',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<NexItem, NexItem, QAfterFilterCondition> websiteStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'website',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<NexItem, NexItem, QAfterFilterCondition> websiteEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'website',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<NexItem, NexItem, QAfterFilterCondition> websiteContains(
+      String value,
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'website',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<NexItem, NexItem, QAfterFilterCondition> websiteMatches(
+      String pattern,
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'website',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<NexItem, NexItem, QAfterFilterCondition> websiteIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'website',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<NexItem, NexItem, QAfterFilterCondition> websiteIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'website',
+        value: '',
+      ));
+    });
+  }
 }
 
 extension NexItemQueryObject
@@ -1879,6 +2253,18 @@ extension NexItemQueryLinks
     on QueryBuilder<NexItem, NexItem, QFilterCondition> {}
 
 extension NexItemQuerySortBy on QueryBuilder<NexItem, NexItem, QSortBy> {
+  QueryBuilder<NexItem, NexItem, QAfterSortBy> sortByHasTotp() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'hasTotp', Sort.asc);
+    });
+  }
+
+  QueryBuilder<NexItem, NexItem, QAfterSortBy> sortByHasTotpDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'hasTotp', Sort.desc);
+    });
+  }
+
   QueryBuilder<NexItem, NexItem, QAfterSortBy> sortByIconKey() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'iconKey', Sort.asc);
@@ -1903,6 +2289,18 @@ extension NexItemQuerySortBy on QueryBuilder<NexItem, NexItem, QSortBy> {
     });
   }
 
+  QueryBuilder<NexItem, NexItem, QAfterSortBy> sortByLastUsedAt() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'lastUsedAt', Sort.asc);
+    });
+  }
+
+  QueryBuilder<NexItem, NexItem, QAfterSortBy> sortByLastUsedAtDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'lastUsedAt', Sort.desc);
+    });
+  }
+
   QueryBuilder<NexItem, NexItem, QAfterSortBy> sortByName() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'name', Sort.asc);
@@ -1912,6 +2310,18 @@ extension NexItemQuerySortBy on QueryBuilder<NexItem, NexItem, QSortBy> {
   QueryBuilder<NexItem, NexItem, QAfterSortBy> sortByNameDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'name', Sort.desc);
+    });
+  }
+
+  QueryBuilder<NexItem, NexItem, QAfterSortBy> sortByTotpSecret() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'totpSecret', Sort.asc);
+    });
+  }
+
+  QueryBuilder<NexItem, NexItem, QAfterSortBy> sortByTotpSecretDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'totpSecret', Sort.desc);
     });
   }
 
@@ -1974,10 +2384,34 @@ extension NexItemQuerySortBy on QueryBuilder<NexItem, NexItem, QSortBy> {
       return query.addSortBy(r'vaultId', Sort.desc);
     });
   }
+
+  QueryBuilder<NexItem, NexItem, QAfterSortBy> sortByWebsite() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'website', Sort.asc);
+    });
+  }
+
+  QueryBuilder<NexItem, NexItem, QAfterSortBy> sortByWebsiteDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'website', Sort.desc);
+    });
+  }
 }
 
 extension NexItemQuerySortThenBy
     on QueryBuilder<NexItem, NexItem, QSortThenBy> {
+  QueryBuilder<NexItem, NexItem, QAfterSortBy> thenByHasTotp() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'hasTotp', Sort.asc);
+    });
+  }
+
+  QueryBuilder<NexItem, NexItem, QAfterSortBy> thenByHasTotpDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'hasTotp', Sort.desc);
+    });
+  }
+
   QueryBuilder<NexItem, NexItem, QAfterSortBy> thenByIconKey() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'iconKey', Sort.asc);
@@ -2014,6 +2448,18 @@ extension NexItemQuerySortThenBy
     });
   }
 
+  QueryBuilder<NexItem, NexItem, QAfterSortBy> thenByLastUsedAt() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'lastUsedAt', Sort.asc);
+    });
+  }
+
+  QueryBuilder<NexItem, NexItem, QAfterSortBy> thenByLastUsedAtDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'lastUsedAt', Sort.desc);
+    });
+  }
+
   QueryBuilder<NexItem, NexItem, QAfterSortBy> thenByName() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'name', Sort.asc);
@@ -2023,6 +2469,18 @@ extension NexItemQuerySortThenBy
   QueryBuilder<NexItem, NexItem, QAfterSortBy> thenByNameDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'name', Sort.desc);
+    });
+  }
+
+  QueryBuilder<NexItem, NexItem, QAfterSortBy> thenByTotpSecret() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'totpSecret', Sort.asc);
+    });
+  }
+
+  QueryBuilder<NexItem, NexItem, QAfterSortBy> thenByTotpSecretDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'totpSecret', Sort.desc);
     });
   }
 
@@ -2085,10 +2543,28 @@ extension NexItemQuerySortThenBy
       return query.addSortBy(r'vaultId', Sort.desc);
     });
   }
+
+  QueryBuilder<NexItem, NexItem, QAfterSortBy> thenByWebsite() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'website', Sort.asc);
+    });
+  }
+
+  QueryBuilder<NexItem, NexItem, QAfterSortBy> thenByWebsiteDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'website', Sort.desc);
+    });
+  }
 }
 
 extension NexItemQueryWhereDistinct
     on QueryBuilder<NexItem, NexItem, QDistinct> {
+  QueryBuilder<NexItem, NexItem, QDistinct> distinctByHasTotp() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'hasTotp');
+    });
+  }
+
   QueryBuilder<NexItem, NexItem, QDistinct> distinctByIconKey(
       {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
@@ -2102,6 +2578,12 @@ extension NexItemQueryWhereDistinct
     });
   }
 
+  QueryBuilder<NexItem, NexItem, QDistinct> distinctByLastUsedAt() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'lastUsedAt');
+    });
+  }
+
   QueryBuilder<NexItem, NexItem, QDistinct> distinctByName(
       {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
@@ -2112,6 +2594,13 @@ extension NexItemQueryWhereDistinct
   QueryBuilder<NexItem, NexItem, QDistinct> distinctByTags() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'tags');
+    });
+  }
+
+  QueryBuilder<NexItem, NexItem, QDistinct> distinctByTotpSecret(
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'totpSecret', caseSensitive: caseSensitive);
     });
   }
 
@@ -2147,6 +2636,13 @@ extension NexItemQueryWhereDistinct
       return query.addDistinctBy(r'vaultId', caseSensitive: caseSensitive);
     });
   }
+
+  QueryBuilder<NexItem, NexItem, QDistinct> distinctByWebsite(
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'website', caseSensitive: caseSensitive);
+    });
+  }
 }
 
 extension NexItemQueryProperty
@@ -2163,6 +2659,12 @@ extension NexItemQueryProperty
     });
   }
 
+  QueryBuilder<NexItem, bool, QQueryOperations> hasTotpProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'hasTotp');
+    });
+  }
+
   QueryBuilder<NexItem, String?, QQueryOperations> iconKeyProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'iconKey');
@@ -2175,6 +2677,12 @@ extension NexItemQueryProperty
     });
   }
 
+  QueryBuilder<NexItem, DateTime?, QQueryOperations> lastUsedAtProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'lastUsedAt');
+    });
+  }
+
   QueryBuilder<NexItem, String, QQueryOperations> nameProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'name');
@@ -2184,6 +2692,12 @@ extension NexItemQueryProperty
   QueryBuilder<NexItem, List<String>, QQueryOperations> tagsProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'tags');
+    });
+  }
+
+  QueryBuilder<NexItem, String, QQueryOperations> totpSecretProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'totpSecret');
     });
   }
 
@@ -2214,6 +2728,12 @@ extension NexItemQueryProperty
   QueryBuilder<NexItem, String?, QQueryOperations> vaultIdProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'vaultId');
+    });
+  }
+
+  QueryBuilder<NexItem, String, QQueryOperations> websiteProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'website');
     });
   }
 }

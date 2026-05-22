@@ -7,6 +7,7 @@ enum NexIconType {
   copy, trash, plus, refresh, language,
   warning, check, info, alertCircle,
   clipboard, brain, cloud,
+  creditCard, heart,
 }
 
 class NexIcon extends StatelessWidget {
@@ -92,6 +93,10 @@ class _NexIconPainter extends CustomPainter {
         _drawBrain(canvas, paint, s, cx, cy, r);
       case NexIconType.cloud:
         _drawCloud(canvas, paint, s, cx, cy, r);
+      case NexIconType.creditCard:
+        _drawCreditCard(canvas, paint, s, cx, cy, r);
+      case NexIconType.heart:
+        _drawHeart(canvas, paint, s, cx, cy, r);
     }
   }
 
@@ -292,6 +297,26 @@ class _NexIconPainter extends CustomPainter {
       ..quadraticBezierTo(cx + r * 0.7, cy - r * 0.35, cx + r * 0.6, cy + r * 0.1)
       ..quadraticBezierTo(cx + r * 0.55, cy + r * 0.4, cx, cy + r * 0.4)
       ..quadraticBezierTo(cx - r * 0.45, cy + r * 0.42, cx - r * 0.5, cy + r * 0.2);
+    c.drawPath(path, p);
+  }
+
+  void _drawCreditCard(Canvas c, Paint p, double s, double cx, double cy, double r) {
+    final body = RRect.fromRectAndRadius(
+      Rect.fromCenter(center: Offset(cx, cy), width: r * 1.7, height: r * 1.1),
+      const Radius.circular(3),
+    );
+    c.drawRRect(body, p);
+    c.drawLine(Offset(cx - r * 0.85, cy - r * 0.15), Offset(cx + r * 0.85, cy - r * 0.15), p);
+    c.drawLine(Offset(cx - r * 0.55, cy + r * 0.2), Offset(cx + r * 0.1, cy + r * 0.2), p);
+  }
+
+  void _drawHeart(Canvas c, Paint p, double s, double cx, double cy, double r) {
+    final path = Path()
+      ..moveTo(cx, cy + r * 0.55)
+      ..quadraticBezierTo(cx - r * 0.8, cy + r * 0.05, cx - r * 0.5, cy - r * 0.3)
+      ..quadraticBezierTo(cx - r * 0.25, cy - r * 0.65, cx, cy - r * 0.35)
+      ..quadraticBezierTo(cx + r * 0.25, cy - r * 0.65, cx + r * 0.5, cy - r * 0.3)
+      ..quadraticBezierTo(cx + r * 0.8, cy + r * 0.05, cx, cy + r * 0.55);
     c.drawPath(path, p);
   }
 

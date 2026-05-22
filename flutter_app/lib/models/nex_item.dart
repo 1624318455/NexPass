@@ -29,6 +29,8 @@ class NexItem {
 
   DateTime updatedAt = DateTime.now();
 
+  DateTime? lastUsedAt;
+
   // Helper to quickly scan list of fields to fetch username
   String get username {
     final userField = fields.firstWhere(
@@ -37,6 +39,24 @@ class NexItem {
     );
     return userField.value;
   }
+
+  String get website {
+    final f = fields.firstWhere(
+      (f) => f.name.toLowerCase() == 'website' || f.name.toLowerCase() == 'url',
+      orElse: () => NexField()..value = '',
+    );
+    return f.value;
+  }
+
+  String get totpSecret {
+    final f = fields.firstWhere(
+      (f) => f.name == 'totpSecret' || f.fieldType == 3,
+      orElse: () => NexField()..value = '',
+    );
+    return f.value;
+  }
+
+  bool get hasTotp => totpSecret.isNotEmpty;
 }
 
 @embedded

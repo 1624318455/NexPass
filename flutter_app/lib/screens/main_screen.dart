@@ -249,24 +249,76 @@ class _VaultPageState extends ConsumerState<_VaultPage> {
   }
 
   Widget _itemSliverList(VaultState state, S) {
-    final filtered = state.items.where((item) {
-      if (state.selectedTypeTab != 0 && item.type != state.selectedTypeTab) return false;
-      return true;
-    }).toList();
-    if (filtered.isEmpty) {
+    final settings = ref.watch(appSettingsNotifierProvider);
+    final matchesTab = (NexItem item) {
+      if (state.selectedTypeTab == 0) return true;
+      return item.type == state.selectedTypeTab;
+    };
+
+    final filtered = state.items.where(matchesTab).toList();
+
+    final favoriteItems = settings.showFavorites
+        ? state.items.where((i) => i.isFavorite && matchesTab(i)).toList()
+        : <NexItem>[];
+
+    final recentItems = settings.showRecentShortcuts
+        ? (state.items.where((i) => i.lastUsedAt != null && matchesTab(i)).toList()
+          ..sort((a, b) => b.lastUsedAt!.compareTo(a.lastUsedAt!)))
+        : <NexItem>[];
+    if (recentItems.length > 5) recentItems.removeRange(5, recentItems.length);
+
+    if (filtered.isEmpty && favoriteItems.isEmpty && recentItems.isEmpty) {
       final cs = Theme.of(context).colorScheme;
       return SliverFillRemaining(child: Center(
         child: Text(S.noItemsInCategory, style: TextStyle(color: cs.outline))));
     }
+
+    final cs = Theme.of(context).colorScheme;
     return SliverPadding(
       padding: EdgeInsets.fromLTRB(NexTheme.lg, NexTheme.sm, NexTheme.lg, 120 + MediaQuery.of(context).padding.bottom),
-      sliver: SliverList.builder(
-        itemCount: filtered.length,
-        itemBuilder: (context, idx) => _VaultItemCard(
-          item: filtered[idx],
-          onCopy: () => _handleCopyItem(filtered[idx]),
-          onDelete: () => _confirmDelete(filtered[idx]),
-        ),
+      sliver: SliverList(
+        delegate: SliverChildListDelegate([
+          if (favoriteItems.isNotEmpty) ...[
+            _sectionHeader(S.settingsShowFavorites, cs),
+            for (final item in favoriteItems)
+              _VaultItemCard(
+                item: item,
+                onCopy: () => _handleCopyItem(item),
+                onDelete: () => _confirmDelete(item),
+                onToggleFavorite: () => ref.read(vaultStateProvider.notifier).toggleFavorite(item),
+              ),
+            const SizedBox(height: NexTheme.sm),
+          ],
+          if (recentItems.isNotEmpty) ...[
+            _sectionHeader(S.settingsShowRecent, cs),
+            for (final item in recentItems)
+              _VaultItemCard(
+                item: item,
+                onCopy: () => _handleCopyItem(item),
+                onDelete: () => _confirmDelete(item),
+                onToggleFavorite: () => ref.read(vaultStateProvider.notifier).toggleFavorite(item),
+              ),
+            const SizedBox(height: NexTheme.sm),
+          ],
+          for (final item in filtered)
+            _VaultItemCard(
+              item: item,
+              onCopy: () => _handleCopyItem(item),
+              onDelete: () => _confirmDelete(item),
+              onToggleFavorite: () => ref.read(vaultStateProvider.notifier).toggleFavorite(item),
+            ),
+        ]),
+      ),
+    );
+  }
+
+  Widget _sectionHeader(String title, ColorScheme cs) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: NexTheme.sm, top: NexTheme.xs),
+      child: Text(
+        title,
+        style: Theme.of(context).textTheme.labelLarge?.copyWith(
+          color: cs.onSurfaceVariant, fontWeight: FontWeight.w600),
       ),
     );
   }
@@ -274,6 +326,7 @@ class _VaultPageState extends ConsumerState<_VaultPage> {
   Future<void> _handleCopyItem(NexItem item) async {
     final S = AppLocalizations.of(context);
     final isDual = await ref.read(dualClipboardProvider.notifier).copyItem(item);
+    ref.read(vaultStateProvider.notifier).markUsed(item);
     if (!mounted) return;
     if (!isDual) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -306,13 +359,12 @@ class _VaultPageState extends ConsumerState<_VaultPage> {
     final vaultNotifier = ref.read(vaultStateProvider.notifier);
 
     final tabs = <(String, int)>[(S.tabAll, 0)];
-    if (settings.navPasswords) tabs.add((S.tabLogins, 1));
-    if (settings.navCards) tabs.add((S.tabCards, 2));
-    if (settings.navAuthenticators) tabs.add((S.tabAuth, 4));
-    // Notes always visible
+    if (settings.navPasswords) tabs.add((S.onboardingNavPasswords, 1));
+    if (settings.navCards) tabs.add((S.onboardingNavCards, 2));
+    if (settings.navAuthenticators) tabs.add((S.onboardingNavAuthenticators, 4));
+    if (settings.navPasskeys) tabs.add((S.onboardingNavPasskeys, 5));
     tabs.add((S.tabNotes, 3));
 
-    // If current selection is hidden, reset to All
     if (!tabs.any((t) => t.$2 == vaultState.selectedTypeTab)) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         vaultNotifier.setTab(0);
@@ -339,8 +391,9 @@ class _VaultItemCard extends ConsumerWidget {
   final NexItem item;
   final VoidCallback onCopy;
   final VoidCallback onDelete;
+  final VoidCallback? onToggleFavorite;
 
-  const _VaultItemCard({required this.item, required this.onCopy, required this.onDelete});
+  const _VaultItemCard({required this.item, required this.onCopy, required this.onDelete, this.onToggleFavorite});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -350,18 +403,15 @@ class _VaultItemCard extends ConsumerWidget {
     Color iconColor;
     switch (item.type) {
       case 1: iconType = NexIconType.person; iconColor = cs.primary; break;
-      case 2: iconType = NexIconType.globe; iconColor = cs.tertiary; break;
+      case 2: iconType = NexIconType.creditCard; iconColor = cs.tertiary; break;
       case 3: iconType = NexIconType.stickyNote; iconColor = NexTheme.warning; break;
       case 4: iconType = NexIconType.clock; iconColor = cs.error; break;
       default: iconType = NexIconType.key; iconColor = cs.primary;
     }
-    final hasTotp = item.fields.any((f) => f.name == 'totpSecret' || f.fieldType == 3);
+
+    final hasTotp = item.hasTotp;
     final showLinkedAuth = settings.cardShowLinkedAuth && hasTotp;
     final hideOtherWhenAuth = settings.cardHideOtherWhenAuth && showLinkedAuth;
-
-    // Find website field if present
-    final websiteField = item.fields.where((f) =>
-        f.name.toLowerCase() == 'website' || f.name.toLowerCase() == 'url').firstOrNull;
 
     return Card(
       child: Padding(
@@ -401,17 +451,35 @@ class _VaultItemCard extends ConsumerWidget {
                   ),
                   if (!hideOtherWhenAuth) ...[
                     const SizedBox(height: 2),
-                    if (settings.cardShowUsername)
-                      Text(item.username, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: cs.onSurfaceVariant),
-                          maxLines: 1, overflow: TextOverflow.ellipsis),
-                    if (settings.cardShowWebsite && websiteField != null)
-                      Text(websiteField.value, style: Theme.of(context).textTheme.labelSmall?.copyWith(color: cs.onSurfaceVariant),
-                          maxLines: 1, overflow: TextOverflow.ellipsis),
+                    if (item.type == 4) ...[
+                      if (settings.authShowIssuer)
+                        Text(item.name, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: cs.onSurfaceVariant),
+                            maxLines: 1, overflow: TextOverflow.ellipsis),
+                      if (settings.authShowAccount)
+                        Text(item.username, style: Theme.of(context).textTheme.labelSmall?.copyWith(color: cs.onSurfaceVariant),
+                            maxLines: 1, overflow: TextOverflow.ellipsis),
+                    ] else ...[
+                      if (settings.cardShowUsername)
+                        Text(item.username, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: cs.onSurfaceVariant),
+                            maxLines: 1, overflow: TextOverflow.ellipsis),
+                      if (settings.cardShowWebsite && item.website.isNotEmpty)
+                        Text(item.website, style: Theme.of(context).textTheme.labelSmall?.copyWith(color: cs.onSurfaceVariant),
+                            maxLines: 1, overflow: TextOverflow.ellipsis),
+                    ],
                   ],
                 ],
               ),
             ),
             const SizedBox(width: NexTheme.sm),
+            if (onToggleFavorite != null)
+              IconButton(
+                onPressed: onToggleFavorite,
+                icon: NexIcon(NexIconType.heart, size: 16,
+                    color: item.isFavorite ? cs.error : cs.outline),
+                iconSize: 16,
+                padding: const EdgeInsets.all(6),
+                constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+              ),
             IconButton(
               onPressed: onCopy,
               icon: NexIcon(NexIconType.copy, size: 16, color: cs.onSurfaceVariant),
