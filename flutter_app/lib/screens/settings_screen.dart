@@ -4,6 +4,7 @@ import '../i18n/app_localizations.dart';
 import '../main.dart';
 import '../models/app_settings.dart';
 import '../state/sync_state.dart';
+import '../state/unlock_state.dart';
 import '../theme/nex_theme.dart';
 import '../widgets/nex_icons.dart';
 import 'security_audit_screen.dart';
@@ -536,7 +537,8 @@ class SettingsScreen extends ConsumerWidget {
           TextButton(onPressed: () => Navigator.pop(ctx), child: Text(S.cancel)),
           FilledButton(
             onPressed: () {
-              ref.read(keyManagerProvider).wipe();
+              ref.read(unlockStateProvider.notifier).lock();
+              ref.read(appStateProvider.notifier).state = AppState.locked;
               Navigator.pop(ctx);
             },
             style: FilledButton.styleFrom(backgroundColor: Theme.of(ctx).colorScheme.error),

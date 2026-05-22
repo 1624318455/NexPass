@@ -12,12 +12,15 @@ import 'theme/nex_theme.dart';
 import 'models/app_settings.dart';
 import 'models/nex_item.dart';
 import 'repositories/vault_repository.dart';
+import 'services/biometric_service.dart';
 import 'services/crypto_utils.dart';
 import 'services/database_service.dart';
 import 'services/secure_storage_service.dart';
 import 'services/sync_service.dart';
 import 'state/sync_state.dart';
+import 'state/unlock_state.dart';
 import 'state/vault_state_notifier.dart';
+import 'screens/lock_screen.dart';
 import 'screens/main_screen.dart';
 import 'screens/onboarding_screen.dart';
 import 'screens/security_audit_screen.dart';
@@ -27,89 +30,44 @@ void main() async {
 
   final cryptoService = CryptoService();
   final secureStorage = SecureStorageService();
+  final biometricService = BiometricService();
 
-  // ── 1. Attempt to recover a previously persisted derived key ──────────
-  Uint8List? derivedKey = await secureStorage.recoverDerivedKey();
-
-  if (derivedKey == null) {
-    // ── 2. First launch or integrity check failed — derive fresh ────────
-    final salt = await secureStorage.getOrCreateMasterSalt(
-      () => base64Encode(generateSalt()),
-    );
-    final saltBytes = base64Decode(salt);
-
-    // NOTE: In production, [masterPassword] MUST come from a user-facing
-    // unlock screen. The value below is a development placeholder only
-    // and MUST NOT be shipped to production.
-    var masterPassword = const String.fromEnvironment(
-      'NEXPASS_MASTER_PASSWORD',
-      defaultValue: '',
-    );
-    if (masterPassword.isEmpty) {
-      // DEBUG-ONLY fallback for first launch without env var.
-      // Remove this block before production release.
-      masterPassword = 'debug_master_key_2026';
-    }
-
-    derivedKey = await cryptoService.deriveKey(
-      password: masterPassword,
-      salt: saltBytes,
-    );
-  }
-
-  // ── 3. Activate KeyManager (5min auto-expiry) ────────────────────────
-  final keyManager = KeyManager(
-    sessionTimeout: const Duration(minutes: 5),
-    onLock: () => debugPrint('[KeyManager] Vault locked'),
-  );
-  keyManager.activate(derivedKey);
-
-  // ── 4. Persist onboarding state ──────────────────────────────────────
+  // ── 1. Minimal init: open DB, load settings ──────────────────────────
   final onboardingDone = await secureStorage.read('onboarding_done') == 'true';
+  final appSettings = await AppSettings.load(secureStorage);
+  final isar = await DatabaseService.initialize();
+  final repository = VaultRepository(isar: isar, cryptoService: cryptoService);
 
-  // ── 5. Load WebDAV credentials from SecureStorage ────────────────────
+  // ── 2. Determine if biometric is enabled ─────────────────────────────
+  final biometricEnabled = appSettings.biometricEnabled;
+
+  // ── 3. Build sync service ────────────────────────────────────────────
   final webDavUrl = await secureStorage.read('webdav_url') ?? '';
   final webDavUser = await secureStorage.read('webdav_user') ?? '';
   final webDavPass = await secureStorage.read('webdav_pass') ?? '';
-
-  // ── 6. Open Isar database ────────────────────────────────────────────
-  final isar = await DatabaseService.initialize();
-
-  // ── 4. Build repository & seed demo data ─────────────────────────────
-  final repository = VaultRepository(
-    isar: isar,
-    cryptoService: cryptoService,
-  );
-
-  await _seedDemoDataIfEmpty(repository, derivedKey);
-
-  // ── 8. Load app settings ──────────────────────────────────────────
-  final appSettings = await AppSettings.load(secureStorage);
-
-  // ── 9. Build sync service ──────────────────────────────────────────
   final syncService = SyncService(
     webDavUrl: webDavUrl,
     username: webDavUser,
     password: webDavPass,
   );
 
+  // ── 4. Launch app ────────────────────────────────────────────────────
   runApp(
     ProviderScope(
       overrides: [
-        masterKeyProvider.overrideWithValue(derivedKey),
-        repositoryProvider.overrideWithValue(repository),
         secureStorageProvider.overrideWithValue(secureStorage),
-        keyManagerProvider.overrideWithValue(keyManager),
+        cryptoServiceProvider.overrideWithValue(cryptoService),
+        biometricServiceProvider.overrideWithValue(biometricService),
+        repositoryProvider.overrideWithValue(repository),
         onboardingDoneProvider.overrideWithValue(onboardingDone),
         appSettingsProvider.overrideWithValue(appSettings),
         syncServiceProvider.overrideWithValue(syncService),
-        syncStateProvider.overrideWith((ref) => SyncNotifier(
-              syncService: ref.watch(syncServiceProvider),
-              repository: ref.watch(repositoryProvider),
-              derivedKey: ref.watch(masterKeyProvider),
+        unlockStateProvider.overrideWith((ref) => UnlockNotifier(
+              secureStorage: secureStorage,
+              cryptoService: cryptoService,
             )),
       ],
-      child: const NexPassApp(),
+      child: NexPassApp(biometricEnabled: biometricEnabled),
     ),
   );
 }
@@ -184,6 +142,16 @@ final secureStorageProvider = Provider<SecureStorageService>((ref) {
   throw UnimplementedError('Override at app startup');
 });
 
+/// CryptoService instance (injected at startup).
+final cryptoServiceProvider = Provider<CryptoService>((ref) {
+  throw UnimplementedError('Override at app startup');
+});
+
+/// BiometricService instance (injected at startup).
+final biometricServiceProvider = Provider<BiometricService>((ref) {
+  throw UnimplementedError('Override at app startup');
+});
+
 /// KeyManager instance (injected at startup).
 final keyManagerProvider = Provider<KeyManager>((ref) {
   throw UnimplementedError('Override at app startup');
@@ -217,12 +185,108 @@ class AppSettingsNotifier extends StateNotifier<AppSettings> {
   }
 }
 
-class NexPassApp extends ConsumerWidget {
-  const NexPassApp({super.key});
+class NexPassApp extends ConsumerStatefulWidget {
+  final bool biometricEnabled;
+  const NexPassApp({super.key, required this.biometricEnabled});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<NexPassApp> createState() => _NexPassAppState();
+}
+
+class _NexPassAppState extends ConsumerState<NexPassApp> {
+  bool _bootstrapped = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _bootstrap());
+  }
+
+  Future<void> _bootstrap() async {
+    if (_bootstrapped) return;
+    _bootstrapped = true;
+
+    final unlockNotifier = ref.read(unlockStateProvider.notifier);
+
+    if (widget.biometricEnabled) {
+      // Biometric enabled: show lock screen, let user authenticate.
+      // Set app state to locked — NexPassApp.build() will show LockScreen.
+      ref.read(appStateProvider.notifier).state = AppState.locked;
+    } else {
+      // No biometric: auto-unlock with stored key or debug password.
+      await _autoUnlock(unlockNotifier);
+    }
+  }
+
+  Future<void> _autoUnlock(UnlockNotifier notifier) async {
+    // Try recovering stored key first.
+    await notifier.tryAutoUnlock();
+    final state = ref.read(unlockStateProvider);
+
+    if (state.isUnlocked) {
+      await _onUnlocked(state.derivedKey!);
+      return;
+    }
+
+    // No stored key (first launch) — derive from debug password.
+    final secureStorage = ref.read(secureStorageProvider);
+    final cryptoService = ref.read(cryptoServiceProvider);
+
+    final salt = await secureStorage.getOrCreateMasterSalt(
+      () => base64Encode(generateSalt()),
+    );
+    final saltBytes = base64Decode(salt);
+
+    var masterPassword = const String.fromEnvironment(
+      'NEXPASS_MASTER_PASSWORD',
+      defaultValue: '',
+    );
+    if (masterPassword.isEmpty) {
+      masterPassword = 'debug_master_key_2026';
+    }
+
+    final derivedKey = await cryptoService.deriveKey(
+      password: masterPassword,
+      salt: saltBytes,
+    );
+
+    await secureStorage.storeDerivedKey(derivedKey);
+
+    final km = KeyManager(
+      sessionTimeout: const Duration(minutes: 5),
+      onLock: () {
+        if (mounted) ref.read(appStateProvider.notifier).state = AppState.locked;
+      },
+    );
+    km.activate(derivedKey);
+
+    ref.read(unlockStateProvider.notifier).state = UnlockState(
+      derivedKey: derivedKey,
+      keyManager: km,
+      isUnlocked: true,
+    );
+
+    await _onUnlocked(derivedKey);
+  }
+
+  Future<void> _onUnlocked(Uint8List derivedKey) async {
+    // Seed demo data if needed.
+    final repository = ref.read(repositoryProvider);
+    await _seedDemoDataIfEmpty(repository, derivedKey);
+
+    // Set up sync with derived key.
+    final syncNotifier = ref.read(syncStateProvider.notifier);
+    syncNotifier.updateDerivedKey(derivedKey);
+
+    ref.read(appStateProvider.notifier).state = AppState.ready;
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final locale = ref.watch(localeProvider);
+    final settings = ref.watch(appSettingsNotifierProvider);
+    final seedColor = NexTheme.themePresets[settings.themeColorIndex];
+    final appState = ref.watch(appStateProvider);
 
     return MaterialApp(
       title: 'NexPass',
@@ -235,9 +299,15 @@ class NexPassApp extends ConsumerWidget {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      theme: NexTheme.lightTheme,
+      theme: NexTheme.lightThemeWith(seedColor),
       themeMode: ThemeMode.light,
-      home: ref.watch(onboardingDoneProvider) ? const MainScreen() : const OnboardingScreen(),
+      home: switch (appState) {
+        AppState.initializing => const Scaffold(body: Center(child: CircularProgressIndicator())),
+        AppState.locked => const LockScreen(),
+        AppState.ready => ref.watch(onboardingDoneProvider)
+            ? const MainScreen()
+            : const OnboardingScreen(),
+      },
     );
   }
 }

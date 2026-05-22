@@ -2,6 +2,7 @@ import 'dart:typed_data';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../repositories/vault_repository.dart';
 import '../services/sync_service.dart';
+import 'vault_state_notifier.dart';
 
 // ---------------------------------------------------------------------------
 // Providers (referenced by main.dart overrides)
@@ -15,8 +16,9 @@ final syncServiceProvider = Provider<SyncService>((ref) {
 
 final syncStateProvider =
     StateNotifierProvider<SyncNotifier, SyncState>((ref) {
-  throw UnimplementedError(
-    'Override syncStateProvider at app startup',
+  return SyncNotifier(
+    ref: ref,
+    repository: ref.watch(repositoryProvider),
   );
 });
 
@@ -104,43 +106,48 @@ class SyncState {
 // ---------------------------------------------------------------------------
 
 class SyncNotifier extends StateNotifier<SyncState> {
-  final SyncService _syncService;
+  final Ref _ref;
   final VaultRepository _repository;
-  final Uint8List _derivedKey;
+  Uint8List? _derivedKey;
 
   static const int _maxLogs = 50;
 
   SyncNotifier({
-    required SyncService syncService,
+    required Ref ref,
     required VaultRepository repository,
-    required Uint8List derivedKey,
-  })  : _syncService = syncService,
+  })  : _ref = ref,
         _repository = repository,
-        _derivedKey = derivedKey,
         super(const SyncState());
+
+  void updateDerivedKey(Uint8List key) {
+    _derivedKey = key;
+  }
 
   // ── Public API ──────────────────────────────────────────────────────
 
   /// Starts a full bidirectional sync cycle.
   Future<void> syncNow() async {
     if (state.isSyncing) return;
+    if (_derivedKey == null) return;
+
+    final syncService = _ref.read(syncServiceProvider);
 
     state = const SyncState(status: SyncStatus.handshake);
     _addLog(SyncStatus.handshake, 'WebDAV handshake initiated');
 
     try {
       // 1. Load local vault
-      final localItems = await _repository.getAllItems(derivedKey: _derivedKey);
+      final localItems = await _repository.getAllItems(derivedKey: _derivedKey!);
 
       // 2. Run sync with progress callbacks
       int downloads = 0;
 
-      await _syncService.syncVault(
+      await syncService.syncVault(
         localItems: localItems,
         onProgress: _onSyncProgress,
         onDownloadItem: (item) async {
           downloads++;
-          await _repository.saveItem(item: item, derivedKey: _derivedKey);
+          await _repository.saveItem(item: item, derivedKey: _derivedKey!);
         },
       );
 

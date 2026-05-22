@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../i18n/app_localizations.dart';
+import '../main.dart';
+import '../models/nex_item.dart';
 import '../state/vault_state_notifier.dart';
 import '../services/clipboard_service.dart';
 import '../theme/nex_theme.dart';
@@ -120,20 +122,7 @@ class _VaultPageState extends ConsumerState<_VaultPage> {
         SliverToBoxAdapter(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: NexTheme.lg, vertical: NexTheme.xs),
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: [
-                  _tabChip(ref, S.tabAll, 0, vaultState.selectedTypeTab),
-                  const SizedBox(width: NexTheme.sm),
-                  _tabChip(ref, S.tabLogins, 1, vaultState.selectedTypeTab),
-                  const SizedBox(width: NexTheme.sm),
-                  _tabChip(ref, S.tabCards, 2, vaultState.selectedTypeTab),
-                  const SizedBox(width: NexTheme.sm),
-                  _tabChip(ref, S.tabNotes, 3, vaultState.selectedTypeTab),
-                ],
-              ),
-            ),
+            child: _buildTabs(ref, S, vaultState),
           ),
         ),
 
@@ -209,7 +198,7 @@ class _VaultPageState extends ConsumerState<_VaultPage> {
     );
   }
 
-  Future<void> _handleCopyItem(dynamic item) async {
+  Future<void> _handleCopyItem(NexItem item) async {
     final S = AppLocalizations.of(context);
     final isDual = await ref.read(dualClipboardProvider.notifier).copyItem(item);
     if (!mounted) return;
@@ -220,7 +209,7 @@ class _VaultPageState extends ConsumerState<_VaultPage> {
     }
   }
 
-  void _confirmDelete(dynamic item) {
+  void _confirmDelete(NexItem item) {
     final S = AppLocalizations.of(context);
     showDialog(
       context: context,
@@ -315,20 +304,52 @@ class _VaultPageState extends ConsumerState<_VaultPage> {
       ),
     );
   }
+
+  Widget _buildTabs(WidgetRef ref, dynamic S, VaultState vaultState) {
+    final settings = ref.watch(appSettingsNotifierProvider);
+    final vaultNotifier = ref.read(vaultStateProvider.notifier);
+
+    final tabs = <(String, int)>[(S.tabAll, 0)];
+    if (settings.navPasswords) tabs.add((S.tabLogins, 1));
+    if (settings.navCards) tabs.add((S.tabCards, 2));
+    if (settings.navAuthenticators) tabs.add((S.tabAuth, 4));
+    // Notes always visible
+    tabs.add((S.tabNotes, 3));
+
+    // If current selection is hidden, reset to All
+    if (!tabs.any((t) => t.$2 == vaultState.selectedTypeTab)) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        vaultNotifier.setTab(0);
+      });
+    }
+
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: [
+          for (int i = 0; i < tabs.length; i++) ...[
+            if (i > 0) const SizedBox(width: NexTheme.sm),
+            _tabChip(ref, tabs[i].$1, tabs[i].$2, vaultState.selectedTypeTab),
+          ],
+        ],
+      ),
+    );
+  }
 }
 
 // ── Vault item card ────────────────────────────────────────────────────
 
-class _VaultItemCard extends StatelessWidget {
-  final dynamic item;
+class _VaultItemCard extends ConsumerWidget {
+  final NexItem item;
   final VoidCallback onCopy;
   final VoidCallback onDelete;
 
   const _VaultItemCard({required this.item, required this.onCopy, required this.onDelete});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final cs = Theme.of(context).colorScheme;
+    final settings = ref.watch(appSettingsNotifierProvider);
     NexIconType iconType;
     Color iconColor;
     switch (item.type) {
@@ -339,6 +360,12 @@ class _VaultItemCard extends StatelessWidget {
       default: iconType = NexIconType.key; iconColor = cs.primary;
     }
     final hasTotp = item.fields.any((f) => f.name == 'totpSecret' || f.fieldType == 3);
+    final showLinkedAuth = settings.cardShowLinkedAuth && hasTotp;
+    final hideOtherWhenAuth = settings.cardHideOtherWhenAuth && showLinkedAuth;
+
+    // Find website field if present
+    final websiteField = item.fields.where((f) =>
+        f.name.toLowerCase() == 'website' || f.name.toLowerCase() == 'url').firstOrNull;
 
     return Card(
       child: Padding(
@@ -348,7 +375,7 @@ class _VaultItemCard extends StatelessWidget {
             Container(
               width: 36, height: 36,
               decoration: BoxDecoration(
-                color: iconColor.withOpacity(0.1),
+                color: iconColor.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(NexTheme.rSm),
               ),
               child: Center(child: NexIcon(iconType, size: 18, color: iconColor)),
@@ -365,7 +392,7 @@ class _VaultItemCard extends StatelessWidget {
                           color: cs.onSurface, fontSize: 14, fontWeight: FontWeight.w600),
                           maxLines: 1, overflow: TextOverflow.ellipsis),
                       ),
-                      if (hasTotp) Container(
+                      if (showLinkedAuth) Container(
                         padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
                         decoration: BoxDecoration(
                           color: cs.primaryContainer,
@@ -376,9 +403,15 @@ class _VaultItemCard extends StatelessWidget {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 2),
-                  Text(item.username, style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12),
-                      maxLines: 1, overflow: TextOverflow.ellipsis),
+                  if (!hideOtherWhenAuth) ...[
+                    const SizedBox(height: 2),
+                    if (settings.cardShowUsername)
+                      Text(item.username, style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12),
+                          maxLines: 1, overflow: TextOverflow.ellipsis),
+                    if (settings.cardShowWebsite && websiteField != null)
+                      Text(websiteField.value, style: TextStyle(color: cs.onSurfaceVariant, fontSize: 11),
+                          maxLines: 1, overflow: TextOverflow.ellipsis),
+                  ],
                 ],
               ),
             ),
@@ -392,7 +425,7 @@ class _VaultItemCard extends StatelessWidget {
             ),
             IconButton(
               onPressed: onDelete,
-              icon: NexIcon(NexIconType.trash, size: 16, color: cs.error.withOpacity(0.6)),
+              icon: NexIcon(NexIconType.trash, size: 16, color: cs.error.withValues(alpha: 0.6)),
               iconSize: 16,
               padding: const EdgeInsets.all(6),
               constraints: const BoxConstraints(minWidth: 32, minHeight: 32),

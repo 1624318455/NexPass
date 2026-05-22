@@ -60,11 +60,11 @@ class NexTheme {
 
   // ── MD3 ThemeData (light) ──────────────────────────────────────────
 
-  static ThemeData get lightTheme => ThemeData(
+  static ThemeData lightThemeWith(Color seed) => ThemeData(
     useMaterial3: true,
     brightness: Brightness.light,
     colorScheme: ColorScheme.fromSeed(
-      seedColor: seedColor,
+      seedColor: seed,
       brightness: Brightness.light,
     ),
     appBarTheme: const AppBarTheme(
@@ -88,9 +88,11 @@ class NexTheme {
     ),
     navigationBarTheme: NavigationBarThemeData(
       elevation: 2,
-      indicatorColor: seedColor.withOpacity(0.12),
+      indicatorColor: seed.withOpacity(0.12),
     ),
   );
+
+  static ThemeData get lightTheme => lightThemeWith(seedColor);
 
   // ── MD3 ThemeData (dark) ───────────────────────────────────────────
 

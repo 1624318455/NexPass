@@ -2,6 +2,7 @@ import 'dart:typed_data';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/nex_item.dart';
 import '../repositories/vault_repository.dart';
+import 'unlock_state.dart';
 
 // ---------------------------------------------------------------------------
 // VaultState — observable state for the vault UI
@@ -145,9 +146,11 @@ class VaultNotifier extends StateNotifier<VaultState> {
 // ---------------------------------------------------------------------------
 
 final masterKeyProvider = Provider<Uint8List>((ref) {
-  throw UnimplementedError(
-    'Override masterKeyProvider at app startup with the Argon2id-derived key',
-  );
+  final unlockState = ref.watch(unlockStateProvider);
+  if (unlockState.derivedKey == null) {
+    throw StateError('Vault is locked — derived key not available');
+  }
+  return unlockState.derivedKey!;
 });
 
 final repositoryProvider = Provider<VaultRepository>((ref) {
