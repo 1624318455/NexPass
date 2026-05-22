@@ -67,6 +67,7 @@ class UnlockNotifier extends StateNotifier<UnlockState> {
     if (storedKey == null) return false;
 
     _activateKey(storedKey);
+    _ref?.read(appStateProvider.notifier).state = AppState.ready;
     return true;
   }
 
@@ -92,6 +93,7 @@ class UnlockNotifier extends StateNotifier<UnlockState> {
     await _secureStorage.storeDerivedKey(derivedKey);
 
     _activateKey(derivedKey);
+    _ref?.read(appStateProvider.notifier).state = AppState.ready;
     return true;
   }
 
