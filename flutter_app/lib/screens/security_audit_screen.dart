@@ -61,8 +61,8 @@ class _SecurityAuditScreenState extends ConsumerState<SecurityAuditScreen> {
   @override
   Widget build(BuildContext context) {
     final S = AppLocalizations.of(context);
+    final cs = Theme.of(context).colorScheme;
     return Scaffold(
-      backgroundColor: NexTheme.background,
       appBar: AppBar(
         title: Text(S.securityAudit, style: const TextStyle(fontWeight: FontWeight.w700)),
         actions: [
@@ -70,85 +70,85 @@ class _SecurityAuditScreenState extends ConsumerState<SecurityAuditScreen> {
             TextButton(
               onPressed: _isFixingAll ? null : _fixAll,
               child: Text(_isFixingAll ? S.fixing : S.fixAll,
-                  style: const TextStyle(color: NexTheme.primary, fontWeight: FontWeight.w600)),
+                  style: TextStyle(color: cs.primary, fontWeight: FontWeight.w600)),
             ),
           IconButton(onPressed: _runAudit, icon: const NexIcon(NexIconType.refresh, size: 18)),
         ],
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: NexTheme.primary))
+          ? const Center(child: CircularProgressIndicator())
           : _result == null
-              ? Center(child: Text(S.noAuditData, style: const TextStyle(color: NexTheme.textMuted)))
+              ? Center(child: Text(S.noAuditData, style: TextStyle(color: cs.outline)))
               : RefreshIndicator(
                   onRefresh: _runAudit,
                   child: ListView(padding: const EdgeInsets.all(NexTheme.xl), children: [
-                    _healthSection(S),
+                    _healthSection(S, cs),
                     const SizedBox(height: NexTheme.xxl),
-                    _statsRow(S),
+                    _statsRow(S, cs),
                     const SizedBox(height: NexTheme.xxl),
-                    _issuesSection(S),
+                    _issuesSection(S, cs),
                   ]),
                 ),
     );
   }
 
-  Widget _healthSection(S) {
+  Widget _healthSection(S, ColorScheme cs) {
     final score = _result!.healthIndex;
     final label = score >= 0.9 ? S.excellent : score >= 0.8 ? S.good : score >= 0.6 ? S.fair : score >= 0.35 ? S.poor : S.critical;
-    final color = _scoreColor(score);
+    final color = _scoreColor(score, cs);
     final desc = score >= 0.9 ? S.healthExcellent : score >= 0.8 ? S.healthGood : score >= 0.6 ? S.healthFair : score >= 0.35 ? S.healthPoor : S.healthCritical;
     return Container(
       padding: const EdgeInsets.symmetric(vertical: NexTheme.xxl),
-      decoration: BoxDecoration(color: NexTheme.surface, borderRadius: BorderRadius.circular(NexTheme.rXl), border: Border.all(color: NexTheme.border)),
+      decoration: BoxDecoration(color: cs.surface, borderRadius: BorderRadius.circular(NexTheme.rXl), border: Border.all(color: cs.outlineVariant)),
       child: Column(children: [
         HealthRingChart(score: score, size: 180, strokeWidth: 14, label: S.healthLabel),
         const SizedBox(height: NexTheme.lg),
         Text(label, style: TextStyle(color: color, fontSize: 16, fontWeight: FontWeight.w700)),
         const SizedBox(height: NexTheme.xs),
-        Text(desc, style: const TextStyle(color: NexTheme.textSecondary, fontSize: 13)),
+        Text(desc, style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13)),
       ]),
     );
   }
 
-  Widget _statsRow(S) {
+  Widget _statsRow(S, ColorScheme cs) {
     return Row(children: [
-      _statTile(NexIconType.key, '${_result!.totalPasswords}', S.statPasswords, NexTheme.primary),
+      _statTile(NexIconType.key, '${_result!.totalPasswords}', S.statPasswords, cs.primary, cs),
       const SizedBox(width: NexTheme.md),
       _statTile(NexIconType.warning, '${_result!.weakCount}', S.statWeak,
-          _result!.weakCount > 0 ? NexTheme.danger : NexTheme.success),
+          _result!.weakCount > 0 ? NexTheme.danger : NexTheme.success, cs),
       const SizedBox(width: NexTheme.md),
       _statTile(NexIconType.copy, '${_result!.reusedCount}', S.statReused,
-          _result!.reusedCount > 0 ? NexTheme.warning : NexTheme.success),
+          _result!.reusedCount > 0 ? NexTheme.warning : NexTheme.success, cs),
     ]);
   }
 
-  Widget _statTile(NexIconType icon, String value, String label, Color color) {
+  Widget _statTile(NexIconType icon, String value, String label, Color color, ColorScheme cs) {
     return Expanded(
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 14),
-        decoration: BoxDecoration(color: NexTheme.surface, borderRadius: BorderRadius.circular(NexTheme.rMd), border: Border.all(color: NexTheme.border)),
+        decoration: BoxDecoration(color: cs.surface, borderRadius: BorderRadius.circular(NexTheme.rMd), border: Border.all(color: cs.outlineVariant)),
         child: Column(children: [
           NexIcon(icon, size: 18, color: color),
           const SizedBox(height: NexTheme.sm),
           Text(value, style: TextStyle(color: color, fontSize: 22, fontWeight: FontWeight.w800)),
           const SizedBox(height: NexTheme.xs),
-          Text(label, style: const TextStyle(color: NexTheme.textMuted, fontSize: 11, fontWeight: FontWeight.w600)),
+          Text(label, style: TextStyle(color: cs.outline, fontSize: 11, fontWeight: FontWeight.w600)),
         ]),
       ),
     );
   }
 
-  Widget _issuesSection(S) {
+  Widget _issuesSection(S, ColorScheme cs) {
     if (_result!.issues.isEmpty) {
       return Container(
         padding: const EdgeInsets.all(32),
-        decoration: BoxDecoration(color: NexTheme.surface, borderRadius: BorderRadius.circular(NexTheme.rXl), border: Border.all(color: NexTheme.border)),
+        decoration: BoxDecoration(color: cs.surface, borderRadius: BorderRadius.circular(NexTheme.rXl), border: Border.all(color: cs.outlineVariant)),
         child: Column(children: [
           const NexIcon(NexIconType.check, size: 48, color: NexTheme.success),
           const SizedBox(height: NexTheme.lg),
-          Text(S.allClear, style: const TextStyle(color: NexTheme.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
+          Text(S.allClear, style: TextStyle(color: cs.onSurface, fontSize: 18, fontWeight: FontWeight.w700)),
           const SizedBox(height: NexTheme.xs),
-          Text(S.noIssuesFound, style: const TextStyle(color: NexTheme.textSecondary, fontSize: 13)),
+          Text(S.noIssuesFound, style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13)),
         ]),
       );
     }
@@ -156,28 +156,28 @@ class _SecurityAuditScreenState extends ConsumerState<SecurityAuditScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(children: [
-          Text(S.issuesFound, style: const TextStyle(color: NexTheme.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
+          Text(S.issuesFound, style: TextStyle(color: cs.onSurface, fontSize: 16, fontWeight: FontWeight.w700)),
           const SizedBox(width: NexTheme.sm),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-            decoration: BoxDecoration(color: NexTheme.dangerDim, borderRadius: BorderRadius.circular(NexTheme.rSm)),
-            child: Text('${_result!.issues.length}', style: const TextStyle(color: NexTheme.danger, fontSize: 12, fontWeight: FontWeight.w700)),
+            decoration: BoxDecoration(color: cs.errorContainer, borderRadius: BorderRadius.circular(NexTheme.rSm)),
+            child: Text('${_result!.issues.length}', style: TextStyle(color: cs.error, fontSize: 12, fontWeight: FontWeight.w700)),
           ),
         ]),
         const SizedBox(height: NexTheme.md),
-        ..._result!.issues.map((issue) => _issueCard(issue, () => _fixItem(issue), S)),
+        ..._result!.issues.map((issue) => _issueCard(issue, () => _fixItem(issue), S, cs)),
       ],
     );
   }
 
-  Widget _issueCard(AuditIssue issue, VoidCallback onFix, S) {
+  Widget _issueCard(AuditIssue issue, VoidCallback onFix, S, ColorScheme cs) {
     final isCrit = issue.severity == AuditSeverity.critical;
     final color = isCrit ? NexTheme.danger : NexTheme.warning;
-    final dimColor = isCrit ? NexTheme.dangerDim : NexTheme.warningDim;
+    final dimColor = isCrit ? cs.errorContainer : cs.tertiaryContainer;
     return Container(
       margin: const EdgeInsets.only(bottom: NexTheme.md),
       padding: const EdgeInsets.all(NexTheme.md),
-      decoration: BoxDecoration(color: NexTheme.surface, borderRadius: BorderRadius.circular(NexTheme.rMd), border: Border.all(color: color.withOpacity(0.2))),
+      decoration: BoxDecoration(color: cs.surface, borderRadius: BorderRadius.circular(NexTheme.rMd), border: Border.all(color: color.withValues(alpha: 0.2))),
       child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Container(
           padding: const EdgeInsets.all(6),
@@ -188,7 +188,7 @@ class _SecurityAuditScreenState extends ConsumerState<SecurityAuditScreen> {
         Expanded(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Row(children: [
-              Expanded(child: Text(issue.item.name, style: const TextStyle(color: NexTheme.textPrimary, fontSize: 13, fontWeight: FontWeight.w600))),
+              Expanded(child: Text(issue.item.name, style: TextStyle(color: cs.onSurface, fontSize: 13, fontWeight: FontWeight.w600))),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
                 decoration: BoxDecoration(color: dimColor, borderRadius: BorderRadius.circular(3)),
@@ -197,23 +197,23 @@ class _SecurityAuditScreenState extends ConsumerState<SecurityAuditScreen> {
               ),
             ]),
             const SizedBox(height: NexTheme.xs),
-            Text(issue.message, style: const TextStyle(color: NexTheme.textSecondary, fontSize: 12, height: 1.4)),
+            Text(issue.message, style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12, height: 1.4)),
             const SizedBox(height: NexTheme.md),
             GestureDetector(
               onTap: onFix,
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color: NexTheme.primaryDim,
+                  color: cs.primaryContainer,
                   borderRadius: BorderRadius.circular(NexTheme.rSm),
-                  border: Border.all(color: NexTheme.primary.withOpacity(0.3)),
+                  border: Border.all(color: cs.primary.withValues(alpha: 0.3)),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const NexIcon(NexIconType.refresh, size: 12, color: NexTheme.primary),
+                    NexIcon(NexIconType.refresh, size: 12, color: cs.primary),
                     const SizedBox(width: 6),
-                    Text(S.generateStrongPassword, style: const TextStyle(color: NexTheme.primary, fontSize: 11, fontWeight: FontWeight.w600)),
+                    Text(S.generateStrongPassword, style: TextStyle(color: cs.primary, fontSize: 11, fontWeight: FontWeight.w600)),
                   ],
                 ),
               ),
@@ -224,9 +224,9 @@ class _SecurityAuditScreenState extends ConsumerState<SecurityAuditScreen> {
     );
   }
 
-  Color _scoreColor(double v) {
+  Color _scoreColor(double v, ColorScheme cs) {
     if (v < 0.35) return NexTheme.danger;
     if (v < 0.6) return NexTheme.warning;
-    return NexTheme.primary;
+    return cs.primary;
   }
 }

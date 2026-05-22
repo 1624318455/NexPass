@@ -276,10 +276,6 @@ class NexTheme {
       ),
 
       scaffoldBackgroundColor: colorScheme.surface,
-
-      // ── Deprecated but still needed for some widgets ──────────────
-      // ignore: deprecated_member_use
-      secondaryHeaderColor: colorScheme.secondaryContainer,
     );
   }
 

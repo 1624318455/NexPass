@@ -76,6 +76,7 @@ class _HealthRingChartState extends State<HealthRingChart>
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return AnimatedBuilder(
       animation: _anim,
       builder: (context, _) {
@@ -87,6 +88,7 @@ class _HealthRingChartState extends State<HealthRingChart>
             painter: _RingPainter(
               progress: current,
               strokeWidth: widget.strokeWidth,
+              trackColor: cs.outlineVariant,
             ),
             child: Center(
               child: Column(
@@ -105,7 +107,7 @@ class _HealthRingChartState extends State<HealthRingChart>
                   Text(
                     widget.label,
                     style: TextStyle(
-                      color: NexTheme.textMuted,
+                      color: cs.outline,
                       fontSize: widget.size * 0.075,
                       fontWeight: FontWeight.w600,
                       letterSpacing: 1.2,
@@ -123,7 +125,7 @@ class _HealthRingChartState extends State<HealthRingChart>
   Color _scoreColor(double value) {
     if (value < 0.35) return NexTheme.danger;
     if (value < 0.6) return NexTheme.warning;
-    return NexTheme.primary;
+    return NexTheme.success;
   }
 }
 
@@ -134,8 +136,9 @@ class _HealthRingChartState extends State<HealthRingChart>
 class _RingPainter extends CustomPainter {
   final double progress; // 0.0 – 1.0
   final double strokeWidth;
+  final Color trackColor;
 
-  _RingPainter({required this.progress, required this.strokeWidth});
+  _RingPainter({required this.progress, required this.strokeWidth, required this.trackColor});
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -144,7 +147,7 @@ class _RingPainter extends CustomPainter {
 
     // ── Background track ─────────────────────────────────────────
     final trackPaint = Paint()
-      ..color = NexTheme.border
+      ..color = trackColor
       ..style = PaintingStyle.stroke
       ..strokeWidth = strokeWidth
       ..strokeCap = StrokeCap.round;
@@ -185,7 +188,7 @@ class _RingPainter extends CustomPainter {
       );
 
       final glowPaint = Paint()
-        ..color = _progressColor(progress).withOpacity(0.5)
+        ..color = _progressColor(progress).withValues(alpha: 0.5)
         ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6);
       canvas.drawCircle(tipOffset, strokeWidth / 2 + 2, glowPaint);
 
@@ -197,11 +200,10 @@ class _RingPainter extends CustomPainter {
   Color _progressColor(double value) {
     if (value < 0.35) return NexTheme.danger;
     if (value < 0.6) return NexTheme.warning;
-    return NexTheme.primary;
+    return NexTheme.success;
   }
 
   @override
   bool shouldRepaint(_RingPainter old) =>
       old.progress != progress || old.strokeWidth != strokeWidth;
 }
-

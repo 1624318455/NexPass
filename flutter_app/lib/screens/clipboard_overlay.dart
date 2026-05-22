@@ -41,6 +41,7 @@ class _DualClipboardOverlayState extends ConsumerState<DualClipboardOverlay>
     final remaining = clipState.secondsRemaining;
     final progress = remaining / DualClipboardNotifier.cacheDurationSeconds;
     final S = AppLocalizations.of(context);
+    final cs = Theme.of(context).colorScheme;
 
     return FadeTransition(
       opacity: _fade,
@@ -53,68 +54,65 @@ class _DualClipboardOverlayState extends ConsumerState<DualClipboardOverlay>
             color: Colors.transparent,
             child: Container(
               decoration: BoxDecoration(
-                color: NexTheme.surfaceElevated,
+                color: cs.surfaceContainerHigh,
                 borderRadius: BorderRadius.circular(NexTheme.rXl),
-                border: Border.all(color: NexTheme.primary.withOpacity(0.2)),
-                boxShadow: [BoxShadow(color: NexTheme.primary.withOpacity(0.08), blurRadius: 20, offset: const Offset(0, 6))],
+                border: Border.all(color: cs.primary.withValues(alpha: 0.2)),
+                boxShadow: [BoxShadow(color: cs.primary.withValues(alpha: 0.08), blurRadius: 20, offset: const Offset(0, 6))],
               ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(NexTheme.xl),
                 child: Stack(
                   children: [
-                    // Progress bar
                     Positioned(bottom: 0, left: 0,
                       child: FractionallySizedBox(
                         widthFactor: progress,
-                        child: Container(height: 2, color: NexTheme.primary.withOpacity(0.5)),
+                        child: Container(height: 2, color: cs.primary.withValues(alpha: 0.5)),
                       ),
                     ),
 
                     Padding(
                       padding: const EdgeInsets.all(NexTheme.lg),
                       child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        // Header
                         Row(children: [
-                          const NexIcon(NexIconType.clipboard, size: 18, color: NexTheme.primary),
+                          NexIcon(NexIconType.clipboard, size: 18, color: cs.primary),
                           const SizedBox(width: NexTheme.sm),
                           Expanded(
                             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                              Text(S.dualClipboardActive, style: const TextStyle(
-                                color: NexTheme.primary, fontSize: 12, fontWeight: FontWeight.w700, letterSpacing: 0.3)),
+                              Text(S.dualClipboardActive, style: TextStyle(
+                                color: cs.primary, fontSize: 12, fontWeight: FontWeight.w700, letterSpacing: 0.3)),
                               const SizedBox(height: 2),
-                              Text(clipState.itemName, style: const TextStyle(
-                                color: NexTheme.textPrimary, fontSize: 14, fontWeight: FontWeight.w600),
+                              Text(clipState.itemName, style: TextStyle(
+                                color: cs.onSurface, fontSize: 14, fontWeight: FontWeight.w600),
                                 maxLines: 1, overflow: TextOverflow.ellipsis),
                             ]),
                           ),
                           GestureDetector(
                             onTap: () { _ctrl.reverse().then((_) => notifier.dismiss()); },
-                            child: const NexIcon(NexIconType.close, size: 16, color: NexTheme.textMuted),
+                            child: NexIcon(NexIconType.close, size: 16, color: cs.outline),
                           ),
                         ]),
 
                         const SizedBox(height: NexTheme.lg),
 
-                        // TOTP row
                         Row(children: [
-                          const NexIcon(NexIconType.clock, size: 14, color: NexTheme.textMuted),
+                          NexIcon(NexIconType.clock, size: 14, color: cs.outline),
                           const SizedBox(width: NexTheme.sm),
-                          Text(S.totpToClipboard, style: const TextStyle(color: NexTheme.textSecondary, fontSize: 11, fontWeight: FontWeight.w600)),
+                          Text(S.totpToClipboard, style: TextStyle(color: cs.onSurfaceVariant, fontSize: 11, fontWeight: FontWeight.w600)),
                           const Spacer(),
                           GestureDetector(
                             onTap: () => Clipboard.setData(ClipboardData(text: clipState.totpCode)),
                             child: Container(
                               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                               decoration: BoxDecoration(
-                                color: NexTheme.background,
+                                color: cs.surface,
                                 borderRadius: BorderRadius.circular(NexTheme.rSm),
-                                border: Border.all(color: NexTheme.border),
+                                border: Border.all(color: cs.outlineVariant),
                               ),
                               child: Row(mainAxisSize: MainAxisSize.min, children: [
-                                Text(clipState.totpCode, style: const TextStyle(
-                                  color: NexTheme.primary, fontFamily: 'monospace', fontSize: 14, fontWeight: FontWeight.w700, letterSpacing: 1.5)),
+                                Text(clipState.totpCode, style: TextStyle(
+                                  color: cs.primary, fontFamily: 'monospace', fontSize: 14, fontWeight: FontWeight.w700, letterSpacing: 1.5)),
                                 const SizedBox(width: NexTheme.sm),
-                                const NexIcon(NexIconType.copy, size: 12, color: NexTheme.primary),
+                                NexIcon(NexIconType.copy, size: 12, color: cs.primary),
                               ]),
                             ),
                           ),
@@ -122,11 +120,10 @@ class _DualClipboardOverlayState extends ConsumerState<DualClipboardOverlay>
 
                         const SizedBox(height: NexTheme.md),
 
-                        // RAM row
                         Row(children: [
-                          const NexIcon(NexIconType.brain, size: 14, color: NexTheme.textMuted),
+                          NexIcon(NexIconType.brain, size: 14, color: cs.outline),
                           const SizedBox(width: NexTheme.sm),
-                          Text(S.passwordToRam, style: const TextStyle(color: NexTheme.textSecondary, fontSize: 11, fontWeight: FontWeight.w600)),
+                          Text(S.passwordToRam, style: TextStyle(color: cs.onSurfaceVariant, fontSize: 11, fontWeight: FontWeight.w600)),
                           const Spacer(),
                           Container(
                             width: 8, height: 8,
@@ -143,26 +140,24 @@ class _DualClipboardOverlayState extends ConsumerState<DualClipboardOverlay>
 
                         const SizedBox(height: NexTheme.md),
 
-                        // Guidance + Quick Paste
                         Container(
                           padding: const EdgeInsets.all(10),
                           decoration: BoxDecoration(
-                            color: NexTheme.primaryDim.withOpacity(0.3),
+                            color: cs.primaryContainer.withValues(alpha: 0.3),
                             borderRadius: BorderRadius.circular(NexTheme.rSm),
                           ),
                           child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                            const NexIcon(NexIconType.info, size: 14, color: NexTheme.primary),
+                            NexIcon(NexIconType.info, size: 14, color: cs.primary),
                             const SizedBox(width: NexTheme.sm),
                             Expanded(
                               child: Text(S.clipboardCountdown(remaining),
-                                style: const TextStyle(color: NexTheme.textSecondary, fontSize: 12, height: 1.5)),
+                                style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12, height: 1.5)),
                             ),
                           ]),
                         ),
 
                         const SizedBox(height: NexTheme.sm),
 
-                        // Quick Paste button
                         GestureDetector(
                           onTap: () {
                             final pwd = notifier.consumePassword();
@@ -177,16 +172,16 @@ class _DualClipboardOverlayState extends ConsumerState<DualClipboardOverlay>
                           child: Container(
                             padding: const EdgeInsets.symmetric(vertical: 10),
                             decoration: BoxDecoration(
-                              color: NexTheme.primary,
+                              color: cs.primary,
                               borderRadius: BorderRadius.circular(NexTheme.rSm),
                             ),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                const NexIcon(NexIconType.copy, size: 14, color: NexTheme.background),
+                                NexIcon(NexIconType.copy, size: 14, color: cs.surface),
                                 const SizedBox(width: NexTheme.sm),
-                                Text(S.quickPaste, style: const TextStyle(
-                                  color: NexTheme.background, fontSize: 13, fontWeight: FontWeight.w600)),
+                                Text(S.quickPaste, style: TextStyle(
+                                  color: cs.surface, fontSize: 13, fontWeight: FontWeight.w600)),
                               ],
                             ),
                           ),

@@ -35,14 +35,14 @@ class SettingsScreen extends ConsumerWidget {
           child: Text(S.settings, style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w700)),
         ),
 
-        _sectionHeader(S.settingsAppearance),
+        _sectionHeader(context, S.settingsAppearance),
         _tile(context, NexIconType.language, S.settingsLanguage, _langName(locale.languageCode),
             onTap: () => _showLanguageDialog(context, ref)),
         _tile(context, NexIconType.gear, S.settingsTheme, _themeColorName(settings.themeColorIndex),
-            trailing: _colorDot(NexTheme.themePresets[settings.themeColorIndex]),
+            trailing: _colorDot(context, NexTheme.themePresets[settings.themeColorIndex]),
             onTap: () => _showThemeDialog(context, ref, settings)),
 
-        _sectionHeader(S.settingsSecurity),
+        _sectionHeader(context, S.settingsSecurity),
         _tile(context, NexIconType.lock, S.settingsMasterPassword, S.settingsMasterPasswordDesc,
             onTap: () => _showChangePasswordDialog(context, ref)),
         _switchTile(context, NexIconType.shield, S.onboardingBiometric, S.settingsBiometricDesc,
@@ -75,7 +75,7 @@ class SettingsScreen extends ConsumerWidget {
               ref.read(appSettingsNotifierProvider.notifier).update((s) => s.biometricEnabled = v);
             }),
 
-        _sectionHeader(S.settingsAutofillLabel),
+        _sectionHeader(context, S.settingsAutofillLabel),
         _switchTile(context, NexIconType.clipboard, S.onboardingAutofillToggle, S.settingsAutofillDesc,
             value: settings.autofillEnabled,
             onChanged: (v) async {
@@ -85,7 +85,7 @@ class SettingsScreen extends ConsumerWidget {
               }
             }),
 
-        _sectionHeader(S.settingsLayout),
+        _sectionHeader(context, S.settingsLayout),
         _tile(context, NexIconType.globe, S.settingsBottomNav, S.settingsBottomNavDesc,
             onTap: () => _showNavCustomizeDialog(context, ref, settings)),
         _tile(context, NexIconType.stickyNote, S.settingsPasswordList, S.settingsPasswordListDesc,
@@ -95,7 +95,7 @@ class SettingsScreen extends ConsumerWidget {
         _tile(context, NexIconType.clock, S.settingsAuthDisplay, S.settingsAuthDisplayDesc,
             onTap: () => _showAuthDisplayDialog(context, ref, settings)),
 
-        _sectionHeader(S.settingsDataManager),
+        _sectionHeader(context, S.settingsDataManager),
         _tile(context, NexIconType.cloud, S.settingsWebDAV, S.settingsWebDAVDesc,
             onTap: () => _showWebDAVDialog(context, ref)),
         _tile(context, NexIconType.refresh, S.settingsSyncNow, S.settingsSyncNowDesc,
@@ -126,7 +126,7 @@ class SettingsScreen extends ConsumerWidget {
           ),
         ),
 
-        _sectionHeader(S.settingsAbout),
+        _sectionHeader(context, S.settingsAbout),
         _tile(context, NexIconType.info, S.settingsVersion, '1.0.0+1'),
         _tile(context, NexIconType.globe, S.settingsGitHub, 'github.com/1624318455/NexPass', onTap: () {}),
 
@@ -137,11 +137,11 @@ class SettingsScreen extends ConsumerWidget {
 
   // ── Section header ────────────────────────────────────────────────────
 
-  Widget _sectionHeader(String title) {
+  Widget _sectionHeader(BuildContext context, String title) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 24, 20, 4),
-      child: Text(title, style: const TextStyle(
-          color: NexTheme.textMuted, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 0.8)),
+      child: Text(title, style: TextStyle(
+          color: Theme.of(context).colorScheme.outline, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 0.8)),
     );
   }
 
@@ -154,7 +154,7 @@ class SettingsScreen extends ConsumerWidget {
       leading: NexIcon(icon, size: 20, color: theme.colorScheme.onSurfaceVariant),
       title: Text(title, style: theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w500)),
       subtitle: Text(subtitle, style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
-      trailing: trailing ?? const NexIcon(NexIconType.chevronRight, size: 16, color: NexTheme.textMuted),
+      trailing: trailing ?? NexIcon(NexIconType.chevronRight, size: 16, color: theme.colorScheme.outline),
       onTap: onTap,
       contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 2),
     );
@@ -191,13 +191,13 @@ class SettingsScreen extends ConsumerWidget {
 
   // ── Color dot indicator ───────────────────────────────────────────────
 
-  Widget _colorDot(Color color) {
+  Widget _colorDot(BuildContext context, Color color) {
     return Container(
       width: 24, height: 24,
       decoration: BoxDecoration(
         color: color,
         shape: BoxShape.circle,
-        border: Border.all(color: NexTheme.border, width: 2),
+        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant, width: 2),
       ),
     );
   }

@@ -129,7 +129,7 @@ class _VaultPageState extends ConsumerState<_VaultPage> {
         // ── Items ───────────────────────────────────────
         if (vaultState.isLoading)
           const SliverFillRemaining(
-            child: Center(child: CircularProgressIndicator(color: NexTheme.primary)),
+            child: const Center(child: CircularProgressIndicator()),
           )
         else if (vaultState.items.isEmpty)
           SliverFillRemaining(child: _emptyState(S))
@@ -162,17 +162,17 @@ class _VaultPageState extends ConsumerState<_VaultPage> {
       checkmarkColor: cs.onPrimaryContainer,
       side: BorderSide(color: isActive ? cs.primary : cs.outline),
       visualDensity: VisualDensity.compact,
-      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
     );
   }
 
   Widget _emptyState(S) {
+    final cs = Theme.of(context).colorScheme;
     return Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
-      const NexIcon(NexIconType.lock, size: 56, color: NexTheme.textMuted),
+      NexIcon(NexIconType.lock, size: 56, color: cs.outline),
       const SizedBox(height: NexTheme.xl),
-      Text(S.vaultEmpty, style: const TextStyle(color: NexTheme.textSecondary, fontSize: 16, fontWeight: FontWeight.w600)),
+      Text(S.vaultEmpty, style: TextStyle(color: cs.onSurfaceVariant, fontSize: 16, fontWeight: FontWeight.w600)),
       const SizedBox(height: NexTheme.sm),
-      Text(S.vaultEmptyHint, style: const TextStyle(color: NexTheme.textMuted, fontSize: 13)),
+      Text(S.vaultEmptyHint, style: TextStyle(color: cs.outline, fontSize: 13)),
     ]));
   }
 
@@ -182,8 +182,9 @@ class _VaultPageState extends ConsumerState<_VaultPage> {
       return true;
     }).toList();
     if (filtered.isEmpty) {
+      final cs = Theme.of(context).colorScheme;
       return SliverFillRemaining(child: Center(
-        child: Text(S.noItemsInCategory, style: const TextStyle(color: NexTheme.textMuted))));
+        child: Text(S.noItemsInCategory, style: TextStyle(color: cs.outline))));
     }
     return SliverPadding(
       padding: const EdgeInsets.fromLTRB(NexTheme.lg, NexTheme.sm, NexTheme.lg, 80),
@@ -211,16 +212,17 @@ class _VaultPageState extends ConsumerState<_VaultPage> {
 
   void _confirmDelete(NexItem item) {
     final S = AppLocalizations.of(context);
+    final cs = Theme.of(context).colorScheme;
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         title: Text(S.deleteTitle),
-        content: Text(S.deleteConfirm(item.name), style: const TextStyle(color: NexTheme.textSecondary)),
+        content: Text(S.deleteConfirm(item.name), style: TextStyle(color: cs.onSurfaceVariant)),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: Text(S.cancel, style: const TextStyle(color: NexTheme.textSecondary))),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: Text(S.cancel, style: TextStyle(color: cs.onSurfaceVariant))),
           TextButton(
             onPressed: () { Navigator.pop(ctx); ref.read(vaultStateProvider.notifier).deleteItem(item); },
-            child: Text(S.delete, style: const TextStyle(color: NexTheme.danger)),
+            child: Text(S.delete, style: TextStyle(color: cs.error)),
           ),
         ],
       ),
@@ -229,6 +231,7 @@ class _VaultPageState extends ConsumerState<_VaultPage> {
 
   void _showAddDialog(BuildContext context) {
     final S = AppLocalizations.of(context);
+    final cs = Theme.of(context).colorScheme;
     final nameC = TextEditingController();
     final userC = TextEditingController();
     final passC = TextEditingController();
@@ -261,7 +264,7 @@ class _VaultPageState extends ConsumerState<_VaultPage> {
           ),
           actions: [
             TextButton(onPressed: () => Navigator.pop(ctx),
-                child: Text(S.cancel, style: const TextStyle(color: NexTheme.textSecondary))),
+                child: Text(S.cancel, style: TextStyle(color: cs.onSurfaceVariant))),
             FilledButton(
               onPressed: () {
                 if (nameC.text.isNotEmpty && passC.text.isNotEmpty) {
@@ -272,8 +275,7 @@ class _VaultPageState extends ConsumerState<_VaultPage> {
                   Navigator.pop(ctx);
                 }
               },
-              style: FilledButton.styleFrom(backgroundColor: NexTheme.primary),
-              child: Text(S.add, style: const TextStyle(color: NexTheme.background)),
+              child: Text(S.add),
             ),
           ],
         ),
@@ -283,24 +285,25 @@ class _VaultPageState extends ConsumerState<_VaultPage> {
 
   Widget _addField(TextEditingController c, String hint) {
     return TextField(
-      controller: c, style: const TextStyle(color: NexTheme.textPrimary),
+      controller: c,
       decoration: InputDecoration(hintText: hint),
     );
   }
 
   Widget _typeBtn(String label, int value, int current, Function(int) onSelect) {
     final isActive = value == current;
+    final cs = Theme.of(context).colorScheme;
     return GestureDetector(
       onTap: () => onSelect(value),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          color: isActive ? NexTheme.primaryDim : Colors.transparent,
+          color: isActive ? cs.primaryContainer : Colors.transparent,
           borderRadius: BorderRadius.circular(NexTheme.rSm),
-          border: Border.all(color: isActive ? NexTheme.primary : NexTheme.border),
+          border: Border.all(color: isActive ? cs.primary : cs.outline),
         ),
         child: Text(label, style: TextStyle(fontSize: 12,
-            color: isActive ? NexTheme.primary : NexTheme.textSecondary)),
+            color: isActive ? cs.primary : cs.onSurfaceVariant)),
       ),
     );
   }

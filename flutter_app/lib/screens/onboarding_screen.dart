@@ -146,7 +146,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                     width: i == _page ? 20 : 6,
                     height: 6,
                     decoration: BoxDecoration(
-                      color: i == _page ? cs.primary : cs.outline.withOpacity(0.3),
+                      color: i == _page ? cs.primary : cs.outline.withValues(alpha: 0.3),
                       borderRadius: BorderRadius.circular(3),
                     ),
                   )),
@@ -334,7 +334,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 200),
                   decoration: BoxDecoration(
-                    color: color.withOpacity(0.15),
+                    color: color.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
                       color: isSelected ? color : Colors.transparent,

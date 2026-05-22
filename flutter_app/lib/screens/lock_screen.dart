@@ -108,7 +108,7 @@ class _LockScreenState extends ConsumerState<LockScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const NexIcon(NexIconType.shield, size: 64, color: NexTheme.primary),
+                NexIcon(NexIconType.shield, size: 64, color: cs.primary),
                 const SizedBox(height: 24),
                 Text(
                   'NexPass',
