@@ -98,6 +98,7 @@ class AppLocalizations {
   String get statPasswords => get('statPasswords');
   String get statWeak => get('statWeak');
   String get statReused => get('statReused');
+  String get securityAuditTitle => get('securityAuditTitle');
 
   // Issues
   String get allClear => get('allClear');

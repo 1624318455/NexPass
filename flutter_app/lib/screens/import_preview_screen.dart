@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../i18n/app_localizations.dart';
-import '../main.dart';
 import '../models/nex_item.dart';
 import '../state/unlock_state.dart';
 import '../state/vault_state_notifier.dart';
@@ -64,7 +62,6 @@ class _ImportPreviewScreenState extends ConsumerState<ImportPreviewScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final S = AppLocalizations.of(context);
     final cs = Theme.of(context).colorScheme;
 
     return Scaffold(

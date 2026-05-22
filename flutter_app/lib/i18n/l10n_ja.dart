@@ -82,7 +82,7 @@ final Map<String, String> jaStrings = {
   'onboardingDualClipboardDesc': '2FA 付き認証情報をコピー？TOTP はクリップボードに、パスワードは 30 秒間セキュアメモリにキャッシュ。シームレスなペースト。',
   'onboardingSyncTitle': 'WebDAV 同期',
   'onboardingSyncDesc': 'Nextcloud、Synology、Jianguoyun など任意の WebDAV プロバイダーでデバイス間同期。アトミック書き込みでデータ破損を防止。',
-  'onboardingSecurityTitle': 'セキュリティ監査',
+  'securityAuditTitle': 'セキュリティ監査',
   'onboardingSecurityDesc': 'パスワードヘルスの継続的監視。弱い、再使用された、侵害された認証情報を検出し、ワンタップで修正。',
 
   // Settings

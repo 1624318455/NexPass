@@ -23,7 +23,6 @@ import 'state/vault_state_notifier.dart';
 import 'screens/lock_screen.dart';
 import 'screens/main_screen.dart';
 import 'screens/onboarding_screen.dart';
-import 'screens/security_audit_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -65,6 +64,7 @@ void main() async {
         unlockStateProvider.overrideWith((ref) => UnlockNotifier(
               secureStorage: secureStorage,
               cryptoService: cryptoService,
+              ref: ref,
             )),
       ],
       child: NexPassApp(biometricEnabled: biometricEnabled),
@@ -131,8 +131,14 @@ NexField _field(String name, String value, int fieldType, bool sensitive) {
 // App root widget
 // ---------------------------------------------------------------------------
 
-/// Locale provider — controls the app language.
-final localeProvider = StateProvider<Locale>((ref) => const Locale('en'));
+/// Locale provider — derives from AppSettings.language.
+final localeProvider = Provider<Locale>((ref) {
+  final settings = ref.watch(appSettingsNotifierProvider);
+  if (settings.language == 'system') {
+    return WidgetsBinding.instance.platformDispatcher.locale;
+  }
+  return Locale(settings.language);
+});
 
 /// Tracks whether the user has completed onboarding (read-only after init).
 final onboardingDoneProvider = Provider<bool>((ref) => false);
@@ -252,19 +258,7 @@ class _NexPassAppState extends ConsumerState<NexPassApp> {
 
     await secureStorage.storeDerivedKey(derivedKey);
 
-    final km = KeyManager(
-      sessionTimeout: const Duration(minutes: 5),
-      onLock: () {
-        if (mounted) ref.read(appStateProvider.notifier).state = AppState.locked;
-      },
-    );
-    km.activate(derivedKey);
-
-    ref.read(unlockStateProvider.notifier).state = UnlockState(
-      derivedKey: derivedKey,
-      keyManager: km,
-      isUnlocked: true,
-    );
+    ref.read(unlockStateProvider.notifier).activateKey(derivedKey);
 
     await _onUnlocked(derivedKey);
   }
@@ -289,6 +283,7 @@ class _NexPassAppState extends ConsumerState<NexPassApp> {
     final appState = ref.watch(appStateProvider);
 
     return MaterialApp(
+      key: ValueKey('app-${settings.themeColorIndex}-${settings.language}'),
       title: 'NexPass',
       debugShowCheckedModeBanner: false,
       locale: locale,

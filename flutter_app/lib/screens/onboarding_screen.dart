@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../i18n/app_localizations.dart';
 import '../main.dart';
-import '../models/app_settings.dart';
 import '../theme/nex_theme.dart';
 import '../widgets/nex_icons.dart';
 import 'main_screen.dart';

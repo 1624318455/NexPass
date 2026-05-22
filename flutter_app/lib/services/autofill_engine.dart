@@ -147,6 +147,16 @@ class AutofillEngine {
     await _channel.invokeMethod('onCredentialSelected', {'uuid': uuid});
   }
 
+  /// Opens the system autofill service settings page.
+  static Future<bool> openSystemSettings() async {
+    try {
+      final result = await _channel.invokeMethod<bool>('openAutofillSettings');
+      return result ?? false;
+    } catch (_) {
+      return false;
+    }
+  }
+
   /// Writes the vault index to the shared App Group container for iOS.
   ///
   /// Must be called whenever the vault is updated so the credential

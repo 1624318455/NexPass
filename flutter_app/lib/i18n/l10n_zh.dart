@@ -82,7 +82,7 @@ final Map<String, String> zhStrings = {
   'onboardingDualClipboardDesc': '复制带有 2FA 的凭证？TOTP 进入剪贴板，密码安全缓存在内存中 30 秒。无缝两步粘贴。',
   'onboardingSyncTitle': 'WebDAV 同步',
   'onboardingSyncDesc': '使用任何 WebDAV 服务（坚果云、Nextcloud、群晖）跨设备同步保险库。原子写入防止数据损坏。',
-  'onboardingSecurityTitle': '安全审计',
+  'securityAuditTitle': '安全审计',
   'onboardingSecurityDesc': '持续的密码健康监控。检测弱密码、重复使用和已泄露的凭证，一键修复。',
 
   // Settings

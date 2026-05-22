@@ -82,7 +82,7 @@ final Map<String, String> enStrings = {
   'onboardingDualClipboardDesc': 'Copy a credential with 2FA? TOTP goes to clipboard, password is cached in secure RAM for 30 seconds. Seamless two-step paste.',
   'onboardingSyncTitle': 'WebDAV Sync',
   'onboardingSyncDesc': 'Sync your vault across devices using any WebDAV provider (Nextcloud, Synology, Jianguoyun). Atomic writes prevent data corruption.',
-  'onboardingSecurityTitle': 'Security Audit',
+  'securityAuditTitle': 'Security Audit',
   'onboardingSecurityDesc': 'Continuous password health monitoring. Detects weak, reused, and compromised credentials with one-tap fix.',
 
   // Settings

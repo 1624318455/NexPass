@@ -6,8 +6,8 @@ import '../i18n/app_localizations.dart';
 import '../main.dart';
 import '../models/app_settings.dart';
 import 'package:file_picker/file_picker.dart';
-import '../repositories/vault_repository.dart';
 import '../services/csv_import_service.dart';
+import '../services/autofill_engine.dart';
 import '../services/crypto_utils.dart';
 import '../state/sync_state.dart';
 import '../services/sync_service.dart';
@@ -47,12 +47,43 @@ class SettingsScreen extends ConsumerWidget {
             onTap: () => _showChangePasswordDialog(context, ref)),
         _switchTile(context, NexIconType.shield, S.onboardingBiometric, S.settingsBiometricDesc,
             value: settings.biometricEnabled,
-            onChanged: (v) => ref.read(appSettingsNotifierProvider.notifier).update((s) => s.biometricEnabled = v)),
+            onChanged: (v) async {
+              if (v) {
+                // Turning ON: verify device supports biometrics
+                final bioService = ref.read(biometricServiceProvider);
+                final supported = await bioService.isDeviceSupported();
+                final canCheck = await bioService.canCheckBiometrics();
+                if (!supported || !canCheck) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('This device does not support biometric authentication')),
+                    );
+                  }
+                  return;
+                }
+                // Try authenticating to verify enrollment
+                final authenticated = await bioService.authenticate(reason: 'Verify biometric enrollment');
+                if (!authenticated) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Biometric verification failed')),
+                    );
+                  }
+                  return;
+                }
+              }
+              ref.read(appSettingsNotifierProvider.notifier).update((s) => s.biometricEnabled = v);
+            }),
 
         _sectionHeader(S.settingsAutofillLabel),
         _switchTile(context, NexIconType.clipboard, S.onboardingAutofillToggle, S.settingsAutofillDesc,
             value: settings.autofillEnabled,
-            onChanged: (v) => ref.read(appSettingsNotifierProvider.notifier).update((s) => s.autofillEnabled = v)),
+            onChanged: (v) async {
+              ref.read(appSettingsNotifierProvider.notifier).update((s) => s.autofillEnabled = v);
+              if (v) {
+                await AutofillEngine.openSystemSettings();
+              }
+            }),
 
         _sectionHeader(S.settingsLayout),
         _tile(context, NexIconType.globe, S.settingsBottomNav, S.settingsBottomNavDesc,
@@ -198,13 +229,7 @@ class SettingsScreen extends ConsumerWidget {
               trailing: isSelected ? Icon(Icons.check, color: Theme.of(ctx).colorScheme.primary) : null,
               onTap: () {
                 final code = l.$1;
-                if (code == 'system') {
-                  ref.read(appSettingsNotifierProvider.notifier).update((s) => s.language = 'system');
-                  ref.read(localeProvider.notifier).state = WidgetsBinding.instance.platformDispatcher.locale;
-                } else {
-                  ref.read(appSettingsNotifierProvider.notifier).update((s) => s.language = code);
-                  ref.read(localeProvider.notifier).state = Locale(code);
-                }
+                ref.read(appSettingsNotifierProvider.notifier).update((s) => s.language = code);
                 Navigator.pop(ctx);
               },
             );
@@ -372,11 +397,7 @@ class SettingsScreen extends ConsumerWidget {
                   km.activate(newDerivedKey);
 
                   // Update unlock state
-                  unlockNotifier.state = UnlockState(
-                    derivedKey: newDerivedKey,
-                    keyManager: km,
-                    isUnlocked: true,
-                  );
+                  unlockNotifier.activateKey(newDerivedKey);
 
                   if (ctx.mounted) Navigator.pop(ctx);
                   if (context.mounted) {

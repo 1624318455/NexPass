@@ -3,7 +3,6 @@ import 'dart:typed_data';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../main.dart';
 import '../services/crypto_utils.dart';
 import '../services/secure_storage_service.dart';
 
@@ -38,12 +37,15 @@ class UnlockState {
 class UnlockNotifier extends StateNotifier<UnlockState> {
   final SecureStorageService _secureStorage;
   final CryptoService _cryptoService;
+  final Ref? _ref;
 
   UnlockNotifier({
     required SecureStorageService secureStorage,
     required CryptoService cryptoService,
+    Ref? ref,
   })  : _secureStorage = secureStorage,
         _cryptoService = cryptoService,
+        _ref = ref,
         super(const UnlockState());
 
   /// Auto-unlock if biometric is not enabled or key is recoverable.
@@ -99,12 +101,18 @@ class UnlockNotifier extends StateNotifier<UnlockState> {
     state = const UnlockState();
   }
 
+  /// Directly activate a new derived key (used after password change).
+  void activateKey(Uint8List key) {
+    _activateKey(key);
+  }
+
   /// Activate KeyManager and transition to ready state.
   void _activateKey(Uint8List key) {
     final km = KeyManager(
       sessionTimeout: const Duration(minutes: 5),
       onLock: () {
         if (mounted) state = const UnlockState();
+        _ref?.read(appStateProvider.notifier).state = AppState.locked;
       },
     );
     km.activate(key);

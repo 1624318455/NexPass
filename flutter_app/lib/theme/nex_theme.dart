@@ -88,7 +88,7 @@ class NexTheme {
     ),
     navigationBarTheme: NavigationBarThemeData(
       elevation: 2,
-      indicatorColor: seed.withOpacity(0.12),
+      indicatorColor: seed.withValues(alpha: 0.12),
     ),
   );
 
