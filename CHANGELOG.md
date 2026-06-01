@@ -74,6 +74,471 @@
 
 ---
 
+## [0.5.0] — 2026-05-22
+
+### 新增 — 设置页面重设计
+
+#### ⚙️ 9 个设置分区
+完整映射 10 页引导流程的配置项，统一管理入口：
+
+| 分区 | 功能 |
+|------|------|
+| **外观** | 主题颜色选择器（6 色预设）、语言选择器 |
+| **安全** | 主密码设置、生物识别开关、密保问答 |
+| **自动填充** | Autofill 服务开关 |
+| **界面布局** | 导航栏 Tab 显示（密码库/验证器/卡片/密钥通行证） |
+| **验证器** | 颁发者/账号/进度条/平滑动画开关 |
+| **数据管理** | WebDAV 配置（URL/用户名/密码）、手动同步触发、导入（Bitwarden/KeePass/CSV） |
+| **安全审计** | 弱密码/重复密码检测引擎入口 |
+| **应用锁定** | 锁定开关 |
+| **关于** | 版本号、许可证 |
+
+#### 🎨 UI 实现
+- 分区式布局：`ListView` + 分节标题，清晰层次
+- 主题色选择器：6 色圆形预设，实时预览
+- 语言选择器：中/日/英即时切换
+- WebDAV 配置表单：URL + 用户名 + 密码输入
+
+#### 🌐 i18n 扩充
+- 新增 **27 个**翻译字符串（en/zh/ja），总计约 **130 字符串**
+- 覆盖全部设置分区标签、选择项、表单提示
+
+### Commits
+
+| Hash | 描述 |
+|------|------|
+| `da74ee8` | feat(settings): redesign settings screen with full onboarding settings mapping |
+
+---
+
+## [0.6.0] — 2026-05-22
+
+### 新增 — 设置功能全部实现（Phase 0–6 全部完成）
+
+#### ✅ Phase 0：主题颜色即时生效
+- 6 色预设主题实时切换，UI 即时渲染
+- `nex_theme.dart` 动态主题供应，AppSettings.themeColorIndex 驱动
+- 切换无需重启、无闪烁
+
+#### ✅ Phase 1：生物识别解锁
+- `flutter_app/lib/services/biometric_service.dart` — local_auth 封装
+- `flutter_app/lib/screens/lock_screen.dart` — 锁屏界面
+- `flutter_app/lib/state/unlock_state.dart` — 解锁状态机
+- 生物识别验证 → 解锁 → 密码回退（fallback）
+- `ThemeMode.light` 锁屏样式统一
+
+#### ✅ Phase 2：主密码修改
+- `reEncryptAllItems()` — 旧密钥解密所有条目 → 新密钥重新加密
+- 密码变更对话框，确认后执行批量重加密
+- 安全过渡：重加密中途崩溃不影响已处理条目
+
+#### ✅ Phase 3：WebDAV 凭据热更新
+- `StateProvider` 驱动 WebDAV 配置运行时更新
+- `SyncService` 运行时重建连接，无需重启应用
+- 配置表单即时生效
+
+#### ✅ Phase 4：卡片显示设置驱动渲染
+- 密码卡片：用户名/网站/关联验证器 按 AppSettings 显隐
+- 验证器卡片：颁发者/账号/进度条/平滑动画 按 AppSettings 显隐
+- `main_screen.dart` 渲染逻辑对接 AppSettings
+
+#### ✅ Phase 5：导航标签自定义
+- 密码库/验证器/卡片/密钥通行证 Tab 按设置显示/隐藏
+- `main_screen.dart` 导航栏动态构建
+
+#### ✅ Phase 6：CSV 导入
+- `csv_import_service.dart` — Bitwarden / KeePass / 通用 CSV 格式自动检测
+- `import_preview_screen.dart` — 导入预览 + 字段映射选择
+- 格式检测：列头解析 → 匹配预置模板
+- OPPO Android 15 真机验证通过
+
+### Commits
+
+| Hash | 描述 |
+|------|------|
+| `3b296d8` | feat(settings): implement core settings functionality (Phase 0-5) |
+| `5a0db74` | feat(settings): implement password change and WebDAV credential hot update |
+| `3c5d98f` | feat(import): implement CSV import with format detection |
+
+---
+
+## [0.6.1] — 2026-05-22
+
+### 修复 — 6 个设置功能 Bug 修复
+
+#### 🐛 1. 语言跟随系统
+- `localeProvider` 从 AppSettings 读取语言配置
+- "Follow System" 选项使用平台语言，无需手动指定
+
+#### 🐛 2. 生物识别开关
+- 开启前验证设备能力（`local_auth.canCheckBiometrics`）
+- 检测生物识别录入状态，未录入时提示引导
+
+#### 🐛 3. 自动填充跳转
+- "Enable System Autofill" 按钮跳转 Android 系统设置页面
+- 原生 Kotlin 桥接：`AutofillServicePlugin.kt` 新增 Intent 启动
+
+#### 🐛 4. 主题颜色即时生效
+- `MaterialApp` 加 `ValueKey`，切换主题色时强制 Widget 树重建
+- 彻底消除主题缓存导致的颜色不更新
+
+#### 🐛 5. 密钥管理重构
+- 新增 `activateKey()` 方法，session 过期时触发锁屏
+- `unlock_state.dart` 解锁状态机增强
+
+#### 🐛 6. i18n 重复 key 修复
+- en/zh/ja 三语重复翻译 key 清理
+- 编译警告消除
+
+### Commits
+
+| Hash | 描述 |
+|------|------|
+| `cdafddc` | fix(settings): implement all 6 broken settings features |
+
+---
+
+## [0.6.2] — 2026-05-22
+
+### 修复 — 引导循环 Bug
+
+#### 🐛 点击「完成」后页面循环回到第一步
+- **根因**: `onboardingDoneProvider` 是 `Provider<bool>`（编译期固定为 `false`），写入 SecureStorage 后内存 provider 值未更新，`MaterialApp.build()` 始终看到 `false`，导致 `home:` 始终显示 `OnboardingScreen`
+- **修复**: `Provider<bool>` → `StateProvider<bool>`，支持运行时更新
+- `_complete()` 中设置 provider state = `true`
+- 移除 `Navigator.pushReplacement`，`MaterialApp` 自动重建切换到 `MainScreen`
+
+#### ✅ 验证
+- OPPO Android 15 真机验证通过
+- 引导完成 → 自动跳转密码库，无循环
+
+### Commits
+
+| Hash | 描述 |
+|------|------|
+| `f96e6a1` | fix(onboarding): prevent loop back to step 1 after completing onboarding |
+
+---
+
+## [0.6.3] — 2026-05-22
+
+### 修复 — 生物识别完全不工作
+
+#### 🐛 生物识别弹窗不显示
+- **根因**: `MainActivity` 继承 `FlutterActivity`，但 `local_auth` 包要求 `FlutterFragmentActivity` 才能显示生物识别弹窗覆盖层
+- **修复**: `MainActivity` → `FlutterFragmentActivity`（关键 1 行变更）
+
+#### 🔧 LockScreen 改进
+- 启动时检查设备能力：`isDeviceSupported()` + `canCheckBiometrics()`
+- 显示加载状态，无生物识别硬件时隐藏按钮
+- 设备不支持时自动回退到密码输入
+- 错误提示改为 banner 样式，更友好的 UX
+
+#### ✅ 验证
+- OPPO Android 15 真机验证通过
+- 生物识别弹窗正常弹出，指纹验证 → 解锁 → 密码回退全链路
+
+### Commits
+
+| Hash | 描述 |
+|------|------|
+| `dd3edd7` | fix(biometric): change MainActivity to FlutterFragmentActivity for local_auth compatibility |
+
+---
+
+## [0.6.4] — 2026-05-22
+
+### 修复 — Onboarding 循环永久修复
+
+#### 🐛 onboarding 完成后崩溃 / 仍循环
+- **根因**: `main.dart` 中残留 `ref.listen` 回调，在 `ConsumerWidget.build()` 内触发 `Navigator.of(context)`——该 context 在 `MaterialApp` 上方，找不到 `Navigator`
+- **修复**: 移除 `ref.listen` 回调，完全依赖 `ValueKey` + `ref.watch(onboardingDoneProvider)` 在 `home:` 中自动切换页面
+- 移除 `onboarding_screen.dart` 中未使用的 `biometric_service` import，消除编译警告
+
+#### ✅ 验证
+- OPPO Android 15 真机验证通过
+- app 启动正常，无崩溃，引导→主屏全链路无循环
+
+### Commits
+
+| Hash | 描述 |
+|------|------|
+| `8a832f5` | fix(onboarding): remove ref.listen callback to prevent Navigator crash |
+
+---
+
+## [0.6.5] — 2026-05-22
+
+### 修复 — 引导流程与设置功能完全对齐
+
+#### 🧩 修复 3 处功能缺失
+引导流程 10 页与设置页面 14 项功能的 feature parity 补齐：
+
+| 页面 | 修复内容 |
+|------|----------|
+| 自动填充页 | 「Open System Settings」按钮接入 `AutofillEngine.openSystemSettings()` |
+| 列表定制页 | 补充缺失的 `showFavorites` 开关（之前只有 settings 界面有） |
+| 数据导入页 | Bitwarden / KeePass / CSV 三个选项接入 `FilePicker` + `CsvImportService` + `ImportPreviewScreen` |
+
+- 全部功能复用 `settings_screen.dart` 同一套业务逻辑
+- 引导流程与设置界面配置项 100% 同步，无遗漏
+
+#### ✅ 审计结论
+引导流程 10 页 与 设置页面 14 项功能 已完全对齐。
+
+### Commits
+
+| Hash | 描述 |
+|------|------|
+| `75f3d2c` | fix(onboarding): implement missing feature parity with settings |
+
+---
+
+## [0.7.0] — 2026-05-22
+
+### 重构 — M3 颜色系统迁移
+
+#### 🎨 硬编码颜色 → Theme.of(context).colorScheme
+8 个屏幕文件 + 主题文件全线迁移，移除 `NexTheme.xxx` 硬编码引用：
+
+| 文件 | 迁移内容 |
+|------|----------|
+| `clipboard_overlay.dart` | ~25 处 `NexTheme.xxx` → `cs.xxx` |
+| `health_ring_chart.dart` | `trackColor` 参数化，支持动态主题 |
+| `lock_screen.dart` | `NexTheme.primary` → `cs.primary` |
+| `main_screen.dart` | surface/text/border 全部颜色迁移 |
+| `onboarding_screen.dart` | `.withOpacity()` → `.withValues(alpha:)` |
+| `security_audit_screen.dart` | 完整重写使用 ColorScheme |
+| `settings_screen.dart` | section headers、chevron、color dot 迁移 |
+| `nex_theme.dart` | 移除废弃 `secondaryHeaderColor`，重构颜色定义 |
+
+#### ✅ 验证
+- `flutter analyze`: **0 errors**, 16 warnings（仅 Isar experimental API）
+- 已构建 debug APK 并部署到真机验证通过
+
+### Commits
+
+| Hash | 描述 |
+|------|------|
+| `864ae59` | refactor(theme): migrate hardcoded colors to Theme.of(context).colorScheme across all screens |
+
+---
+
+## [0.8.0] — 2026-05-22
+
+### 新增 — M3 响应式布局 & Edge-to-Edge 优化
+
+#### 📐 Edge-to-Edge 显示
+- `main.dart`: 启用全屏 edge-to-edge 显示，`AnnotatedRegion` 包裹 `MaterialApp`
+- `nex_theme.dart`: `appBarTheme` 添加 `systemOverlayStyle`（亮/暗模式自动适配）
+
+#### 🧩 布局 Tokens 化
+- `nex_theme.dart`: 新增 `xxxl`（32dp）间距 token，配合现有 sm/md/lg/xl 形成完整间距体系
+- `settings_screen.dart`: 所有硬编码 `20/8/4` → `NexTheme` tokens，顶部用 `viewPadding.top`，底部动态 `120 + padding.bottom`
+- `main_screen.dart`: FAB 从 `Positioned/Stack` → `Scaffold.floatingActionButton`，`_VaultPage` 移除 Stack 包装，header 用 `viewPadding.top`，底部 `120 + padding.bottom`
+- `onboarding_screen.dart`: `EdgeInsets.fromLTRB(20,0,20,32)` → `NexTheme` tokens
+- `clipboard_overlay.dart`: `padding.top + 8` → `NexTheme.sm`
+
+#### ✅ 验证
+- `flutter analyze`: **0 errors**
+- 已构建 debug APK 并部署到真机验证通过
+
+### Commits
+
+| Hash | 描述 |
+|------|------|
+| `db79927` | refactor(layout): implement responsive layout with safe-area and edge-to-edge |
+
+---
+
+## [0.9.0] — 2026-05-22
+
+### 重构 — M3 合规性审计自修复
+
+#### 🎨 主题进化（nex_theme.dart）
+- 移除遗留颜色别名，清理过期定义
+- 新增完整 M3 组件主题：`listTileTheme` / `textButtonTheme` / `checkboxTheme` / `radioTheme`
+- 所有 `FilledButton` 中的 `Colors.white` → `cs.onPrimary` / `cs.onError`，遵循 ColorScheme 契约
+
+#### 📝 排版 Tokens 化
+- **~48 处**硬编码 `fontSize` 替换为 `Theme.of(context).textStyles` 体系
+- 涉及全部 8 个屏幕文件，排版与主题完全解耦
+
+#### 🧩 组件语义化
+- `Container` → `Card`（security_audit_screen），获得 M3 Card 默认圆角/阴影/ink
+- `GestureDetector` → `InkWell`（audit/onboarding），获得水波纹反馈
+- 移除 `FilledButton.shape` 覆盖，使用 MD3 默认按钮形状
+
+#### ✅ 验证
+- `flutter analyze`: 零新增错误
+- 已构建 debug APK 并部署真机验证
+
+### Commits
+
+| Hash | 描述 |
+|------|------|
+| `1d87d7d` | refactor(theme): implement M3 compliance audit self-fix across all screens |
+
+---
+
+## [0.9.1] — 2026-05-22
+
+### 修复 — 键盘溢出 & 生物识别首次启动
+
+#### 🐛 1. 锁屏键盘溢出
+- `Column` 包裹 `SingleChildScrollView`，锁屏输入框弹出键盘时不会溢出
+- 添加 `viewInsets.bottom` 动态 padding，键盘弹出时自动调整布局
+
+#### 🐛 2. 引导页键盘溢出
+- 10 个引导页面全部添加 `_pageScroll` 滚动包装
+- 任何带输入框的页面都不会被键盘遮挡
+
+#### 🐛 3. 生物识别首次启动失败
+- **根因**: 首次启动时 `recoverDerivedKey()` 无有效密钥可恢复，锁屏界面即使生物识别验证成功也无密钥解密数据库
+- **修复**: 新增 `_ensureKeyStored()` 方法，在显示锁屏前预派生密钥并存储到 SecureStorage
+- 生物识别验证通过后 `recoverDerivedKey()` 能返回有效密钥，数据库正常解密
+
+### Commits
+
+| Hash | 描述 |
+|------|------|
+| `a722156` | fix(ui): fix lock screen and onboarding keyboard overflow; fix biometric first-launch key recovery |
+
+---
+
+## [0.10.0] — 2026-05-22
+
+### 新增 — 保险库 UI 完善
+
+#### 🏷️ Tab 标签统一
+- 保险库 Tab 使用与设置一致的 i18n key：密码 / 卡包 / 验证器 / 通行密钥
+- 引导流程与设置页配置项 100% 同名同步
+
+#### 🗄️ 数据库模型增强
+- `NexItem` 新增 `lastUsedAt` 字段 — 记录最近使用时间
+- 新增 `website` / `totpSecret` / `hasTotp` getters，字段访问标准化
+
+#### ⭐ 收藏功能
+- 收藏按钮（爱心图标），支持切换收藏状态
+- **收藏区**：置于列表顶部，受 `showFavorites` 设置控制
+- 自定义 Canvas 图标：`heart` （`nex_icons.dart`）
+
+#### 🕐 最近使用
+- 复制密码 / 验证码时自动标记 `lastUsedAt`
+- **最近使用区**：按时间排序，受 `showRecentShortcuts` 设置控制
+
+#### 🎴 卡片 UI 修复
+- `type=2` 卡片图标修正为 `creditCard`（信用卡）
+- 验证器卡片应用 `auth` 显示设置（issuer/account/progress bar）
+- 自定义 Canvas 图标：`creditCard`
+
+#### 🧩 新文件
+- `flutter_app/lib/widgets/nex_icons.dart` — 自定义 Canvas 图标集（creditCard / heart）
+
+### Commits
+
+| Hash | 描述 |
+|------|------|
+| `375de0b` | feat(vault): unify tab labels, add favorites/recent sections, complete card UI |
+
+---
+
+## [0.11.0] — 2026-05-22
+
+### 新增 — 卡片详情页 & 底部浮动操作栏
+
+#### 📄 ItemDetailScreen（10 模块）
+全新 `flutter_app/lib/screens/item_detail_screen.dart`（720 行），从列表点击进入：
+
+| # | 模块 | 说明 |
+|---|------|------|
+| 1 | **头部信息** | 标题 + 类型图标（密码/卡包/验证器） |
+| 2 | **账号** | 解密后 username 显示 |
+| 3 | **密码显隐切换** | 加密存储，点击显/隐切换 |
+| 4 | **安全状态评估** | 密码强度指示（弱/中/强） |
+| 5 | **网址跳转** | 通过 `url_launcher` 打开 |
+| 6 | **TOTP 动态验证码** | 30s 自动刷新倒计时 |
+| 7 | **自定义字段** | 额外字段列表展示 |
+| 8 | **存储信息** | 加密方式、存储位置 |
+| 9 | **时间记录** | 创建时间 / 更新时间 / 最近使用 |
+| 10 | **备注** | 文本备注区域 |
+
+#### 🪟 底部浮动操作栏
+- 毛玻璃效果（BackdropFilter + blur）
+- **收藏** / **编辑** / **导出** / **删除** 四个按钮
+- 使用 `pencil` / `download` 自定义图标
+
+#### 🧩 自定义图标扩展
+- `nex_icons.dart`: 新增 `pencil`（编辑）和 `download`（导出）
+
+#### 🐛 修复
+- 详情页敏感字段使用 `decryptedValue` 而非加密的 `field.value`
+- Demo 数据补充 `website` 字段
+- 卡片点击导航至 `ItemDetailScreen`
+- AGP 升级至 `8.9.1` 兼容 `url_launcher` 依赖
+
+### Commits
+
+| Hash | 描述 |
+|------|------|
+| `600cad0` | feat(vault): add card detail page, favorites visual separation, fix demo data |
+
+---
+
+## [0.11.1] — 2026-05-22
+
+### 新增 — 详情页编辑模式 & 关联笔记模块
+
+#### ✏️ 编辑模式
+- 铅笔按钮切换「编辑/保存」模式
+- 编辑状态：字段变为可编辑输入框
+- 保存：更新数据库（`vault_repository`），字段实时持久化
+- 新增 `_EditFieldCard` 组件 — 可编辑字段卡片
+
+#### 📝 关联笔记模块
+- `fieldType==3` 字段独立展示为笔记区域
+- 新增 `_NotesCard` 组件 — 笔记内容卡片
+
+#### 🐛 URL 模块修复
+- 添加 `canLaunchUrl` 守卫，防止无法处理的 URL 引发崩溃
+- 使用 `LaunchMode.externalApplication` 强制外部浏览器打开
+
+#### ✅ 验证
+- `flutter analyze`: 零错误
+- 真机部署测试通过
+
+### Commits
+
+| Hash | 描述 |
+|------|------|
+| `51fd0a1` | feat(detail): add edit mode, notes module, fix URL launch |
+
+---
+
+## [0.11.2] — 2026-05-22
+
+### 修复 — 详情页编辑按钮双重加密 Bug
+
+#### 🐛 第二次编辑保存后显示乱码
+- **根因**: `saveItem()` 原地加密敏感字段，导致内存中 `NexItem` 的字段值被加密值覆盖
+- 第二次点击编辑 → 保存时，已加密的值被再次加密（**双重加密**），解密后显示乱码
+- **修复方案**:
+  - 保存前深拷贝 `NexItem`，确保原始对象不被污染
+  - 保存后调用 `reloadVault` 刷新列表，重新从数据库加载清洁数据
+  - 增加空字段名防护
+
+#### ✅ 验证
+- `flutter analyze`: 零错误
+- APK 构建部署成功
+
+### Commits
+
+| Hash | 描述 |
+|------|------|
+| `9ab613d` | fix(detail): deep copy NexItem before save to prevent double encryption |
+
+---
+
 ## [0.2.4] — 2026-05-21
 
 ### 新增 — 引导流程与设置页

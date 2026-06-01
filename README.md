@@ -33,7 +33,7 @@
 | 密钥存储 | flutter_secure_storage 9.0（Keychain/Keystore） |
 | 加密引擎 | pointycastle (Argon2id + PBKDF2) + cryptography (AES-GCM) |
 | 网络同步 | http (WebDAV 原子事务) |
-|| UI | Material 3 浅色主题（MD3 Light + #5B21B6 紫色/靛蓝强调色）+ CustomPainter 动画环形图 |
+|| UI | Material 3 浅色主题（ColorScheme 驱动 + 全 M3 组件主题，#5B21B6 紫色/靛蓝强调色）+ CustomPainter 动画环形图 |
 | 原生桥接 | MethodChannel — AutofillService (Android) / CredentialProvider (iOS) |
 
 ### 密码学架构
@@ -90,19 +90,40 @@ Argon2id (iterations=3, memory=64MB, parallelism=4)  ← Isolate
 #### 🌐 国际化
 | 语言 | 状态 |
 |------|------|
-| 中文（简体） | 默认 — 52 字符串全覆盖 |
-| 日本語 | 完全対応 — 52 文字列 + 動的補間 |
-| English | Full — 52 strings + dynamic interpolation |
+| 中文（简体） | 默认 — 约 130 字符串全覆盖 |
+| 日本語 | 完全対応 — 約 130 文字列 + 動的補間 |
+| English | Full — ~130 strings + dynamic interpolation |
 
 - **技术方案**: `Map<String, Map<String, String>>` + `InheritedWidget`，零第三方依赖
 - **即时切换**: AppBar 🌐 按钮 / 设置页语言选项，无需重启
 - **热重载友好**: `context.watch<LocaleState>().t('key')` 访问模式
 
 #### 🚀 引导与导航
-- **4 页引导流程**: 零知识加密 → 双剪贴板 → WebDAV 同步 → 安全审计
+- **10 页引导流程**: 快速初始化 → 安全设置 → 自动填充 → 主题选择 → 导航栏配置 → 数据导入 → 密码列表定制 → 密码卡片显示 → 验证器卡片显示 → 完成页
 - `PageView` + `Indicator` 分页，底部「跳过」入口
+- 引导完成自动保存所有配置到 SecureStorage
 - **底部导航栏**: Vault（密码库）+ Settings（设置）双 Tab
-- **设置页**: 语言切换、WebDAV 配置、手动同步、应用锁定、关于
+- **设置页**: 9 个分区 — 外观（主题色/语言）、安全（主密码/生物识别）、自动填充、界面布局、验证器、数据管理（WebDAV/同步/导入）、安全审计、应用锁定、关于
+
+#### 🏷️ 保险库 UI
+- **Tab 标签统一**: 密码 / 卡包 / 验证器 / 通行密钥，i18n 与设置同步
+- **收藏功能**: 爱心按钮切换，收藏区置于列表顶部（受 `showFavorites` 控制）
+- **最近使用**: 复制时自动标记 `lastUsedAt`，按时间排序（受 `showRecentShortcuts` 控制）
+- **卡片图标**: creditCard / heart 自定义 Canvas 图标集（`nex_icons.dart`）
+
+#### 📄 卡片详情页
+- **10 模块详情页**: 头部 / 账号 / 密码显隐 / 安全评估 / 网址跳转 / TOTP 验证码 / 自定义字段 / 存储信息 / 时间记录 / 备注
+- **底部浮动操作栏**: 毛玻璃效果，收藏/编辑/导出/删除
+- **敏感字段解密**: 使用 `decryptedValue` 确保数据安全展示
+
+#### ⚙️ 设置功能 (Phase 0–6 全部完成)
+- **主题颜色即时生效** — 6 色预设，实时切换无闪烁
+- **生物识别解锁** — local_auth 验证 + 锁屏界面 + 密码回退
+- **主密码修改** — reEncryptAllItems 批量重加密，密码变更对话框
+- **WebDAV 凭据热更新** — StateProvider 驱动，SyncService 运行时重建
+- **卡片显示驱动渲染** — 密码/验证器卡片按 AppSettings 显隐
+- **导航标签自定义** — 各 Tab 按设置显示/隐藏
+- **CSV 导入** — Bitwarden/KeePass/通用格式自动检测 + 预览选择
 
 ### 项目结构
 
@@ -114,11 +135,12 @@ NexPass/
 │       ├── main.dart                    # 入口：密钥派生 → Isar 初始化 → Riverpod → 底部导航
 │       ├── l10n/
 │       │   ├── locale_state.dart        # Locale 状态管理（InheritedWidget）
-│       │   ├── strings_zh.dart          # 中文翻译 (52 字符串)
+│       │   ├── strings_zh.dart          # 中文翻译（~130 字符串）
 │       │   ├── strings_ja.dart          # 日文翻译
 │       │   └── strings_en.dart          # 英文翻译
 │       ├── models/
-│       │   └── nex_item.dart            # Isar @collection 数据模型
+│       │   ├── nex_item.dart            # Isar @collection 数据模型
+│       │   └── app_settings.dart        # 20+ 可持久化配置项
 │       ├── repositories/
 │       │   └── vault_repository.dart    # 批量加解密仓储（单 Isolate）
 │       ├── services/
@@ -126,19 +148,27 @@ NexPass/
 │       │   ├── secure_storage_service.dart   # Keychain/Keystore 密钥管理
 │       │   ├── database_service.dart         # Isar 加密配置
 │       │   ├── clipboard_service.dart        # Monica 双剪贴板引擎
+│       │   ├── biometric_service.dart        # local_auth 生物识别封装
 │       │   ├── sync_service.dart             # WebDAV 原子同步
 │       │   ├── security_audit_service.dart   # 弱密码/重复密码审计
 │       │   ├── password_generator_service.dart
+│       │   ├── csv_import_service.dart        # CSV 导入 + Bitwarden/KeePass 格式检测
 │       │   ├── autofill_engine.dart          # 跨平台自动填充抽象层
 │       │   └── autofill_channel_service.dart # MethodChannel 桥接
 │       ├── state/
+│       │   ├── unlock_state.dart             # 解锁状态机（生物识别/密码回退）
 │       │   ├── vault_state_notifier.dart     # Vault CRUD + 搜索
-│       │   └── sync_state.dart               # 同步进度状态机
-│       ├── state/settings_state.dart         # 设置状态（语言、WebDAV 配置）
+│       │   ├── sync_state.dart               # 同步进度状态机
+│       │   └── settings_state.dart           # 设置状态（语言、WebDAV 配置）
+│       ├── widgets/
+│       │   └── nex_icons.dart                # 自定义 Canvas 图标（creditCard / heart / pencil / download）
 │       └── screens/
 │           ├── main_screen.dart             # 主仪表板（搜索/分类/复制）
-│           ├── settings_screen.dart         # 设置页（语言/WebDAV/同步/锁定）
-│           ├── onboarding_screen.dart       # 引导流程（4 页 PageView）
+│           ├── item_detail_screen.dart      # 卡片详情页（10 模块 + 底部浮动操作栏）
+│           ├── settings_screen.dart         # 设置页（9 分区：外观/安全/自动填充/界面/验证器/数据/审计/锁定/关于）
+│           ├── onboarding_screen.dart       # 引导流程（10 页 PageView）
+│           ├── import_preview_screen.dart   # CSV 导入预览 + 字段映射
+│           ├── lock_screen.dart             # 锁屏界面（生物识别 + 密码回退）
 │           ├── clipboard_overlay.dart       # 双剪贴板提示覆盖层
 │           ├── security_audit_screen.dart   # 安全审计面板
 │           └── health_ring_chart.dart       # 自定义环形图
