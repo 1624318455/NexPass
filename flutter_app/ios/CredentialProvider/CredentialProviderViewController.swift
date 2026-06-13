@@ -3,26 +3,24 @@ import UIKit
 
 /// iOS Credential Provider Extension for NexPass.
 ///
-/// Implements `ASCredentialProviderViewController` to supply credentials
-/// from the NexPass vault to Safari and system autofill.
+/// ## Autofill Flow
+/// 1. Safari requests credentials for a domain → `prepareInterfaceToProvideCredentials`
+/// 2. We search the shared `CredentialStore` index for matching entries
+/// 3. User selects an entry → `fillCredential` reads the password from `PasswordCache`
+/// 4. We return an `ASPasswordCredential` to the system
 ///
-/// ## Flow
-/// 1. Safari requests credentials for a domain → [prepareInterfaceToProvideCredentials].
-/// 2. We search the shared [CredentialStore] index for matching entries.
-/// 3. We present a list; the user selects one.
-/// 4. We return an `ASPasswordCredential` to the system.
-///
-/// ## Security
-/// - The shared index contains only names/usernames — never passwords.
-/// - When the user taps "Fill", we invoke the main app via a custom URL
-///   scheme (`nexpass://fill/<uuid>`) to perform decryption and injection
-///   in the main app's secure sandbox.
+/// ## Password Availability
+/// - Passwords are cached by the main app when the vault is unlocked.
+/// - Cache entries expire after 5 minutes (TTL).
+/// - If no cached password is found, we show a prompt telling the user
+///   to open NexPass and unlock the vault first.
 class CredentialProviderViewController: ASCredentialProviderViewController {
 
     // MARK: - Lifecycle
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        PasswordCache.purgeExpired()
         NSLog("[CredentialProvider] Extension loaded")
     }
 
@@ -34,16 +32,13 @@ class CredentialProviderViewController: ASCredentialProviderViewController {
         let domain = serviceIdentifiers.first?.identifier ?? ""
         NSLog("[CredentialProvider] Requesting credentials for: \(domain)")
 
-        // Search the shared vault index
         let matches = CredentialStore.search(query: domain)
 
         if matches.isEmpty {
-            // No matching credentials — show empty state
             showEmptyState(for: domain)
             return
         }
 
-        // Present a credential selection UI
         showCredentialList(matches, for: domain)
     }
 
@@ -65,21 +60,7 @@ class CredentialProviderViewController: ASCredentialProviderViewController {
     }
 
     private func showEmptyState(for domain: String) {
-        let emptyView = VStack(spacing: 12) {
-            Image(systemName: "lock.shield")
-                .font(.system(size: 40))
-                .foregroundColor(.teal)
-
-            Text("No credentials found")
-                .font(.headline)
-                .foregroundColor(.primary)
-
-            Text("No NexPass credentials match \"\(domain)\"")
-                .font(.subheadline)
-                .foregroundColor(.secondary)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 32)
-        }
+        let emptyView = EmptyStateView(domain: domain)
 
         let hostingController = UIHostingController(rootView: emptyView)
         hostingController.view.frame = self.view.bounds
@@ -87,27 +68,44 @@ class CredentialProviderViewController: ASCredentialProviderViewController {
         self.view.addSubview(hostingController.view)
     }
 
+    private func showPasswordUnavailable(for entry: CredentialEntry) {
+        let view = PasswordUnavailableView(entryName: entry.name)
+
+        let hostingController = UIHostingController(rootView: view)
+        hostingController.view.frame = self.view.bounds
+        self.addChild(hostingController)
+        self.view.addSubview(hostingController.view)
+    }
+
+    // MARK: - Credential Fill
+
     /// Fills the selected credential back to the system.
     ///
-    /// In production, this would invoke the main app via URL scheme to
-    /// decrypt the password. For the stub, we return only the username.
+    /// Attempts to load the decrypted password from `PasswordCache`.
+    /// If the cache is empty (vault locked or expired), shows a prompt
+    /// asking the user to open NexPass first.
     private func fillCredential(_ entry: CredentialEntry) {
-        let credential = ASPasswordCredential(
-            user: entry.username,
-            password: "" // Main app decryption required for real password
-        )
+        // Try to load password from the shared cache
+        if let cachedPassword = PasswordCache.loadPassword(forUUID: entry.id) {
+            NSLog("[CredentialProvider] Filling credential with cached password: \(entry.name)")
 
-        // Log the fill attempt for analytics
-        NSLog("[CredentialProvider] Filling credential: \(entry.name) (\(entry.username))")
-
-        self.extensionContext.completeRequest(
-            withSelectedCredential: credential,
-            completionHandler: nil
-        )
+            let credential = ASPasswordCredential(
+                user: entry.username,
+                password: cachedPassword
+            )
+            self.extensionContext.completeRequest(
+                withSelectedCredential: credential,
+                completionHandler: nil
+            )
+        } else {
+            // Password not cached — vault may be locked
+            NSLog("[CredentialProvider] No cached password for: \(entry.name)")
+            showPasswordUnavailable(for: entry)
+        }
     }
 }
 
-// MARK: - SwiftUI List View (for credential selection)
+// MARK: - SwiftUI Views
 
 import SwiftUI
 
@@ -149,6 +147,54 @@ struct CredentialListView: View {
             }
             .navigationTitle("NexPass")
             .navigationBarTitleDisplayMode(.inline)
+        }
+    }
+}
+
+struct EmptyStateView: View {
+    let domain: String
+
+    var body: some View {
+        VStack(spacing: 12) {
+            Image(systemName: "lock.shield")
+                .font(.system(size: 40))
+                .foregroundColor(.teal)
+
+            Text("No credentials found")
+                .font(.headline)
+                .foregroundColor(.primary)
+
+            Text("No NexPass credentials match \"\(domain)\"")
+                .font(.subheadline)
+                .foregroundColor(.secondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 32)
+        }
+    }
+}
+
+struct PasswordUnavailableView: View {
+    let entryName: String
+
+    var body: some View {
+        VStack(spacing: 16) {
+            Image(systemName: "exclamationmark.triangle")
+                .font(.system(size: 36))
+                .foregroundColor(.orange)
+
+            Text("Vault Locked")
+                .font(.headline)
+                .foregroundColor(.primary)
+
+            Text("To fill \"\(entryName)\", please open NexPass and unlock your vault first.")
+                .font(.subheadline)
+                .foregroundColor(.secondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 32)
+
+            Text("Passwords are cached for 5 minutes after unlock.")
+                .font(.caption)
+                .foregroundColor(.secondary)
         }
     }
 }

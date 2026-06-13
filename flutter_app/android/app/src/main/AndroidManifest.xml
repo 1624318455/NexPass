@@ -6,7 +6,8 @@
     <application
         android:name="${applicationName}"
         android:label="NexPass"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/ic_launcher"
+        android:extractNativeLibs="true">
 
         <!-- Flutter v2 Embedding -->
         <meta-data
