@@ -1,7 +1,9 @@
 import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/nex_item.dart';
 import '../repositories/vault_repository.dart';
+import '../services/autofill_engine.dart';
 import 'unlock_state.dart';
 
 // ---------------------------------------------------------------------------
@@ -47,6 +49,7 @@ class VaultState {
 class VaultNotifier extends StateNotifier<VaultState> {
   final VaultRepository _repository;
   final Uint8List _masterKey;
+  late final AutofillEngine _autofillEngine;
 
   VaultNotifier({
     required VaultRepository repository,
@@ -54,6 +57,10 @@ class VaultNotifier extends StateNotifier<VaultState> {
   })  : _repository = repository,
         _masterKey = masterKey,
         super(const VaultState(items: [])) {
+    // Initialize autofill engine with credential provider
+    _autofillEngine = AutofillEngine(
+      credentialProvider: () => state.items,
+    );
     loadVault();
   }
 
@@ -71,6 +78,9 @@ class VaultNotifier extends StateNotifier<VaultState> {
         derivedKey: _masterKey,
       );
       state = state.copyWith(items: items, isLoading: false);
+
+      // Sync credentials to platform autofill cache
+      _syncAutofillCache();
     } catch (e) {
       state = state.copyWith(
         errorMessage: 'Vault load failed: $e',
@@ -113,7 +123,7 @@ class VaultNotifier extends StateNotifier<VaultState> {
       ];
 
     await _repository.saveItem(item: item, derivedKey: _masterKey);
-    await loadVault();
+    await loadVault(); // loadVault already syncs autofill cache
   }
 
   /// Deletes a vault entry.
@@ -129,6 +139,7 @@ class VaultNotifier extends StateNotifier<VaultState> {
 
   void markUsed(NexItem item) {
     _repository.markUsed(item: item);
+    // No need to sync cache for usage tracking
   }
 
   /// Re-saves an existing item (used by security audit to update passwords).
@@ -166,6 +177,24 @@ class VaultNotifier extends StateNotifier<VaultState> {
   /// Returns all items (used by SyncService for comparison).
   Future<List<NexItem>> getAllItems() {
     return _repository.getAllItems(derivedKey: _masterKey);
+  }
+
+  /// Syncs credentials to platform autofill cache.
+  void _syncAutofillCache() {
+    try {
+      _autofillEngine.cacheCredentials();
+    } catch (e) {
+      debugPrint('[VaultNotifier] Failed to sync autofill cache: $e');
+    }
+  }
+
+  /// Clears autofill cache (called when vault is locked).
+  Future<void> clearAutofillCache() async {
+    try {
+      await _autofillEngine.clearCredentialCache();
+    } catch (e) {
+      debugPrint('[VaultNotifier] Failed to clear autofill cache: $e');
+    }
   }
 }
 

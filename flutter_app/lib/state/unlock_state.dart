@@ -1,10 +1,12 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../services/crypto_utils.dart';
 import '../services/secure_storage_service.dart';
+import 'vault_state_notifier.dart';
 
 enum AppState { initializing, locked, ready }
 
@@ -97,9 +99,20 @@ class UnlockNotifier extends StateNotifier<UnlockState> {
     return true;
   }
 
-  /// Lock the vault: wipe key from memory.
+  /// Lock the vault: wipe key from memory and clear autofill cache.
   void lock() {
     state.keyManager?.wipe();
+
+    // Clear autofill cache when vault is locked
+    try {
+      if (_ref != null) {
+        final vaultNotifier = _ref!.read(vaultStateProvider.notifier);
+        vaultNotifier.clearAutofillCache();
+      }
+    } catch (e) {
+      debugPrint('[UnlockNotifier] Failed to clear autofill cache on lock: $e');
+    }
+
     state = const UnlockState();
   }
 

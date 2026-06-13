@@ -11,7 +11,13 @@ import '../models/nex_item.dart';
 
 /// Unified abstraction over Android AutofillService and iOS
 /// CredentialProvider. Handles bidirectional MethodChannel communication
-/// and manages the shared vault index for the iOS extension.
+/// and manages the shared credential cache for autofill services.
+///
+/// ## Platform Integration
+/// - **Android**: Pushes credentials to `CredentialCache` (EncryptedSharedPreferences)
+///   so `NexPassAutofillService` can read them in its isolated process.
+/// - **iOS**: Pushes decrypted passwords to `PasswordCache` (App Group container)
+///   so the CredentialProvider extension can read them.
 class AutofillEngine {
   static const MethodChannel _channel =
       MethodChannel('io.nexpass.app/autofill');
@@ -182,6 +188,80 @@ class AutofillEngine {
       debugPrint('[AutofillEngine] iOS vault index synced (${index.length} entries)');
     } catch (e) {
       debugPrint('[AutofillEngine] Failed to sync iOS vault index: $e');
+    }
+  }
+
+  // ── Credential cache management ─────────────────────────────────────
+
+  /// Pushes the current vault credentials to the platform's autofill cache.
+  ///
+  /// Must be called after vault unlock, credential create/update/delete,
+  /// and after vault decryption completes.
+  ///
+  /// - **Android**: Writes to `CredentialCache` (EncryptedSharedPreferences)
+  ///   via MethodChannel so `NexPassAutofillService` can access them.
+  /// - **iOS**: Writes decrypted passwords to `PasswordCache` (App Group container)
+  ///   via the native AppDelegate MethodChannel.
+  Future<void> cacheCredentials() async {
+    final items = _credentialProvider();
+
+    // Filter to login items with at least username or password
+    final loginItems = items.where((item) =>
+        item.type == 1 &&
+        (item.username.isNotEmpty ||
+            item.fields.any((f) => f.name == 'password' && f.value.isNotEmpty)));
+
+    // Build credential maps for native side
+    final credentialMaps = loginItems.map((item) {
+      final passwordField = item.fields.firstWhere(
+        (f) => f.name == 'password' || f.fieldType == 2,
+        orElse: () => NexField()..value = '',
+      );
+      final websiteField = item.fields.firstWhere(
+        (f) => f.name.toLowerCase() == 'website' || f.name.toLowerCase() == 'url',
+        orElse: () => NexField()..value = '',
+      );
+
+      return {
+        'uuid': item.uuid ?? '',
+        'name': item.name,
+        'username': item.username,
+        'password': passwordField.decryptedValue ?? passwordField.value,
+        'website': websiteField.value,
+        'packageName': _extractDomain(websiteField.value),
+      };
+    }).toList();
+
+    try {
+      await _channel.invokeMethod('cacheCredentials', credentialMaps);
+      debugPrint('[AutofillEngine] Cached ${credentialMaps.length} credentials '
+          '(${Platform.operatingSystem})');
+    } catch (e) {
+      debugPrint('[AutofillEngine] Failed to cache credentials: $e');
+    }
+  }
+
+  /// Clears all cached credentials from the platform's autofill cache.
+  ///
+  /// MUST be called when the vault is locked to ensure passwords
+  /// are not persisted after the user locks the vault.
+  Future<void> clearCredentialCache() async {
+    try {
+      await _channel.invokeMethod('clearCache');
+      debugPrint('[AutofillEngine] Credential cache cleared');
+    } catch (e) {
+      debugPrint('[AutofillEngine] Failed to clear credential cache: $e');
+    }
+  }
+
+  /// Extracts a domain-like string from a website URL for package matching.
+  String _extractDomain(String url) {
+    if (url.isEmpty) return '';
+    try {
+      final uri = Uri.parse(url);
+      return uri.host;
+    } catch (_) {
+      return url;
     }
   }
 
