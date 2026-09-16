@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../i18n/app_localizations.dart';
+import '../models/nex_item.dart';
 import '../models/password_history.dart';
 import '../services/password_history_service.dart';
 import '../state/vault_state_notifier.dart';
@@ -50,8 +52,49 @@ class _PasswordHistoryScreenState
     HapticFeedback.lightImpact();
     await Clipboard.setData(ClipboardData(text: value));
     if (mounted) {
+      final S = AppLocalizations.of(context);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Password from "${e.label}" copied')),
+        SnackBar(content: Text(S.historyCopied(e.label))),
+      );
+    }
+  }
+
+  /// One-tap restore: writes the archived value back into its vault item.
+  /// [VaultNotifier.updateItem] snapshots the new value as 'rotated', and the
+  /// service dedups it against this entry, so no duplicate is created.
+  /// Entries without an owning item (generated-but-never-saved) keep copy
+  /// as their restore path.
+  Future<void> _restore(PasswordHistoryEntry e) async {
+    final value = e.decryptedValue;
+    if (value == null || value.isEmpty || e.itemUuid == null) return;
+    final S = AppLocalizations.of(context);
+    final notifier = ref.read(vaultStateProvider.notifier);
+    final items = await notifier.getAllItems();
+    NexItem? target;
+    try {
+      target = items.firstWhere((i) => i.uuid == e.itemUuid);
+    } catch (_) {
+      target = null;
+    }
+    if (!mounted) return;
+    if (target == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(S.historyRestoreMissing)),
+      );
+      return;
+    }
+    final idx = target.fields
+        .indexWhere((f) => f.name == 'password' || f.fieldType == 2);
+    if (idx == -1) return;
+    HapticFeedback.mediumImpact();
+    target.fields[idx].value = value;
+    target.fields[idx].decryptedValue = value;
+    target.updatedAt = DateTime.now();
+    await notifier.updateItem(target);
+    await _reload();
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(S.historyRestored(e.label))),
       );
     }
   }
@@ -62,19 +105,19 @@ class _PasswordHistoryScreenState
   }
 
   Future<void> _clearAll() async {
+    final S = AppLocalizations.of(context);
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Clear password history?'),
-        content: const Text(
-            'All saved passwords from the last 14 days will be permanently deleted.'),
+        title: Text(S.historyClearTitle),
+        content: Text(S.historyClearBody),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Cancel')),
+              child: Text(S.cancel)),
           FilledButton(
               onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('Clear')),
+              child: Text(S.historyClearAction)),
         ],
       ),
     );
@@ -86,14 +129,16 @@ class _PasswordHistoryScreenState
 
   @override
   Widget build(BuildContext context) {
+    final S = AppLocalizations.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Password History',
-            style: TextStyle(fontWeight: FontWeight.w700)),
+        title: Text(S.historyTitle,
+            style: const TextStyle(fontWeight: FontWeight.w700)),
         actions: [
           if (_entries.isNotEmpty)
             IconButton(
               onPressed: _clearAll,
+              tooltip: S.historyClearAction,
               icon: const NexIcon(NexIconType.trash, size: 18),
             ),
         ],
@@ -121,6 +166,7 @@ class _PasswordHistoryScreenState
 
   Widget _retentionNote(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final S = AppLocalizations.of(context);
     return Container(
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
@@ -133,7 +179,7 @@ class _PasswordHistoryScreenState
           const SizedBox(width: NexTheme.sm),
           Expanded(
             child: Text(
-              'Passwords are kept for 14 days, encrypted with your vault key. Tap copy to restore one.',
+              S.historyRetentionNote,
               style: Theme.of(context)
                   .textTheme
                   .bodySmall
@@ -147,6 +193,7 @@ class _PasswordHistoryScreenState
 
   Widget _entryTile(BuildContext context, PasswordHistoryEntry e) {
     final cs = Theme.of(context).colorScheme;
+    final S = AppLocalizations.of(context);
     final length = e.decryptedValue?.length ?? 0;
     return Card(
       margin: EdgeInsets.zero,
@@ -161,7 +208,7 @@ class _PasswordHistoryScreenState
             maxLines: 1,
             overflow: TextOverflow.ellipsis),
         subtitle: Text(
-          '${_sourceLabel(e.source)} · ${_ageLabel(e.createdAt)} · $length chars · ••••••',
+          '${_sourceLabel(e.source, S)} · ${_ageLabel(e.createdAt, S)} · $length chars · ••••••',
           style: Theme.of(context)
               .textTheme
               .bodySmall
@@ -170,6 +217,13 @@ class _PasswordHistoryScreenState
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
+            if (e.itemUuid != null)
+              IconButton(
+                onPressed: () => _restore(e),
+                tooltip: S.historyRestore,
+                icon: NexIcon(NexIconType.refresh,
+                    size: 18, color: cs.tertiary),
+              ),
             IconButton(
               onPressed: () => _copy(e),
               icon: NexIcon(NexIconType.copy, size: 18, color: cs.primary),
@@ -188,19 +242,20 @@ class _PasswordHistoryScreenState
 
   Widget _emptyState(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final S = AppLocalizations.of(context);
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           NexIcon(NexIconType.clock, size: 48, color: cs.outline),
           const SizedBox(height: NexTheme.lg),
-          Text('No saved passwords yet',
+          Text(S.historyEmpty,
               style: Theme.of(context)
                   .textTheme
                   .bodyLarge
                   ?.copyWith(fontWeight: FontWeight.w600)),
           const SizedBox(height: NexTheme.sm),
-          Text('New, rotated and generated passwords\nwill appear here for 14 days.',
+          Text(S.historyEmptyHint,
               textAlign: TextAlign.center,
               style: Theme.of(context)
                   .textTheme
@@ -222,22 +277,22 @@ class _PasswordHistoryScreenState
     }
   }
 
-  String _sourceLabel(String source) {
+  String _sourceLabel(String source, AppLocalizations S) {
     switch (source) {
       case 'created':
-        return 'Created';
+        return S.historySourceCreated;
       case 'rotated':
-        return 'Rotated';
+        return S.historySourceRotated;
       default:
-        return 'Generated';
+        return S.historySourceGenerated;
     }
   }
 
-  String _ageLabel(DateTime at) {
+  String _ageLabel(DateTime at, AppLocalizations S) {
     final age = DateTime.now().difference(at);
-    if (age.inMinutes < 1) return 'just now';
-    if (age.inHours < 1) return '${age.inMinutes}m ago';
-    if (age.inDays < 1) return '${age.inHours}h ago';
-    return '${age.inDays}d ago';
+    if (age.inMinutes < 1) return S.historyAgeJustNow;
+    if (age.inHours < 1) return S.historyAgeMin(age.inMinutes);
+    if (age.inDays < 1) return S.historyAgeHour(age.inHours);
+    return S.historyAgeDay(age.inDays);
   }
 }

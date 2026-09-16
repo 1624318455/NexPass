@@ -204,6 +204,31 @@ class AppLocalizations {
   String get settingsCSV => get('settingsCSV');
   String get settingsAuthDisplay => get('settingsAuthDisplay');
   String get settingsAuthDisplayDesc => get('settingsAuthDisplayDesc');
+
+  // ── Password history ─────────────────────────────────────────────
+
+  String get historyTitle => get('historyTitle');
+  String get historySettingsDesc => get('historySettingsDesc');
+  String get historyRetentionNote => get('historyRetentionNote');
+  String historyCopied(String label) =>
+      get('historyCopied').replaceAll('{label}', label);
+  String get historyClearTitle => get('historyClearTitle');
+  String get historyClearBody => get('historyClearBody');
+  String get historyClearAction => get('historyClearAction');
+  String get historyEmpty => get('historyEmpty');
+  String get historyEmptyHint => get('historyEmptyHint');
+  String get historySourceCreated => get('historySourceCreated');
+  String get historySourceRotated => get('historySourceRotated');
+  String get historySourceGenerated => get('historySourceGenerated');
+  String get historyAgeJustNow => get('historyAgeJustNow');
+  String historyAgeMin(int n) => get('historyAgeMin').replaceAll('{n}', '$n');
+  String historyAgeHour(int n) =>
+      get('historyAgeHour').replaceAll('{n}', '$n');
+  String historyAgeDay(int n) => get('historyAgeDay').replaceAll('{n}', '$n');
+  String get historyRestore => get('historyRestore');
+  String historyRestored(String label) =>
+      get('historyRestored').replaceAll('{label}', label);
+  String get historyRestoreMissing => get('historyRestoreMissing');
 }
 
 class _AppLocalizationsDelegate

@@ -12,6 +12,9 @@
 .swiftpm/
 migrate_working_dir/
 
+# Isar unit-test native binary (downloaded by initializeIsarCore in tests)
+/libisar.dylib
+
 # IntelliJ related
 *.iml
 *.ipr

@@ -127,7 +127,7 @@ class SettingsScreen extends ConsumerWidget {
                 MaterialPageRoute(builder: (_) => const SecurityAuditScreen()))),
 
         // P1-6c: 14-day encrypted password history (recover unsaved/rotated).
-        _tile(context, NexIconType.clock, 'Password History', 'Recover passwords from the last 14 days',
+        _tile(context, NexIconType.clock, S.historyTitle, S.historySettingsDesc,
             onTap: () => Navigator.push(context,
                 MaterialPageRoute(builder: (_) => const PasswordHistoryScreen()))),
 
