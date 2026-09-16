@@ -41,6 +41,14 @@ class AuditResult {
   final int weakCount;
   final int reusedCount;
   final int compromisedCount;
+
+  /// Items whose password is older than [SecurityAuditService.staleAfter].
+  final int staleCount;
+
+  /// Login items carrying a password but no TOTP secret (guidance only,
+  /// excluded from [healthIndex]: 2FA availability depends on the site).
+  final int no2faCount;
+
   final double healthIndex; // 0.0 – 1.0
   final List<AuditIssue> issues;
 
@@ -49,6 +57,8 @@ class AuditResult {
     required this.weakCount,
     required this.reusedCount,
     required this.compromisedCount,
+    required this.staleCount,
+    required this.no2faCount,
     required this.healthIndex,
     required this.issues,
   });
@@ -313,7 +323,13 @@ class SecurityAuditService {
         issues.where((i) => i.severity == AuditSeverity.critical).length;
     final reusedCount = reusedValues.length;
     final compromisedCount = issues
-        .where((i) => i.message.contains('compromised'))
+        .where((i) => i.kind == AuditIssueKind.compromisedPassword)
+        .length;
+    final staleCount = issues
+        .where((i) => i.kind == AuditIssueKind.stalePassword)
+        .length;
+    final no2faCount = issues
+        .where((i) => i.kind == AuditIssueKind.missingTwoFactor)
         .length;
 
     return AuditResult(
@@ -321,10 +337,16 @@ class SecurityAuditService {
       weakCount: weakCount,
       reusedCount: reusedCount,
       compromisedCount: compromisedCount,
+      staleCount: staleCount,
+      no2faCount: no2faCount,
       healthIndex: _computeHealthIndex(
         totalPasswords: passwordMap.length,
-        weakCount: weakCount,
+        weakLengthCount: issues
+            .where((i) => i.kind == AuditIssueKind.weakPassword)
+            .length,
+        compromisedCount: compromisedCount,
         reusedCount: reusedCount,
+        staleCount: staleCount,
       ),
       issues: issues,
     );
@@ -332,25 +354,37 @@ class SecurityAuditService {
 
   // ── Health index formula ─────────────────────────────────────────────
 
-  /// Health index = 1.0 − penalty.
+  /// Health index = 1.0 − penalty, clamped to 0.0 – 1.0.
   ///
-  /// Penalty sources:
-  /// - Each weak password costs up to 0.30 (divided by total, capped).
-  /// - Each reused password costs up to 0.20.
+  /// Penalty sources (each ratio is capped at 1.0):
+  /// - Short passwords: up to 0.55 — the dominant, always-actionable signal.
+  /// - Known-compromised passwords: up to 0.25 on top (a breached value is
+  ///   usually also short, so breached items cost up to 0.80 combined).
+  /// - Reused passwords: up to 0.15.
+  /// - Stale passwords: up to 0.05.
+  /// - Missing 2FA is deliberately unscored guidance: whether a site offers
+  ///   TOTP is outside the user's control, so it must not drag the score.
   /// - Empty vault scores 1.0 (nothing to be weak).
   double _computeHealthIndex({
     required int totalPasswords,
-    required int weakCount,
+    required int weakLengthCount,
+    required int compromisedCount,
     required int reusedCount,
+    required int staleCount,
   }) {
     if (totalPasswords == 0) return 1.0;
 
     final weakPenalty =
-        (weakCount / totalPasswords).clamp(0.0, 1.0) * 0.60;
+        (weakLengthCount / totalPasswords).clamp(0.0, 1.0) * 0.55;
+    final compromisedPenalty =
+        (compromisedCount / totalPasswords).clamp(0.0, 1.0) * 0.25;
     final reusedPenalty =
-        (reusedCount / totalPasswords).clamp(0.0, 1.0) * 0.40;
+        (reusedCount / totalPasswords).clamp(0.0, 1.0) * 0.15;
+    final stalePenalty =
+        (staleCount / totalPasswords).clamp(0.0, 1.0) * 0.05;
 
-    return (1.0 - weakPenalty - reusedPenalty).clamp(0.0, 1.0);
+    return (1.0 - weakPenalty - compromisedPenalty - reusedPenalty - stalePenalty)
+        .clamp(0.0, 1.0);
   }
 
   String _mask(String value) {

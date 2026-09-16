@@ -262,8 +262,7 @@ void main() {
     });
   });
 
-  group('stale passwords', () {
-    test('password older than staleAfter is flagged', () {
+  group('stale passwords', () {    test('password older than staleAfter is flagged', () {
       final item = _makeItem('Old', r'V3ry$ecureP@ss!')
         ..updatedAt = DateTime.now().subtract(const Duration(days: 200));
       final result = audit.analyze([item]);
@@ -302,6 +301,50 @@ void main() {
             .where((i) => i.kind == AuditIssueKind.stalePassword),
         isEmpty,
       );
+    });
+  });
+
+  // ── P1-7a (B3): health-index weights ────────────────────────────────
+
+  group('health index weights', () {
+    test('missing 2FA is counted but unscored', () {
+      final result = audit.analyze([
+        _makeItem('A', 'Str0ng!P@ssw0rd1'),
+        _makeItem('B', r'An0ther$ecure2!'),
+      ]);
+      expect(result.no2faCount, 2);
+      expect(result.healthIndex, 1.0);
+      expect(result.isHealthy, isTrue);
+    });
+
+    test('stale-only vault costs 0.05', () {
+      final item = _makeItem('Old', 'Str0ng!P@ssw0rd1')
+        ..updatedAt = DateTime.now().subtract(const Duration(days: 200));
+      final result = audit.analyze([item]);
+      expect(result.staleCount, 1);
+      expect(result.healthIndex, closeTo(0.95, 0.001));
+    });
+
+    test('long compromised password costs 0.25', () {
+      // 'welcome123' is 10 chars (not weak) but in the compromised list.
+      final result = audit.analyze([_makeItem('Leaky', 'welcome123')]);
+      expect(result.compromisedCount, 1);
+      expect(result.healthIndex, closeTo(0.75, 0.001));
+    });
+
+    test('short breached password stacks weak + compromised', () {
+      // '123456': weak-length (0.55) + compromised (0.25) = 0.80 penalty.
+      final result = audit.analyze([_makeItem('Bad', '123456')]);
+      expect(result.healthIndex, closeTo(0.20, 0.001));
+      expect(result.isHealthy, isFalse);
+    });
+
+    test('fully weak vault stays below 0.5', () {
+      final result = audit.analyze([
+        _makeItem('A', 'ab'),
+        _makeItem('B', 'cd'),
+      ]);
+      expect(result.healthIndex, closeTo(0.45, 0.001));
     });
   });
 }
