@@ -6,16 +6,28 @@ import '../models/nex_item.dart';
 
 enum AuditSeverity { critical, warning, info }
 
+/// Stable category for an [AuditIssue], used by the Watchtower UI to group
+/// issues (P1-7b) without parsing human-readable messages.
+enum AuditIssueKind {
+  weakPassword,
+  reusedPassword,
+  compromisedPassword,
+  missingTwoFactor,
+  stalePassword,
+}
+
 class AuditIssue {
   final NexItem item;
   final String field;
   final AuditSeverity severity;
+  final AuditIssueKind kind;
   final String message;
 
   const AuditIssue({
     required this.item,
     required this.field,
     required this.severity,
+    required this.kind,
     required this.message,
   });
 }
@@ -49,10 +61,16 @@ class AuditResult {
 // ---------------------------------------------------------------------------
 
 /// Analyzes the vault for weak passwords, reused credentials,
-/// and computes a single health-index score.
+/// known-compromised values, missing two-factor coverage, and stale
+/// passwords — and computes a single health-index score.
 class SecurityAuditService {
   /// Minimum password length to pass the weak-password check.
   final int minimumSecureLength;
+
+  /// Passwords untouched longer than this are flagged as stale.
+  /// Heuristic: [NexItem.updatedAt] is the closest locally-tracked signal
+  /// for "last rotated" (any edit bumps it, so this errs toward fewer flags).
+  final Duration staleAfter;
 
   /// Known compromised passwords (haveibeenpwned top-N list).
   /// In production this would be loaded from a bundled file or API.
@@ -193,7 +211,10 @@ class SecurityAuditService {
     'default',
   };
 
-  SecurityAuditService({this.minimumSecureLength = 10});
+  SecurityAuditService({
+    this.minimumSecureLength = 10,
+    this.staleAfter = const Duration(days: 180),
+  });
 
   /// Runs a full audit against the given vault [items].
   AuditResult analyze(List<NexItem> items) {
@@ -215,6 +236,7 @@ class SecurityAuditService {
             item: item,
             field: field.name,
             severity: AuditSeverity.critical,
+            kind: AuditIssueKind.weakPassword,
             message:
                 'Password "${_mask(value)}" is only ${value.length} characters '
                 '(minimum $minimumSecureLength)',
@@ -227,6 +249,7 @@ class SecurityAuditService {
             item: item,
             field: field.name,
             severity: AuditSeverity.critical,
+            kind: AuditIssueKind.compromisedPassword,
             message:
                 'Password "${_mask(value)}" is in the known-compromised list',
           ));
@@ -248,8 +271,40 @@ class SecurityAuditService {
           item: entry.value.first,
           field: 'password',
           severity: AuditSeverity.warning,
+          kind: AuditIssueKind.reusedPassword,
           message:
               'Password "${_mask(entry.key)}" is reused across $names',
+        ));
+      }
+    }
+
+    // ── P1-7a: missing-2FA nudge + stale passwords ──────────────
+    // Login items (type 1) carrying a password but no TOTP secret get an
+    // info-level enable-2FA prompt; any password untouched longer than
+    // [staleAfter] gets a rotation reminder.
+    final itemsWithPasswords = <NexItem>{
+      for (final list in passwordMap.values) ...list
+    };
+    for (final item in itemsWithPasswords) {
+      if (item.type == 1 && !_hasTotp(item)) {
+        issues.add(AuditIssue(
+          item: item,
+          field: 'totpSecret',
+          severity: AuditSeverity.info,
+          kind: AuditIssueKind.missingTwoFactor,
+          message:
+              'Login "${item.name}" has no authenticator code — enable 2FA where the site supports it',
+        ));
+      }
+      final age = DateTime.now().difference(item.updatedAt);
+      if (age > staleAfter) {
+        issues.add(AuditIssue(
+          item: item,
+          field: 'password',
+          severity: AuditSeverity.warning,
+          kind: AuditIssueKind.stalePassword,
+          message:
+              'Password for "${item.name}" is ${age.inDays} days old — consider rotating it',
         ));
       }
     }
@@ -301,5 +356,16 @@ class SecurityAuditService {
   String _mask(String value) {
     if (value.length <= 4) return '••••';
     return '${value.substring(0, 2)}•••${value.substring(value.length - 2)}';
+  }
+
+  /// Mirrors the TOTP lookup in [NexItem.hasTotp] but prefers the decrypted
+  /// value, matching how [analyze] reads password fields.
+  bool _hasTotp(NexItem item) {
+    for (final f in item.fields) {
+      if (f.name == 'totpSecret' || f.fieldType == 3) {
+        if ((f.decryptedValue ?? f.value).isNotEmpty) return true;
+      }
+    }
+    return false;
   }
 }

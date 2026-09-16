@@ -53,8 +53,22 @@ void main() {
     test('flags password shorter than minimumSecureLength', () {
       final result = audit.analyze([_makeItem('Short', 'abc')]);
       expect(result.weakCount, 1);
-      expect(result.issues.length, 1);
-      expect(result.issues.first.severity, AuditSeverity.critical);
+      // P1-7a: a TOTP-less login also gets an info-level 2FA nudge.
+      expect(result.issues.length, 2);
+      expect(
+        result.issues
+            .where((i) => i.kind == AuditIssueKind.weakPassword)
+            .single
+            .severity,
+        AuditSeverity.critical,
+      );
+      expect(
+        result.issues
+            .where((i) => i.kind == AuditIssueKind.missingTwoFactor)
+            .single
+            .severity,
+        AuditSeverity.info,
+      );
     });
 
     test('passes password at exactly minimumSecureLength', () {
@@ -185,6 +199,109 @@ void main() {
       expect(result.weakCount, greaterThanOrEqualTo(1));
       expect(result.reusedCount, 1);
       expect(result.healthIndex, lessThan(1.0));
+    });
+  });
+
+  // ── P1-7a: 2FA coverage + stale passwords ────────────────────────────
+
+  group('two-factor coverage', () {
+    NexItem makeLoginWithTotp(String name, String password) {
+      return NexItem()
+        ..name = name
+        ..type = 1
+        ..fields = [
+          NexField()
+            ..name = 'password'
+            ..value = password
+            ..fieldType = 2
+            ..isSensitive = true,
+          NexField()
+            ..name = 'totpSecret'
+            ..value = 'JBSWY3DPEHPK3PXP'
+            ..fieldType = 3
+            ..isSensitive = true,
+        ];
+    }
+
+    test('login without TOTP gets an info-level 2FA nudge', () {
+      final result = audit.analyze([_makeItem('NoTotp', r'V3ry$ecureP@ss!')]);
+      final nudge = result.issues.where(
+        (i) => i.kind == AuditIssueKind.missingTwoFactor,
+      );
+      expect(nudge, hasLength(1));
+      expect(nudge.single.severity, AuditSeverity.info);
+      expect(nudge.single.field, 'totpSecret');
+    });
+
+    test('login with TOTP gets no 2FA nudge', () {
+      final result = audit.analyze(
+        [makeLoginWithTotp('WithTotp', r'V3ry$ecureP@ss!')],
+      );
+      expect(
+        result.issues.where((i) => i.kind == AuditIssueKind.missingTwoFactor),
+        isEmpty,
+      );
+    });
+
+    test('non-login items are exempt from the 2FA nudge', () {
+      final card = NexItem()
+        ..name = 'Card'
+        ..type = 2
+        ..fields = [
+          NexField()
+            ..name = 'password'
+            ..value = r'V3ry$ecureP@ss!'
+            ..fieldType = 2
+            ..isSensitive = true,
+        ];
+      final result = audit.analyze([card]);
+      expect(
+        result.issues.where((i) => i.kind == AuditIssueKind.missingTwoFactor),
+        isEmpty,
+      );
+    });
+  });
+
+  group('stale passwords', () {
+    test('password older than staleAfter is flagged', () {
+      final item = _makeItem('Old', r'V3ry$ecureP@ss!')
+        ..updatedAt = DateTime.now().subtract(const Duration(days: 200));
+      final result = audit.analyze([item]);
+      final stale = result.issues.where(
+        (i) => i.kind == AuditIssueKind.stalePassword,
+      );
+      expect(stale, hasLength(1));
+      expect(stale.single.severity, AuditSeverity.warning);
+    });
+
+    test('recently updated password is not flagged', () {
+      final result = audit.analyze([_makeItem('Fresh', r'V3ry$ecureP@ss!')]);
+      expect(
+        result.issues.where((i) => i.kind == AuditIssueKind.stalePassword),
+        isEmpty,
+      );
+    });
+
+    test('staleAfter threshold is configurable', () {
+      final strict = SecurityAuditService(
+        staleAfter: const Duration(days: 30),
+      );
+      final item = _makeItem('Aged', r'V3ry$ecureP@ss!')
+        ..updatedAt = DateTime.now().subtract(const Duration(days: 60));
+      expect(
+        strict
+            .analyze([item])
+            .issues
+            .where((i) => i.kind == AuditIssueKind.stalePassword),
+        hasLength(1),
+      );
+      expect(
+        audit
+            .analyze([item])
+            .issues
+            .where((i) => i.kind == AuditIssueKind.stalePassword),
+        isEmpty,
+      );
     });
   });
 }
