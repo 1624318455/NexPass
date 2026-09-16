@@ -18,29 +18,45 @@ TypeScript 5.8 + React 19 | Vite 6.2 | Tailwind CSS 4 | @google/genai (Gemini)
 ```
 flutter_app/lib/
 ├── main.dart                    # 入口: Argon2id → Isar 加密 → Riverpod
-├── models/nex_item.dart         # Isar @collection
+├── models/
+│   ├── nex_item.dart            # Isar @collection (含 NexField 嵌入)
+│   └── app_settings.dart        # 20+ 可配置设置项
 ├── repositories/vault_repository.dart  # 批量加解密（单 Isolate）
 ├── services/
-│   ├── crypto_utils.dart        # Argon2id + PBKDF2 + AES-256-GCM (Isolate)
+│   ├── crypto_utils.dart        # KeyManager + Argon2id + PBKDF2 + AES-256-GCM (Isolate)
 │   ├── secure_storage_service.dart # Keychain/Keystore
 │   ├── database_service.dart    # Isar AesGcmFileCipher
-│   ├── clipboard_service.dart   # Monica 双剪贴板
+│   ├── clipboard_service.dart   # Monica 双剪贴板 + 30s 自动清空
+│   ├── biometric_service.dart   # local_auth 生物识别封装
 │   ├── sync_service.dart        # WebDAV 原子同步 (PROPFIND→PUT.tmp→MOVE)
-│   ├── security_audit_service.dart
-│   ├── password_generator_service.dart
+│   ├── security_audit_service.dart # 弱密码/重复/泄露检测 + 健康指数
+│   ├── password_generator_service.dart # 安全密码生成 + 强度评估
 │   ├── csv_import_service.dart  # CSV + Bitwarden/KeePass 格式检测
-│   ├── autofill_engine.dart     # 跨平台自动填充
-│   └── autofill_channel_service.dart
+│   ├── autofill_engine.dart     # 跨平台自动填充抽象层
+│   └── autofill_channel_service.dart # MethodChannel 桥接
 ├── state/
 │   ├── unlock_state.dart        # 解锁状态机（生物识别/密码回退）
-│   ├── vault_state_notifier.dart
-│   └── sync_state.dart
-└── screens/
-    ├── main_screen.dart         # 搜索/分类/复制
-    ├── item_detail_screen.dart  # 10 模块 + 浮动操作栏
-    ├── lock_screen.dart         # 生物识别 + 密码回退
-    ├── import_preview_screen.dart
-    └── security_audit_screen.dart
+│   ├── vault_state_notifier.dart # Vault CRUD + 搜索 + 收藏
+│   └── sync_state.dart          # 同步进度状态机
+├── screens/
+│   ├── main_screen.dart         # 搜索/分类/复制
+│   ├── item_detail_screen.dart  # 10 模块卡片 + 编辑模式 + 浮动操作栏
+│   ├── settings_screen.dart     # 9 分区设置页
+│   ├── onboarding_screen.dart   # 10 页引导流程
+│   ├── lock_screen.dart         # 生物识别 + 密码回退
+│   ├── import_preview_screen.dart # CSV 导入预览
+│   ├── security_audit_screen.dart # 安全审计面板
+│   ├── clipboard_overlay.dart   # 剪贴板 Toast 浮层
+│   └── health_ring_chart.dart   # 自定义环形图 (CustomPainter)
+├── widgets/
+│   └── nex_icons.dart           # 自定义 Canvas 图标
+├── theme/
+│   └── nex_theme.dart           # Material 3 主题 (#5B21B6 紫色)
+└── i18n/
+    ├── app_localizations.dart   # 国际化入口
+    ├── l10n_en.dart             # 英文
+    ├── l10n_zh.dart             # 中文
+    └── l10n_ja.dart             # 日文
 ```
 
 ## 密码学架构

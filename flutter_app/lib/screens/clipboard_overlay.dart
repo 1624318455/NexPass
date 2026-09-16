@@ -19,6 +19,12 @@ class _DualClipboardOverlayState extends ConsumerState<DualClipboardOverlay>
   late Animation<double> _fade;
   late Animation<Offset> _slide;
 
+  // P0-4b: exit-animation support — stash last visible state so the
+  // auto-dismiss countdown can play reverse instead of vanishing.
+  DualClipboardState? _stashed;
+  bool _exiting = false;
+  bool _recopyPop = false;
+
   @override
   void initState() {
     super.initState();
@@ -32,24 +38,48 @@ class _DualClipboardOverlayState extends ConsumerState<DualClipboardOverlay>
   @override
   void dispose() { _ctrl.dispose(); super.dispose(); }
 
+  void _onVisibility(bool wasVisible, bool isVisible) {
+    if (isVisible && !wasVisible) {
+      // Fresh show — replay entrance.
+      _exiting = false;
+      _stashed = null;
+      _ctrl.forward(from: 0);
+    } else if (!isVisible && wasVisible && !_exiting) {
+      // Auto-dismiss / external dismiss — play exit on stashed content.
+      _exiting = true;
+      _ctrl.reverse().then((_) {
+        if (mounted) setState(() => _exiting = false);
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final clipState = ref.watch(dualClipboardProvider);
-    if (!clipState.isVisible) return const SizedBox.shrink();
+    ref.listen<DualClipboardState>(dualClipboardProvider, (prev, next) {
+      _onVisibility(prev?.isVisible ?? false, next.isVisible);
+      if (next.isVisible) _stashed = next;
+    });
+
+    // Render live state while visible; stashed snapshot during exit.
+    final DualClipboardState? shown =
+        clipState.isVisible ? clipState : (_exiting ? _stashed : null);
+    if (shown == null) return const SizedBox.shrink();
 
     final notifier = ref.read(dualClipboardProvider.notifier);
-    final remaining = clipState.secondsRemaining;
+    final remaining = shown.secondsRemaining;
     final progress = remaining / DualClipboardNotifier.cacheDurationSeconds;
     final S = AppLocalizations.of(context);
     final cs = Theme.of(context).colorScheme;
 
-    return FadeTransition(
-      opacity: _fade,
-      child: SlideTransition(
-        position: _slide,
-        child: Positioned(
-          top: MediaQuery.of(context).padding.top + NexTheme.sm,
-          left: NexTheme.lg, right: NexTheme.lg,
+    // NOTE: Positioned must be the direct Stack child — transitions go inside.
+    return Positioned(
+      top: MediaQuery.of(context).padding.top + NexTheme.sm,
+      left: NexTheme.lg, right: NexTheme.lg,
+      child: FadeTransition(
+        opacity: _fade,
+        child: SlideTransition(
+          position: _slide,
           child: Material(
             color: Colors.transparent,
             child: Container(
@@ -81,13 +111,13 @@ class _DualClipboardOverlayState extends ConsumerState<DualClipboardOverlay>
                               Text(S.dualClipboardActive, style: Theme.of(context).textTheme.labelSmall?.copyWith(
                                 color: cs.primary, fontWeight: FontWeight.w700, letterSpacing: 0.3)),
                               const SizedBox(height: 2),
-                              Text(clipState.itemName, style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              Text(shown.itemName, style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                                 color: cs.onSurface, fontWeight: FontWeight.w600),
                                 maxLines: 1, overflow: TextOverflow.ellipsis),
                             ]),
                           ),
                           GestureDetector(
-                            onTap: () { _ctrl.reverse().then((_) => notifier.dismiss()); },
+                            onTap: notifier.dismiss,
                             child: NexIcon(NexIconType.close, size: 16, color: cs.outline),
                           ),
                         ]),
@@ -100,20 +130,24 @@ class _DualClipboardOverlayState extends ConsumerState<DualClipboardOverlay>
                           Text(S.totpToClipboard, style: Theme.of(context).textTheme.labelSmall?.copyWith(color: cs.onSurfaceVariant, fontWeight: FontWeight.w600)),
                           const Spacer(),
                           GestureDetector(
-                            onTap: () => Clipboard.setData(ClipboardData(text: clipState.totpCode)),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: cs.surface,
-                                borderRadius: BorderRadius.circular(NexTheme.rSm),
-                                border: Border.all(color: cs.outlineVariant),
+                            onTap: _recopy,
+                            child: AnimatedScale(
+                              scale: _recopyPop ? 0.9 : 1.0,
+                              duration: const Duration(milliseconds: 150),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: cs.surface,
+                                  borderRadius: BorderRadius.circular(NexTheme.rSm),
+                                  border: Border.all(color: cs.outlineVariant),
+                                ),
+                                child: Row(mainAxisSize: MainAxisSize.min, children: [
+                                  Text(shown.totpCode, style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                    color: cs.primary, fontFamily: 'monospace', fontWeight: FontWeight.w700, letterSpacing: 1.5)),
+                                  const SizedBox(width: NexTheme.sm),
+                                  NexIcon(NexIconType.copy, size: 12, color: cs.primary),
+                                ]),
                               ),
-                              child: Row(mainAxisSize: MainAxisSize.min, children: [
-                                Text(clipState.totpCode, style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                  color: cs.primary, fontFamily: 'monospace', fontWeight: FontWeight.w700, letterSpacing: 1.5)),
-                                const SizedBox(width: NexTheme.sm),
-                                NexIcon(NexIconType.copy, size: 12, color: cs.primary),
-                              ]),
                             ),
                           ),
                         ]),
@@ -196,5 +230,16 @@ class _DualClipboardOverlayState extends ConsumerState<DualClipboardOverlay>
         ),
       ),
     );
+  }
+
+  /// P0-4b: re-copy chip press feedback (scale pop + light haptic).
+  void _recopy() {
+    HapticFeedback.lightImpact();
+    final code = _stashed?.totpCode ?? ref.read(dualClipboardProvider).totpCode;
+    Clipboard.setData(ClipboardData(text: code));
+    setState(() => _recopyPop = true);
+    Future.delayed(const Duration(milliseconds: 180), () {
+      if (mounted) setState(() => _recopyPop = false);
+    });
   }
 }

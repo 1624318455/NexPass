@@ -16,6 +16,7 @@ import '../state/unlock_state.dart';
 import '../theme/nex_theme.dart';
 import '../widgets/nex_icons.dart';
 import 'import_preview_screen.dart';
+import 'password_history_screen.dart';
 import 'security_audit_screen.dart';
 
 class SettingsScreen extends ConsumerWidget {
@@ -74,6 +75,20 @@ class SettingsScreen extends ConsumerWidget {
               }
               ref.read(appSettingsNotifierProvider.notifier).update((s) => s.biometricEnabled = v);
             }),
+        // P0-3d: PIN convenience unlock (setup requires master-password verify)
+        FutureBuilder<bool>(
+          future: ref.read(secureStorageProvider).hasPin(),
+          builder: (ctx, snap) {
+            final has = snap.data == true;
+            return _tile(
+              context,
+              NexIconType.key,
+              'Unlock PIN',
+              has ? '4-digit convenience unlock is ON' : 'Set a 4-digit convenience unlock',
+              onTap: () => _showPinDialog(context, ref, has),
+            );
+          },
+        ),
 
         _sectionHeader(context, S.settingsAutofillLabel),
         _switchTile(context, NexIconType.clipboard, S.onboardingAutofillToggle, S.settingsAutofillDesc,
@@ -110,6 +125,11 @@ class SettingsScreen extends ConsumerWidget {
         _tile(context, NexIconType.shield, S.settingsSecurityAudit, S.settingsSecurityAuditDesc,
             onTap: () => Navigator.push(context,
                 MaterialPageRoute(builder: (_) => const SecurityAuditScreen()))),
+
+        // P1-6c: 14-day encrypted password history (recover unsaved/rotated).
+        _tile(context, NexIconType.clock, 'Password History', 'Recover passwords from the last 14 days',
+            onTap: () => Navigator.push(context,
+                MaterialPageRoute(builder: (_) => const PasswordHistoryScreen()))),
 
         const SizedBox(height: 8),
         Padding(
@@ -423,6 +443,146 @@ class SettingsScreen extends ConsumerWidget {
       if (a[i] != b[i]) return false;
     }
     return true;
+  }
+
+  // ── P0-3d: PIN setup/manage (master-password gated) ────────────────────
+
+  void _showPinDialog(BuildContext context, WidgetRef ref, bool hasPin) {
+    final masterCtrl = TextEditingController();
+    final pinCtrl = TextEditingController();
+    final confirmCtrl = TextEditingController();
+    bool loading = false;
+    String? error;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          title: Text(hasPin ? 'Change / Remove PIN' : 'Set Unlock PIN'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Your master password is required. The PIN only unlocks this device (key stays in the system keystore).',
+                  style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(ctx).colorScheme.onSurfaceVariant),
+                ),
+                const SizedBox(height: 12),
+                _fieldCtrl(masterCtrl, 'Master password', obscure: true),
+                const SizedBox(height: 12),
+                _fieldCtrl(pinCtrl, 'New 4-digit PIN', obscure: true),
+                const SizedBox(height: 12),
+                _fieldCtrl(confirmCtrl, 'Confirm PIN', obscure: true),
+                if (error != null) ...[
+                  const SizedBox(height: 8),
+                  Text(error!,
+                      style: Theme.of(ctx)
+                          .textTheme
+                          .bodySmall
+                          ?.copyWith(color: Theme.of(ctx).colorScheme.error)),
+                ],
+              ],
+            ),
+          ),
+          actions: [
+            if (hasPin)
+              TextButton(
+                onPressed: loading
+                    ? null
+                    : () async {
+                        if (masterCtrl.text.isEmpty) {
+                          setDialogState(() => error = 'Master password is required');
+                          return;
+                        }
+                        setDialogState(() {
+                          loading = true;
+                          error = null;
+                        });
+                        final ok = await _verifyMaster(context, ref, masterCtrl.text);
+                        if (!ok) {
+                          setDialogState(() {
+                            loading = false;
+                            error = 'Master password is incorrect';
+                          });
+                          return;
+                        }
+                        await ref.read(secureStorageProvider).clearPin();
+                        if (ctx.mounted) Navigator.pop(ctx);
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('PIN removed')));
+                        }
+                      },
+                child: const Text('Remove'),
+              ),
+            TextButton(
+              onPressed: loading ? null : () => Navigator.pop(ctx),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: loading
+                  ? null
+                  : () async {
+                      if (masterCtrl.text.isEmpty) {
+                        setDialogState(() => error = 'Master password is required');
+                        return;
+                      }
+                      if (!RegExp(r'^[0-9]{4}$').hasMatch(pinCtrl.text)) {
+                        setDialogState(() => error = 'PIN must be exactly 4 digits');
+                        return;
+                      }
+                      if (pinCtrl.text != confirmCtrl.text) {
+                        setDialogState(() => error = 'PINs do not match');
+                        return;
+                      }
+                      setDialogState(() {
+                        loading = true;
+                        error = null;
+                      });
+                      final ok = await _verifyMaster(context, ref, masterCtrl.text);
+                      if (!ok) {
+                        setDialogState(() {
+                          loading = false;
+                          error = 'Master password is incorrect';
+                        });
+                        return;
+                      }
+                      await ref.read(secureStorageProvider).setPin(pinCtrl.text);
+                      if (ctx.mounted) Navigator.pop(ctx);
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text(hasPin ? 'PIN updated' : 'PIN set')));
+                      }
+                    },
+              child: loading
+                  ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                  : const Text('Save'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Verifies [password] against the in-memory derived key (no state change).
+  Future<bool> _verifyMaster(BuildContext context, WidgetRef ref, String password) async {
+    try {
+      final secureStorage = ref.read(secureStorageProvider);
+      final cryptoService = ref.read(cryptoServiceProvider);
+      final currentKey = ref.read(unlockStateProvider).derivedKey;
+      if (currentKey == null) return false;
+      final salt = await secureStorage.getOrCreateMasterSalt(
+        () => base64Encode(generateSalt()),
+      );
+      final derived = await cryptoService.deriveKey(
+        password: password,
+        salt: base64Decode(salt),
+      );
+      return _bytesEqual(derived, currentKey);
+    } catch (_) {
+      return false;
+    }
   }
 
   void _showNavCustomizeDialog(BuildContext context, WidgetRef ref, AppSettings settings) {

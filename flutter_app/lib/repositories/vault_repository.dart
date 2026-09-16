@@ -68,6 +68,19 @@ class VaultRepository {
     return allItems;
   }
 
+  /// Fetches one item by uuid with fields decrypted (null when absent).
+  /// Used by history change-detection before overwrite.
+  Future<NexItem?> getItemByUuid({
+    required String uuid,
+    required Uint8List derivedKey,
+  }) async {
+    final item =
+        await _isar.nexItems.filter().uuidEqualTo(uuid).findFirst();
+    if (item == null) return null;
+    await _decryptFields(item, derivedKey);
+    return item;
+  }
+
   Future<List<NexItem>> getWeakPasswordItems({
     required Uint8List derivedKey,
     int minimumSecureLength = 10,

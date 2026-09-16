@@ -99,6 +99,21 @@ class UnlockNotifier extends StateNotifier<UnlockState> {
     return true;
   }
 
+  /// Unlock with 4-digit PIN gate (P0-3c).
+  ///
+  /// The PIN only gates access to the keystore-persisted derived key —
+  /// it never derives or replaces the master key (zero-knowledge preserved).
+  /// Returns false if no PIN is set, PIN mismatches, or no key is stored.
+  Future<bool> unlockWithPin(String pin) async {
+    final ok = await _secureStorage.verifyPin(pin);
+    if (!ok) return false;
+    final storedKey = await _secureStorage.recoverDerivedKey();
+    if (storedKey == null) return false;
+    _activateKey(storedKey);
+    _ref?.read(appStateProvider.notifier).state = AppState.ready;
+    return true;
+  }
+
   /// Lock the vault: wipe key from memory and clear autofill cache.
   void lock() {
     state.keyManager?.wipe();

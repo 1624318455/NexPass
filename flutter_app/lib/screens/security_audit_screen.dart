@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../i18n/app_localizations.dart';
 import '../services/password_generator_service.dart';
+import '../services/password_history_service.dart';
 import '../services/security_audit_service.dart';
 import '../state/vault_state_notifier.dart';
 import '../theme/nex_theme.dart';
@@ -35,6 +36,19 @@ class _SecurityAuditScreenState extends ConsumerState<SecurityAuditScreen> {
   Future<void> _fixItem(AuditIssue issue) async {
     final item = issue.item;
     final pw = _generator.generate(length: 20);
+    // P1-6b: capture the generated value even if the save below fails.
+    // updateItem's 'rotated' snapshot dedups against this entry.
+    try {
+      await ref.read(passwordHistoryProvider).record(
+            password: pw,
+            derivedKey: ref.read(masterKeyProvider),
+            itemUuid: item.uuid,
+            label: item.name,
+            source: 'generated',
+          );
+    } catch (_) {
+      // History is best-effort; the rotation below still proceeds.
+    }
     final idx = item.fields.indexWhere((f) => f.name == issue.field);
     if (idx == -1) return;
     item.fields[idx].value = pw;

@@ -616,25 +616,39 @@ class _TotpCard extends StatefulWidget {
 class _TotpCardState extends State<_TotpCard> {
   String _code = '------';
   double _progress = 0;
+  int _lastCounter = -1;
   Timer? _timer;
+  // P0-4b: inline copy confirmation
+  bool _justCopied = false;
+  Timer? _copyTimer;
 
   @override
   void initState() {
     super.initState();
     _generate();
-    _timer = Timer.periodic(const Duration(seconds: 1), (_) => _generate());
+    // P0-4a: 250ms ticks → smooth ring sweep; HMAC recomputed only on counter rollover.
+    _timer = Timer.periodic(const Duration(milliseconds: 250), (_) => _generate());
   }
 
   @override
   void dispose() {
     _timer?.cancel();
+    _copyTimer?.cancel();
     super.dispose();
   }
 
   void _generate() {
-    final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
-    final remaining = 30 - (now % 30);
+    final nowMs = DateTime.now().millisecondsSinceEpoch;
+    final now = nowMs ~/ 1000;
+    final progress = (30000 - (nowMs % 30000)) / 30000;
     final counter = now ~/ 30;
+
+    if (counter == _lastCounter) {
+      // Same 30s window — progress-only update (no HMAC cost).
+      if (mounted) setState(() => _progress = progress);
+      return;
+    }
+    _lastCounter = counter;
 
     // HMAC-SHA1 TOTP (RFC 6238)
     final key = _base32Decode(widget.secret);
@@ -649,7 +663,7 @@ class _TotpCardState extends State<_TotpCard> {
 
     setState(() {
       _code = code.toString().padLeft(6, '0');
-      _progress = remaining / 30;
+      _progress = progress;
     });
   }
 
@@ -736,6 +750,7 @@ class _TotpCardState extends State<_TotpCard> {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final isUrgent = _progress < 0.2;
+    final remainingSec = (_progress * 30).ceil();
 
     return _SectionCard(
       child: Column(
@@ -743,34 +758,168 @@ class _TotpCardState extends State<_TotpCard> {
           Text('TOTP', style: Theme.of(context).textTheme.labelLarge?.copyWith(
             color: cs.onSurfaceVariant, fontWeight: FontWeight.w600)),
           const SizedBox(height: NexTheme.md),
-          Text(
-            '${_code.substring(0, 3)} ${_code.substring(3)}',
-            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-              fontWeight: FontWeight.w700,
-              letterSpacing: 4,
-              color: isUrgent ? cs.error : cs.onSurface,
-              fontFamily: 'monospace',
+          // P0-4b: tap-to-copy with inline confirmation (no extra deps)
+          InkWell(
+            borderRadius: BorderRadius.circular(NexTheme.rSm),
+            onTap: _copyCode,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    '${_code.substring(0, 3)} ${_code.substring(3)}',
+                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 4,
+                      color: isUrgent ? cs.error : cs.onSurface,
+                      fontFamily: 'monospace',
+                    ),
+                  ),
+                  const SizedBox(width: NexTheme.lg),
+                  // P0-4a: countdown ring (CustomPainter, urgent turns error)
+                  _TotpRing(
+                    progress: _progress,
+                    seconds: remainingSec,
+                    isUrgent: isUrgent,
+                  ),
+                ],
+              ),
             ),
           ),
-          const SizedBox(height: NexTheme.md),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(2),
-            child: LinearProgressIndicator(
-              value: _progress,
-              backgroundColor: cs.surfaceContainerHighest,
-              color: isUrgent ? cs.error : cs.primary,
-              minHeight: 4,
+          SizedBox(
+            height: 28,
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 200),
+              child: _justCopied
+                  ? Container(
+                      key: const ValueKey('copied'),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: cs.primaryContainer,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.check, size: 12, color: cs.onPrimaryContainer),
+                          const SizedBox(width: 4),
+                          Text('Copied',
+                              key: const ValueKey('copied-label'),
+                              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                                  color: cs.onPrimaryContainer, fontWeight: FontWeight.w700)),
+                        ],
+                      ),
+                    )
+                  : Text('Tap to copy',
+                      key: const ValueKey('hint'),
+                      style: Theme.of(context)
+                          .textTheme
+                          .labelSmall
+                          ?.copyWith(color: cs.outline)),
             ),
-          ),
-          const SizedBox(height: NexTheme.sm),
-          Text(
-            '${(30 - (_progress * 30).toInt())}s',
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: cs.outline),
           ),
         ],
       ),
     );
   }
+
+  /// P0-4b: copies the raw 6-digit code + haptic + transient confirmation.
+  void _copyCode() {
+    if (_code.contains('-')) return;
+    HapticFeedback.lightImpact();
+    Clipboard.setData(ClipboardData(text: _code));
+    setState(() => _justCopied = true);
+    _copyTimer?.cancel();
+    _copyTimer = Timer(const Duration(milliseconds: 1200), () {
+      if (mounted) setState(() => _justCopied = false);
+    });
+  }
+}
+
+/// P0-4a: small countdown ring for the TOTP card (48px, core CustomPainter).
+class _TotpRing extends StatelessWidget {
+  final double progress; // remaining fraction 0–1
+  final int seconds;
+  final bool isUrgent;
+
+  const _TotpRing({
+    required this.progress,
+    required this.seconds,
+    required this.isUrgent,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final fg = isUrgent ? cs.error : cs.primary;
+    return SizedBox(
+      width: 48,
+      height: 48,
+      child: CustomPaint(
+        painter: _TotpRingPainter(
+          progress: progress.clamp(0.0, 1.0),
+          trackColor: cs.surfaceContainerHighest,
+          fgColor: fg,
+        ),
+        child: Center(
+          child: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 200),
+            child: Text(
+              '${seconds}s',
+              key: ValueKey(seconds),
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                color: isUrgent ? cs.error : cs.onSurfaceVariant,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _TotpRingPainter extends CustomPainter {
+  final double progress;
+  final Color trackColor;
+  final Color fgColor;
+
+  _TotpRingPainter({
+    required this.progress,
+    required this.trackColor,
+    required this.fgColor,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    const stroke = 4.0;
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = (size.width / 2) - stroke;
+
+    final track = Paint()
+      ..color = trackColor
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = stroke;
+    canvas.drawCircle(center, radius, track);
+
+    final arc = Paint()
+      ..color = fgColor
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = stroke
+      ..strokeCap = StrokeCap.round;
+    canvas.drawArc(
+      Rect.fromCircle(center: center, radius: radius),
+      -3.1415926535 / 2,
+      2 * 3.1415926535 * progress,
+      false,
+      arc,
+    );
+  }
+
+  @override
+  bool shouldRepaint(_TotpRingPainter old) =>
+      old.progress != progress || old.fgColor != fgColor;
 }
 
 // ── 10. Related notes card ─────────────────────────────────────────

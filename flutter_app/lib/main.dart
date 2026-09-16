@@ -16,6 +16,7 @@ import 'repositories/vault_repository.dart';
 import 'services/biometric_service.dart';
 import 'services/crypto_utils.dart';
 import 'services/database_service.dart';
+import 'services/password_history_service.dart';
 import 'services/secure_storage_service.dart';
 import 'services/sync_service.dart';
 import 'state/sync_state.dart';
@@ -38,6 +39,9 @@ void main() async {
   final appSettings = await AppSettings.load(secureStorage);
   final isar = await DatabaseService.initialize();
   final repository = VaultRepository(isar: isar, cryptoService: cryptoService);
+  // P1-6b: 14-day password history (AES-GCM, same envelope as vault fields).
+  final passwordHistory =
+      PasswordHistoryService(isar: isar, crypto: cryptoService);
 
   // ── 2. Determine if biometric is enabled ─────────────────────────────
   final biometricEnabled = appSettings.biometricEnabled;
@@ -60,6 +64,7 @@ void main() async {
         cryptoServiceProvider.overrideWithValue(cryptoService),
         biometricServiceProvider.overrideWithValue(biometricService),
         repositoryProvider.overrideWithValue(repository),
+        passwordHistoryProvider.overrideWithValue(passwordHistory),
         onboardingDoneProvider.overrideWith((ref) => onboardingDone),
         appSettingsProvider.overrideWithValue(appSettings),
         syncServiceProvider.overrideWith((ref) => syncService),

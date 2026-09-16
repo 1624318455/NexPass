@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/nex_item.dart';
 import '../repositories/vault_repository.dart';
 import '../services/autofill_engine.dart';
+import '../services/password_history_service.dart';
 import 'unlock_state.dart';
 
 // ---------------------------------------------------------------------------
@@ -49,13 +50,16 @@ class VaultState {
 class VaultNotifier extends StateNotifier<VaultState> {
   final VaultRepository _repository;
   final Uint8List _masterKey;
+  final PasswordHistoryService? _history;
   late final AutofillEngine _autofillEngine;
 
   VaultNotifier({
     required VaultRepository repository,
     required Uint8List masterKey,
+    PasswordHistoryService? history,
   })  : _repository = repository,
         _masterKey = masterKey,
+        _history = history,
         super(const VaultState(items: [])) {
     // Initialize autofill engine with credential provider
     _autofillEngine = AutofillEngine(
@@ -123,6 +127,16 @@ class VaultNotifier extends StateNotifier<VaultState> {
       ];
 
     await _repository.saveItem(item: item, derivedKey: _masterKey);
+    // P1-6b: snapshot the fresh password (history never blocks the write).
+    if (password.isNotEmpty) {
+      await _history?.record(
+        password: password,
+        derivedKey: _masterKey,
+        itemUuid: item.uuid,
+        label: title,
+        source: 'created',
+      );
+    }
     await loadVault(); // loadVault already syncs autofill cache
   }
 
@@ -144,6 +158,8 @@ class VaultNotifier extends StateNotifier<VaultState> {
 
   /// Re-saves an existing item (used by security audit to update passwords).
   Future<void> updateItem(NexItem item) async {
+    // P1-6b: snapshot the outgoing password when it actually changed.
+    await _snapshotRotatedPassword(item);
     // Deep-copy: saveItem encrypts sensitive fields in-place, which would
     // corrupt the in-memory item used by the detail screen.
     final copy = NexItem()
@@ -172,6 +188,45 @@ class VaultNotifier extends StateNotifier<VaultState> {
       derivedKey: _masterKey,
       minimumSecureLength: minimumSecureLength,
     );
+  }
+
+  /// Compares the incoming plaintext password against the stored one and
+  /// archives the new value when it differs. No-ops when history is
+  /// unwired, the uuid is unknown, or the password is unchanged.
+  Future<void> _snapshotRotatedPassword(NexItem item) async {
+    final history = _history;
+    if (history == null || item.uuid == null) return;
+    try {
+      NexField? pwField;
+      try {
+        pwField = item.fields.firstWhere(
+          (f) => f.name == 'password' || f.fieldType == 2,
+        );
+      } catch (_) {
+        return;
+      }
+      // Plaintext only ever lives in decryptedValue (value may be ciphertext).
+      final incoming = pwField.decryptedValue;
+      if (incoming == null || incoming.isEmpty) return;
+      final stored = await _repository.getItemByUuid(
+        uuid: item.uuid!,
+        derivedKey: _masterKey,
+      );
+      final previous = stored?.fields
+          .where((f) => f.name == 'password' || f.fieldType == 2)
+          .firstOrNull
+          ?.decryptedValue;
+      if (incoming == previous) return;
+      await history.record(
+        password: incoming,
+        derivedKey: _masterKey,
+        itemUuid: item.uuid,
+        label: item.name,
+        source: 'rotated',
+      );
+    } catch (e) {
+      debugPrint('[VaultNotifier] history snapshot skipped: $e');
+    }
   }
 
   /// Returns all items (used by SyncService for comparison).
@@ -220,5 +275,11 @@ final vaultStateProvider =
     StateNotifierProvider<VaultNotifier, VaultState>((ref) {
   final repo = ref.watch(repositoryProvider);
   final key = ref.watch(masterKeyProvider);
-  return VaultNotifier(repository: repo, masterKey: key);
+  PasswordHistoryService? history;
+  try {
+    history = ref.watch(passwordHistoryProvider);
+  } catch (_) {
+    history = null;
+  }
+  return VaultNotifier(repository: repo, masterKey: key, history: history);
 });

@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:isar/isar.dart';
 import 'package:path_provider/path_provider.dart';
 import '../models/nex_item.dart';
+import '../models/password_history.dart';
 
 /// Manages the Isar database lifecycle.
 ///
@@ -20,7 +21,7 @@ class DatabaseService {
     final dir = await getApplicationDocumentsDirectory();
 
     _instance = await Isar.open(
-      [NexItemSchema],
+      [NexItemSchema, PasswordHistoryEntrySchema],
       directory: dir.path,
       name: 'nexpass_vault',
     );

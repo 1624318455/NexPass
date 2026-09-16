@@ -1746,7 +1746,7 @@ export default function App() {
 
             <div className="md:col-span-8 bg-slate-950 border border-slate-850 rounded-2xl overflow-hidden h-[400px] flex flex-col">
               <div className="bg-slate-900 px-4 py-3 border-b border-slate-850 flex justify-between items-center">
-                <span className="text-xs font-mono text-slate-400">flutter_test_suite_console.log</span>
+                <span className="text-xs font-mono text-slate-400">flutter_test_suite_output.log</span>
                 <span className="text-[10px] font-mono text-indigo-400 uppercase font-bold">Passed</span>
               </div>
 

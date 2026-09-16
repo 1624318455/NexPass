@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:pointycastle/export.dart' as pc;
 
 /// Secure bridge to platform keystores (iOS Keychain / Android Keystore).
 ///
@@ -17,6 +18,9 @@ class SecureStorageService {
   static const String _keyMasterSalt = 'nexpass_master_salt';
   static const String _keyDerivedVault = 'nexpass_derived_vault_key';
   static const String _keyIntegrityTag = 'nexpass_integrity_tag';
+  // P0-3c: PIN gate — 4-digit convenience unlock (hash only, key stays in keystore)
+  static const String _keyPinHash = 'nexpass_pin_hash';
+  static const String _pinPepper = 'nexpass_pin_v1';
 
   SecureStorageService({FlutterSecureStorage? storage})
       : _storage =
@@ -116,6 +120,28 @@ class SecureStorageService {
   Future<void> lockVault() async {
     await _wipeDerivedKey();
     debugPrint('[SecureStorage] Vault locked, derived key wiped from keystore');
+  }
+
+  // ── PIN convenience unlock (P0-3c) ──────────────────────────────────
+
+  Future<bool> hasPin() async => await read(_keyPinHash) != null;
+
+  Future<void> setPin(String pin) async {
+    await write(key: _keyPinHash, value: _hashPin(pin));
+  }
+
+  Future<void> clearPin() async => await delete(_keyPinHash);
+
+  Future<bool> verifyPin(String pin) async {
+    final stored = await read(_keyPinHash);
+    if (stored == null) return false;
+    return stored == _hashPin(pin);
+  }
+
+  String _hashPin(String pin) {
+    final digest = pc.SHA256Digest();
+    final bytes = utf8.encode('$_pinPepper::$pin');
+    return base64Encode(digest.process(Uint8List.fromList(bytes)));
   }
 
   // ── Integrity tag ─────────────────────────────────────────────────────
