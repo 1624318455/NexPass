@@ -205,4 +205,11 @@ final Map<String, String> zhStrings = {
   'historyRestore': '恢复到条目',
   'historyRestored': '密码已恢复到“{label}”',
   'historyRestoreMissing': '条目已不在保险库中，请手动复制',
+
+  // HIBP opt-in (P1-7c)
+  'hibpTitle': '在线泄露检测',
+  'hibpDesc': '向 HaveIBeenPwned 查询密码是否泄露（k-匿名，默认关闭）',
+  'hibpConsentTitle': '启用在线泄露检测？',
+  'hibpConsentBody': '离开设备的只有密码 SHA-1 哈希的前 5 个字符——完整密码永不联网。可随时关闭。',
+  'hibpEnable': '启用',
 };

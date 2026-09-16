@@ -90,6 +90,31 @@ class SettingsScreen extends ConsumerWidget {
           },
         ),
 
+        // P1-7c: HIBP k-anonymity breach check (explicit opt-in, off by default)
+        _switchTile(context, NexIconType.globe, S.hibpTitle, S.hibpDesc,
+            value: settings.hibpOptIn,
+            onChanged: (v) async {
+              if (v) {
+                final consent = await showDialog<bool>(
+                  context: context,
+                  builder: (ctx) => AlertDialog(
+                    title: Text(S.hibpConsentTitle),
+                    content: Text(S.hibpConsentBody),
+                    actions: [
+                      TextButton(
+                          onPressed: () => Navigator.pop(ctx, false),
+                          child: Text(S.cancel)),
+                      FilledButton(
+                          onPressed: () => Navigator.pop(ctx, true),
+                          child: Text(S.hibpEnable)),
+                    ],
+                  ),
+                );
+                if (consent != true) return;
+              }
+              ref.read(appSettingsNotifierProvider.notifier).update((s) => s.hibpOptIn = v);
+            }),
+
         _sectionHeader(context, S.settingsAutofillLabel),
         _switchTile(context, NexIconType.clipboard, S.onboardingAutofillToggle, S.settingsAutofillDesc,
             value: settings.autofillEnabled,

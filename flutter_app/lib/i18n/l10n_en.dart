@@ -205,4 +205,11 @@ final Map<String, String> enStrings = {
   'historyRestore': 'Restore to item',
   'historyRestored': 'Password restored to "{label}"',
   'historyRestoreMissing': 'Item no longer in vault — copy it manually',
+
+  // HIBP opt-in (P1-7c)
+  'hibpTitle': 'Online breach check',
+  'hibpDesc': 'Ask HaveIBeenPwned if passwords leaked (k-anonymity, off by default)',
+  'hibpConsentTitle': 'Enable online breach check?',
+  'hibpConsentBody': 'Only the first 5 characters of your password SHA-1 hash leave the device — the full password never does. You can turn this off anytime.',
+  'hibpEnable': 'Enable',
 };

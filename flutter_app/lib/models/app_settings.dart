@@ -10,6 +10,10 @@ class AppSettings {
   String? recoveryQuestion;
   String? recoveryAnswer;
 
+  /// P1-7c: HIBP k-anonymity breach check. Default off — the vault is
+  /// fully offline unless the user explicitly opts in.
+  bool hibpOptIn;
+
   // ── Autofill ────────────────────────────────────────────────────────
   bool autofillEnabled;
 
@@ -49,6 +53,7 @@ class AppSettings {
     this.biometricEnabled = false,
     this.recoveryQuestion,
     this.recoveryAnswer,
+    this.hibpOptIn = false,
     this.autofillEnabled = false,
     this.themeColorIndex = 0,
     this.navPasswords = true,
@@ -75,6 +80,7 @@ class AppSettings {
     'biometricEnabled': biometricEnabled,
     'recoveryQuestion': recoveryQuestion,
     'recoveryAnswer': recoveryAnswer,
+    'hibpOptIn': hibpOptIn,
     'autofillEnabled': autofillEnabled,
     'themeColorIndex': themeColorIndex,
     'navPasswords': navPasswords,
@@ -99,6 +105,7 @@ class AppSettings {
     biometricEnabled: json['biometricEnabled'] ?? false,
     recoveryQuestion: json['recoveryQuestion'],
     recoveryAnswer: json['recoveryAnswer'],
+    hibpOptIn: json['hibpOptIn'] ?? false,
     autofillEnabled: json['autofillEnabled'] ?? false,
     themeColorIndex: json['themeColorIndex'] ?? 0,
     navPasswords: json['navPasswords'] ?? true,

@@ -205,4 +205,11 @@ final Map<String, String> jaStrings = {
   'historyRestore': '項目へ復元',
   'historyRestored': 'パスワードを「{label}」へ復元しました',
   'historyRestoreMissing': '項目はボールトに存在しません — 手動でコピーしてください',
+
+  // HIBP opt-in (P1-7c)
+  'hibpTitle': 'オンライン漏洩チェック',
+  'hibpDesc': 'HaveIBeenPwned に漏洩を照会（k-匿名性、既定でオフ）',
+  'hibpConsentTitle': 'オンライン漏洩チェックを有効にしますか？',
+  'hibpConsentBody': 'デバイスを離れるのはパスワード SHA-1 ハッシュの先頭 5 文字のみ——パスワード本体が送信されることはありません。いつでもオフにできます。',
+  'hibpEnable': '有効化',
 };

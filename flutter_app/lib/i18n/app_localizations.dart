@@ -223,6 +223,14 @@ class AppLocalizations {
   String get settingsAuthDisplay => get('settingsAuthDisplay');
   String get settingsAuthDisplayDesc => get('settingsAuthDisplayDesc');
 
+  // ── HIBP opt-in ──────────────────────────────────────────────────
+
+  String get hibpTitle => get('hibpTitle');
+  String get hibpDesc => get('hibpDesc');
+  String get hibpConsentTitle => get('hibpConsentTitle');
+  String get hibpConsentBody => get('hibpConsentBody');
+  String get hibpEnable => get('hibpEnable');
+
   // ── Password history ─────────────────────────────────────────────
 
   String get historyTitle => get('historyTitle');
