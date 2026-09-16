@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../i18n/app_localizations.dart';
 import '../services/password_generator_service.dart';
@@ -8,6 +9,7 @@ import '../state/vault_state_notifier.dart';
 import '../theme/nex_theme.dart';
 import '../widgets/nex_icons.dart';
 import 'health_ring_chart.dart';
+import 'item_detail_screen.dart';
 
 class SecurityAuditScreen extends ConsumerStatefulWidget {
   const SecurityAuditScreen({super.key});
@@ -61,15 +63,50 @@ class _SecurityAuditScreenState extends ConsumerState<SecurityAuditScreen> {
   Future<void> _fixAll() async {
     if (_result == null) return;
     setState(() => _isFixingAll = true);
-    final criticals = _result!.issues.where((i) => i.severity == AuditSeverity.critical).toList();
-    for (final issue in criticals) { await _fixItem(issue); }
+    // P1-7b: fix criticals and warnings (weak/breached/reused/stale).
+    // Info-level 2FA suggestions need the site's TOTP setup, not a rotation.
+    final fixable = _result!.issues.where((i) => i.severity != AuditSeverity.info).toList();
+    for (final issue in fixable) { await _fixItem(issue); }
     if (mounted) {
       setState(() => _isFixingAll = false);
       final S = AppLocalizations.of(context);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(S.fixedCount(criticals.length))),
+        SnackBar(content: Text(S.fixedCount(fixable.length))),
       );
     }
+  }
+
+  /// P1-7b: shareable security score.
+  ///
+  /// Offline-first: copies a plaintext summary to the clipboard instead of
+  /// hitting a network share target. No vault secrets included — only counts.
+  Future<void> _shareScore() async {
+    final result = _result;
+    if (result == null) return;
+    final S = AppLocalizations.of(context);
+    HapticFeedback.lightImpact();
+    await Clipboard.setData(ClipboardData(
+      text: S.scoreSummary(
+        score: (result.healthIndex * 100).round(),
+        total: result.totalPasswords,
+        weak: result.weakCount,
+        reused: result.reusedCount,
+      ),
+    ));
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(S.scoreShared)),
+      );
+    }
+  }
+
+  /// P1-7b: 2FA guidance opens the item so the user can add a TOTP secret.
+  /// Refresh on return — a newly added code clears the suggestion.
+  void _openItem(AuditIssue issue) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => ItemDetailScreen(item: issue.item)),
+    ).then((_) => _runAudit());
   }
 
   @override
@@ -87,6 +124,11 @@ class _SecurityAuditScreenState extends ConsumerState<SecurityAuditScreen> {
                   style: TextStyle(color: cs.primary, fontWeight: FontWeight.w600)),
             ),
           IconButton(onPressed: _runAudit, icon: const NexIcon(NexIconType.refresh, size: 18)),
+          IconButton(
+            onPressed: _result == null ? null : _shareScore,
+            tooltip: S.shareScore,
+            icon: const NexIcon(NexIconType.clipboard, size: 18),
+          ),
         ],
       ),
       body: _isLoading
@@ -169,6 +211,13 @@ class _SecurityAuditScreenState extends ConsumerState<SecurityAuditScreen> {
         ),
       );
     }
+    // P1-7b: group by kind — criticals first, then reuse/stale warnings,
+    // then 2FA suggestions. Counts come from stable kinds, not messages.
+    final issues = _result!.issues;
+    final criticals = issues.where((i) => i.severity == AuditSeverity.critical).toList();
+    final reused = issues.where((i) => i.kind == AuditIssueKind.reusedPassword).toList();
+    final stale = issues.where((i) => i.kind == AuditIssueKind.stalePassword).toList();
+    final suggestions = issues.where((i) => i.kind == AuditIssueKind.missingTwoFactor).toList();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -178,19 +227,46 @@ class _SecurityAuditScreenState extends ConsumerState<SecurityAuditScreen> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
             decoration: BoxDecoration(color: cs.errorContainer, borderRadius: BorderRadius.circular(NexTheme.rSm)),
-            child: Text('${_result!.issues.length}', style: TextStyle(color: cs.error, fontSize: 12, fontWeight: FontWeight.w700)),
+            child: Text('${issues.length}', style: TextStyle(color: cs.error, fontSize: 12, fontWeight: FontWeight.w700)),
           ),
         ]),
         const SizedBox(height: NexTheme.md),
-        ..._result!.issues.map((issue) => _issueCard(issue, () => _fixItem(issue), S, cs)),
+        ..._issueGroup(S.groupCritical, criticals, S, cs),
+        ..._issueGroup(S.statReused, reused, S, cs),
+        ..._issueGroup(S.groupStale, stale, S, cs),
+        ..._issueGroup(S.group2fa, suggestions, S, cs),
       ],
     );
   }
 
-  Widget _issueCard(AuditIssue issue, VoidCallback onFix, S, ColorScheme cs) {
+  List<Widget> _issueGroup(String title, List<AuditIssue> group, S, ColorScheme cs) {
+    if (group.isEmpty) return const [];
+    return [
+      Padding(
+        padding: const EdgeInsets.only(top: NexTheme.sm, bottom: NexTheme.sm),
+        child: Row(children: [
+          Text(title, style: Theme.of(context).textTheme.labelLarge?.copyWith(color: cs.onSurfaceVariant, fontWeight: FontWeight.w700)),
+          const SizedBox(width: NexTheme.sm),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 1),
+            decoration: BoxDecoration(color: cs.surfaceContainerHighest, borderRadius: BorderRadius.circular(NexTheme.rSm)),
+            child: Text('${group.length}', style: TextStyle(color: cs.onSurfaceVariant, fontSize: 11, fontWeight: FontWeight.w700)),
+          ),
+        ]),
+      ),
+      ...group.map((issue) => _issueCard(issue, S, cs)),
+    ];
+  }
+
+  Widget _issueCard(AuditIssue issue, S, ColorScheme cs) {
     final isCrit = issue.severity == AuditSeverity.critical;
-    final color = isCrit ? NexTheme.danger : NexTheme.warning;
-    final dimColor = isCrit ? cs.errorContainer : cs.tertiaryContainer;
+    final isInfo = issue.severity == AuditSeverity.info;
+    final color = isCrit ? NexTheme.danger : isInfo ? cs.primary : NexTheme.warning;
+    final dimColor = isCrit ? cs.errorContainer : isInfo ? cs.primaryContainer : cs.tertiaryContainer;
+    final badge = isCrit ? S.severityCritical : isInfo ? S.severityInfo : S.severityWarning;
+    // P1-7b: 2FA suggestions navigate to the item (add a TOTP secret);
+    // every other kind is fixed by rotating to a generated password.
+    final is2fa = issue.kind == AuditIssueKind.missingTwoFactor;
     return Card(
       margin: const EdgeInsets.only(bottom: NexTheme.md),
       child: Padding(
@@ -199,7 +275,7 @@ class _SecurityAuditScreenState extends ConsumerState<SecurityAuditScreen> {
           Container(
             padding: const EdgeInsets.all(6),
             decoration: BoxDecoration(color: dimColor, borderRadius: BorderRadius.circular(NexTheme.rSm)),
-            child: NexIcon(isCrit ? NexIconType.alertCircle : NexIconType.warning, size: 16, color: color),
+            child: NexIcon(isCrit ? NexIconType.alertCircle : isInfo ? NexIconType.key : NexIconType.warning, size: 16, color: color),
           ),
           const SizedBox(width: NexTheme.md),
           Expanded(
@@ -209,7 +285,7 @@ class _SecurityAuditScreenState extends ConsumerState<SecurityAuditScreen> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
                   decoration: BoxDecoration(color: dimColor, borderRadius: BorderRadius.circular(3)),
-                  child: Text(isCrit ? S.severityCritical : S.severityWarning,
+                  child: Text(badge,
                       style: TextStyle(color: color, fontSize: 9, fontWeight: FontWeight.w800, letterSpacing: 0.5)),
                 ),
               ]),
@@ -217,7 +293,7 @@ class _SecurityAuditScreenState extends ConsumerState<SecurityAuditScreen> {
               Text(issue.message, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: cs.onSurfaceVariant, height: 1.4)),
               const SizedBox(height: NexTheme.md),
               InkWell(
-                onTap: onFix,
+                onTap: is2fa ? () => _openItem(issue) : () => _fixItem(issue),
                 borderRadius: BorderRadius.circular(NexTheme.rSm),
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -229,9 +305,9 @@ class _SecurityAuditScreenState extends ConsumerState<SecurityAuditScreen> {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      NexIcon(NexIconType.refresh, size: 12, color: cs.primary),
+                      NexIcon(is2fa ? NexIconType.key : NexIconType.refresh, size: 12, color: cs.primary),
                       const SizedBox(width: 6),
-                      Text(S.generateStrongPassword, style: TextStyle(color: cs.primary, fontSize: 11, fontWeight: FontWeight.w600)),
+                      Text(is2fa ? S.viewItem : S.generateStrongPassword, style: TextStyle(color: cs.primary, fontSize: 11, fontWeight: FontWeight.w600)),
                     ],
                   ),
                 ),

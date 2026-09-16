@@ -69,8 +69,16 @@ final Map<String, String> enStrings = {
   'issuesFound': 'Issues Found',
   'severityCritical': 'CRITICAL',
   'severityWarning': 'WARNING',
-  'generateStrongPassword': '\u{2728} Generate Strong Password',
+  'severityInfo': 'SUGGESTION',
+  'generateStrongPassword': '✨ Generate Strong Password',
   'healthLabel': 'Health',
+  'groupCritical': 'Needs attention',
+  'groupStale': 'Aging passwords',
+  'group2fa': 'Enable two-factor auth',
+  'viewItem': 'View item',
+  'shareScore': 'Share score',
+  'scoreShared': 'Security summary copied to clipboard',
+  'scoreSummary': 'NexPass security score {score}/100 — {total} passwords, {weak} weak, {reused} reused',
 
   // Onboarding
   'onboardingSkip': 'Skip',

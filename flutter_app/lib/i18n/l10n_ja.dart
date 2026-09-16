@@ -69,8 +69,16 @@ final Map<String, String> jaStrings = {
   'issuesFound': '検出された問題',
   'severityCritical': '深刻',
   'severityWarning': '警告',
-  'generateStrongPassword': '\u{2728} 強いパスワードを生成',
+  'severityInfo': '提案',
+  'generateStrongPassword': '✨ 強いパスワードを生成',
   'healthLabel': 'ヘルス',
+  'groupCritical': '要対応',
+  'groupStale': '古いパスワード',
+  'group2fa': '二要素認証を有効化',
+  'viewItem': '項目を見る',
+  'shareScore': 'スコアを共有',
+  'scoreShared': 'セキュリティ概要をクリップボードにコピーしました',
+  'scoreSummary': 'NexPass セキュリティスコア {score}/100——{total} 件中、弱い {weak} 件、再使用 {reused} 件',
 
   // Onboarding
   'onboardingSkip': 'スキップ',

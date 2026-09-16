@@ -69,8 +69,16 @@ final Map<String, String> zhStrings = {
   'issuesFound': '发现问题',
   'severityCritical': '严重',
   'severityWarning': '警告',
-  'generateStrongPassword': '\u{2728} 生成强密码',
+  'severityInfo': '建议',
+  'generateStrongPassword': '✨ 生成强密码',
   'healthLabel': '健康度',
+  'groupCritical': '需要处理',
+  'groupStale': '老化密码',
+  'group2fa': '启用双重验证',
+  'viewItem': '查看条目',
+  'shareScore': '分享评分',
+  'scoreShared': '安全摘要已复制到剪贴板',
+  'scoreSummary': 'NexPass 安全评分 {score}/100——共 {total} 个密码，{weak} 个弱密码，{reused} 个重复',
 
   // Onboarding
   'onboardingSkip': '跳过',

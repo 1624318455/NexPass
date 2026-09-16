@@ -106,8 +106,26 @@ class AppLocalizations {
   String get issuesFound => get('issuesFound');
   String get severityCritical => get('severityCritical');
   String get severityWarning => get('severityWarning');
+  String get severityInfo => get('severityInfo');
   String get generateStrongPassword => get('generateStrongPassword');
   String get healthLabel => get('healthLabel');
+  String get groupCritical => get('groupCritical');
+  String get groupStale => get('groupStale');
+  String get group2fa => get('group2fa');
+  String get viewItem => get('viewItem');
+  String get shareScore => get('shareScore');
+  String get scoreShared => get('scoreShared');
+  String scoreSummary({
+    required int score,
+    required int total,
+    required int weak,
+    required int reused,
+  }) =>
+      get('scoreSummary')
+          .replaceAll('{score}', '$score')
+          .replaceAll('{total}', '$total')
+          .replaceAll('{weak}', '$weak')
+          .replaceAll('{reused}', '$reused');
 
   // Onboarding
   String get onboardingSkip => get('onboardingSkip');
