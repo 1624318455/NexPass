@@ -180,6 +180,28 @@ class _VaultPage extends ConsumerStatefulWidget {
 }
 
 class _VaultPageState extends ConsumerState<_VaultPage> {
+  // ── P1-10: local multi-selection (uuid-keyed, page-scoped) ─────────────
+  // Kept out of VaultState on purpose: selection is transient UI state and
+  // must not leak into audit/sync or survive a vault reload.
+  final Set<String> _selected = {};
+
+  String _keyOf(NexItem item) => item.uuid ?? 'id-${item.id}';
+  bool get _selecting => _selected.isNotEmpty;
+
+  void _toggleSelect(NexItem item) {
+    HapticFeedback.selectionClick();
+    setState(() {
+      final k = _keyOf(item);
+      if (_selected.contains(k)) {
+        _selected.remove(k);
+      } else {
+        _selected.add(k);
+      }
+    });
+  }
+
+  void _clearSelection() => setState(() => _selected.clear());
+
   @override
   Widget build(BuildContext context) {
     final vaultState = ref.watch(vaultStateProvider);
@@ -259,6 +281,16 @@ class _VaultPageState extends ConsumerState<_VaultPage> {
             child: _buildTabs(ref, S, vaultState),
           ),
         ),
+
+        // ── P1-10: batch action bar (selection mode only) ───────────────
+        if (_selecting)
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(
+                  NexTheme.lg, NexTheme.xs, NexTheme.lg, NexTheme.sm),
+              child: _batchBar(S, vaultState),
+            ),
+          ),
 
         // ── Items ───────────────────────────────────────
         // P0-1: skeleton shimmer while loading, illustrated error state
@@ -401,15 +433,7 @@ class _VaultPageState extends ConsumerState<_VaultPage> {
                   for (int i = 0; i < favoriteItems.length; i++)
                     _StaggeredEntrance(
                       index: i,
-                      child: _VaultSwipeWrapper(
-                        key: ValueKey('fav-${favoriteItems[i].uuid}'),
-                        item: favoriteItems[i],
-                        child: _VaultItemCard(
-                          item: favoriteItems[i],
-                          onTap: () => _openDetail(
-                              context, ref, favoriteItems[i]),
-                        ),
-                      ),
+                      child: _selectableCard(favoriteItems[i]),
                     ),
                 ],
               ),
@@ -429,15 +453,7 @@ class _VaultPageState extends ConsumerState<_VaultPage> {
                   for (int i = 0; i < recentItems.length; i++)
                     _StaggeredEntrance(
                       index: i,
-                      child: _VaultSwipeWrapper(
-                        key: ValueKey('recent-${recentItems[i].uuid}'),
-                        item: recentItems[i],
-                        child: _VaultItemCard(
-                          item: recentItems[i],
-                          onTap: () => _openDetail(
-                              context, ref, recentItems[i]),
-                        ),
-                      ),
+                      child: _selectableCard(recentItems[i]),
                     ),
                 ],
               ),
@@ -445,15 +461,7 @@ class _VaultPageState extends ConsumerState<_VaultPage> {
           for (int i = 0; i < filtered.length; i++)
             _StaggeredEntrance(
               index: i,
-              child: _VaultSwipeWrapper(
-                key: ValueKey('all-${filtered[i].uuid}'),
-                item: filtered[i],
-                child: _VaultItemCard(
-                  item: filtered[i],
-                  onTap: () =>
-                      _openDetail(context, ref, filtered[i]),
-                ),
-              ),
+              child: _selectableCard(filtered[i]),
             ),
         ]),
       ),
@@ -470,6 +478,188 @@ class _VaultPageState extends ConsumerState<_VaultPage> {
         context,
         MaterialPageRoute(
             builder: (_) => ItemDetailScreen(item: item)));
+  }
+
+  // ── P1-10: selection-aware card ──────────────────────────────────────
+  // Selecting disables swipe (Dismissible would steal the horizontal drag
+  // and cause accidental deletes), so the wrapper is bypassed in batch mode.
+
+  void _onCardTap(NexItem item) {
+    if (_selecting) {
+      _toggleSelect(item);
+    } else {
+      _openDetail(context, ref, item);
+    }
+  }
+
+  Widget _selectableCard(NexItem item) {
+    final card = _VaultItemCard(
+      item: item,
+      selected: _selected.contains(_keyOf(item)),
+      onTap: () => _onCardTap(item),
+      onLongPress: () => _toggleSelect(item),
+    );
+    if (_selecting) return card;
+    return _VaultSwipeWrapper(
+      key: ValueKey('all-${item.uuid}'),
+      item: item,
+      child: card,
+    );
+  }
+
+  List<NexItem> _resolveSelected(List<NexItem> all) {
+    return all.where((e) => _selected.contains(_keyOf(e))).toList();
+  }
+
+  void _selectAllVisible(List<NexItem> visible) {
+    HapticFeedback.selectionClick();
+    setState(() {
+      for (final item in visible) {
+        _selected.add(_keyOf(item));
+      }
+    });
+  }
+
+  Future<void> _batchDelete(List<NexItem> targets) async {
+    if (targets.isEmpty) return;
+    HapticFeedback.heavyImpact();
+    final S = AppLocalizations.of(context);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(S.deleteTitle),
+        content: Text(S.batchDeleted(targets.length)),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: Text(S.cancel)),
+          FilledButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: Text(S.delete)),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    await ref.read(vaultStateProvider.notifier).deleteItems(targets);
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(S.batchDeleted(targets.length))),
+      );
+    }
+    _clearSelection();
+  }
+
+  Future<void> _batchFavorite(List<NexItem> targets) async {
+    if (targets.isEmpty) return;
+    HapticFeedback.mediumImpact();
+    final S = AppLocalizations.of(context);
+    await ref.read(vaultStateProvider.notifier).setFavoriteAll(targets, true);
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(S.batchUpdated(targets.length))),
+      );
+    }
+    _clearSelection();
+  }
+
+  // B6 move = change entry type (1/2/3). Folder-level move lands in B7 and
+  // reuses this sheet + the same notifier batch path.
+  Future<void> _batchMove(List<NexItem> targets) async {
+    if (targets.isEmpty) return;
+    final S = AppLocalizations.of(context);
+    final picked = await showModalBottomSheet<int>(
+      context: context,
+      useSafeArea: true,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(NexTheme.lg),
+              child: Text(S.batchMoveTitle,
+                  style: Theme.of(ctx).textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w700)),
+            ),
+            ListTile(
+              leading: const NexIcon(NexIconType.person, size: 20),
+              title: Text(S.typeLogin),
+              onTap: () => Navigator.pop(ctx, 1),
+            ),
+            ListTile(
+              leading: const NexIcon(NexIconType.creditCard, size: 20),
+              title: Text(S.typeCard),
+              onTap: () => Navigator.pop(ctx, 2),
+            ),
+            ListTile(
+              leading: const NexIcon(NexIconType.stickyNote, size: 20),
+              title: Text(S.typeNote),
+              onTap: () => Navigator.pop(ctx, 3),
+            ),
+            const SizedBox(height: NexTheme.sm),
+          ],
+        ),
+      ),
+    );
+    if (picked == null) return;
+    HapticFeedback.mediumImpact();
+    await ref.read(vaultStateProvider.notifier).moveItemsToType(targets, picked);
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(S.batchUpdated(targets.length))),
+      );
+    }
+    _clearSelection();
+  }
+
+  Widget _batchBar(dynamic S, VaultState vaultState) {
+    final cs = Theme.of(context).colorScheme;
+    final targets = _resolveSelected(vaultState.items);
+    return Container(
+      padding: const EdgeInsets.symmetric(
+          horizontal: NexTheme.md, vertical: NexTheme.sm),
+      decoration: BoxDecoration(
+        color: cs.primaryContainer.withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(NexTheme.rMd),
+        border: Border.all(color: cs.primary.withValues(alpha: 0.4)),
+      ),
+      child: Row(
+        children: [
+          GestureDetector(
+            onTap: _clearSelection,
+            child: NexIcon(NexIconType.close, size: 20, color: cs.onPrimaryContainer),
+          ),
+          const SizedBox(width: NexTheme.sm),
+          Expanded(
+            child: Text(
+              S.batchSelected(_selected.length),
+              style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                  color: cs.onPrimaryContainer, fontWeight: FontWeight.w700),
+            ),
+          ),
+          TextButton(
+            onPressed: () => _selectAllVisible(vaultState.items),
+            child: Text(S.batchSelectAll),
+          ),
+          IconButton(
+            tooltip: S.batchFavorite,
+            onPressed: targets.isEmpty ? null : () => _batchFavorite(targets),
+            icon: NexIcon(NexIconType.shield, size: 20,
+                color: cs.onPrimaryContainer),
+          ),
+          IconButton(
+            tooltip: S.batchMove,
+            onPressed: targets.isEmpty ? null : () => _batchMove(targets),
+            icon: NexIcon(NexIconType.copy, size: 20,
+                color: cs.onPrimaryContainer),
+          ),
+          IconButton(
+            tooltip: S.delete,
+            onPressed: targets.isEmpty ? null : () => _batchDelete(targets),
+            icon: NexIcon(NexIconType.close, size: 20, color: cs.error),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _sectionHeader(String title, ColorScheme cs) {
@@ -519,8 +709,11 @@ class _VaultPageState extends ConsumerState<_VaultPage> {
 class _VaultItemCard extends ConsumerWidget {
   final NexItem item;
   final VoidCallback? onTap;
+  final VoidCallback? onLongPress;
+  final bool selected;
 
-  const _VaultItemCard({required this.item, this.onTap});
+  const _VaultItemCard(
+      {required this.item, this.onTap, this.onLongPress, this.selected = false});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -542,12 +735,27 @@ class _VaultItemCard extends ConsumerWidget {
 
     return Card(
       clipBehavior: Clip.antiAlias,
+      color: selected ? cs.primaryContainer.withValues(alpha: 0.45) : null,
       child: InkWell(
         onTap: onTap,
+        onLongPress: onLongPress,
         child: Padding(
           padding: const EdgeInsets.all(NexTheme.md),
           child: Row(
           children: [
+            // P1-10: selection checkbox replaces the icon badge in batch mode.
+            if (selected)
+              Container(
+                width: 36, height: 36,
+                decoration: BoxDecoration(
+                  color: cs.primary,
+                  borderRadius: BorderRadius.circular(NexTheme.rSm),
+                ),
+                child: Center(
+                    child: NexIcon(NexIconType.shield,
+                        size: 18, color: cs.onPrimary)),
+              )
+            else
             Hero(
               tag: 'vault-icon-${item.uuid}',
               child: Container(

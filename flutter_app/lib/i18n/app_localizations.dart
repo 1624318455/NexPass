@@ -231,6 +231,16 @@ class AppLocalizations {
   String get hibpConsentBody => get('hibpConsentBody');
   String get hibpEnable => get('hibpEnable');
 
+  // ── Batch selection (P1-10) ────────────────────────────────────────
+
+  String batchSelected(int n) => get('batchSelected').replaceAll('{n}', '$n');
+  String get batchSelectAll => get('batchSelectAll');
+  String get batchFavorite => get('batchFavorite');
+  String get batchMove => get('batchMove');
+  String get batchMoveTitle => get('batchMoveTitle');
+  String batchDeleted(int n) => get('batchDeleted').replaceAll('{n}', '$n');
+  String batchUpdated(int n) => get('batchUpdated').replaceAll('{n}', '$n');
+
   // ── Password history ─────────────────────────────────────────────
 
   String get historyTitle => get('historyTitle');

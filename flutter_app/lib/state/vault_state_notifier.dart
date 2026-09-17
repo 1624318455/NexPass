@@ -151,6 +151,29 @@ class VaultNotifier extends StateNotifier<VaultState> {
     await loadVault();
   }
 
+  // ── P1-10 batch (single reload, metadata-only repo ops) ──────────────
+
+  /// Batch-deletes [items] then reloads once. Empty list is a no-op.
+  Future<void> deleteItems(List<NexItem> items) async {
+    if (items.isEmpty) return;
+    await _repository.deleteItems(items: items);
+    await loadVault();
+  }
+
+  /// Batch-sets favorite flag on [items] then reloads once.
+  Future<void> setFavoriteAll(List<NexItem> items, bool favorite) async {
+    if (items.isEmpty) return;
+    await _repository.setFavoriteAll(items: items, favorite: favorite);
+    await loadVault();
+  }
+
+  /// Batch-moves [items] to [type] then reloads once.
+  Future<void> moveItemsToType(List<NexItem> items, int type) async {
+    if (items.isEmpty) return;
+    await _repository.moveItemsToType(items: items, type: type);
+    await loadVault();
+  }
+
   void markUsed(NexItem item) {
     _repository.markUsed(item: item);
     // No need to sync cache for usage tracking

@@ -115,6 +115,54 @@ class VaultRepository {
     await _isar.writeTxn(() async => _isar.nexItems.put(item));
   }
 
+  // ── P1-10 batch (metadata-only, no re-encryption) ────────────────────
+  // All three ops touch only isFavorite/type/updatedAt and reuse a single
+  // write txn each, so sensitive fields are never passed through
+  // encrypt-then-write (avoids double-encryption of at-rest ciphertext).
+
+  /// Deletes all [items] by id in one transaction. Empty list is a no-op.
+  Future<void> deleteItems({required List<NexItem> items}) async {
+    if (items.isEmpty) return;
+    final ids = items.map((e) => e.id).toList();
+    await _isar.writeTxn(() async {
+      for (final id in ids) {
+        await _isar.nexItems.delete(id);
+      }
+    });
+  }
+
+  /// Sets [favorite] on all [items] in one transaction. Empty list no-op.
+  Future<void> setFavoriteAll({
+    required List<NexItem> items,
+    required bool favorite,
+  }) async {
+    if (items.isEmpty) return;
+    final now = DateTime.now();
+    await _isar.writeTxn(() async {
+      for (final item in items) {
+        item.isFavorite = favorite;
+        item.updatedAt = now;
+        await _isar.nexItems.put(item);
+      }
+    });
+  }
+
+  /// Moves all [items] to [type] (1..5) in one transaction. Empty list no-op.
+  Future<void> moveItemsToType({
+    required List<NexItem> items,
+    required int type,
+  }) async {
+    if (items.isEmpty) return;
+    final now = DateTime.now();
+    await _isar.writeTxn(() async {
+      for (final item in items) {
+        item.type = type;
+        item.updatedAt = now;
+        await _isar.nexItems.put(item);
+      }
+    });
+  }
+
   Future<void> markUsed({required NexItem item}) async {
     item.lastUsedAt = DateTime.now();
     await _isar.writeTxn(() async => _isar.nexItems.put(item));

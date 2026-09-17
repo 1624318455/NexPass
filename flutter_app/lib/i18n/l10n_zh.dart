@@ -212,4 +212,13 @@ final Map<String, String> zhStrings = {
   'hibpConsentTitle': '启用在线泄露检测？',
   'hibpConsentBody': '离开设备的只有密码 SHA-1 哈希的前 5 个字符——完整密码永不联网。可随时关闭。',
   'hibpEnable': '启用',
+
+  // 批量选择 (P1-10)
+  'batchSelected': '已选 {n} 项',
+  'batchSelectAll': '全选',
+  'batchFavorite': '收藏',
+  'batchMove': '移动',
+  'batchMoveTitle': '移动到分类',
+  'batchDeleted': '已删除 {n} 项',
+  'batchUpdated': '已更新 {n} 项',
 };

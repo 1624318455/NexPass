@@ -212,4 +212,13 @@ final Map<String, String> jaStrings = {
   'hibpConsentTitle': 'オンライン漏洩チェックを有効にしますか？',
   'hibpConsentBody': 'デバイスを離れるのはパスワード SHA-1 ハッシュの先頭 5 文字のみ——パスワード本体が送信されることはありません。いつでもオフにできます。',
   'hibpEnable': '有効化',
+
+  // 一括選択 (P1-10)
+  'batchSelected': '{n} 件選択中',
+  'batchSelectAll': 'すべて選択',
+  'batchFavorite': 'お気に入り',
+  'batchMove': '移動',
+  'batchMoveTitle': '種類へ移動',
+  'batchDeleted': '{n} 件を削除しました',
+  'batchUpdated': '{n} 件を更新しました',
 };

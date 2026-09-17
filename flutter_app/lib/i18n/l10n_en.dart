@@ -212,4 +212,13 @@ final Map<String, String> enStrings = {
   'hibpConsentTitle': 'Enable online breach check?',
   'hibpConsentBody': 'Only the first 5 characters of your password SHA-1 hash leave the device — the full password never does. You can turn this off anytime.',
   'hibpEnable': 'Enable',
+
+  // Batch selection (P1-10)
+  'batchSelected': '{n} selected',
+  'batchSelectAll': 'Select all',
+  'batchFavorite': 'Favorite',
+  'batchMove': 'Move',
+  'batchMoveTitle': 'Move to type',
+  'batchDeleted': 'Deleted {n} items',
+  'batchUpdated': 'Updated {n} items',
 };
