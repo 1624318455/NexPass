@@ -25,6 +25,11 @@ class NexItem {
 
   List<String> tags = [];
 
+  // P1-10 (B7): single-level folder. Plain string id (folder name);
+  // no nesting by design (NordPass lesson). Null/empty = no folder.
+  @Index()
+  String? folderId;
+
   bool isFavorite = false;
 
   DateTime updatedAt = DateTime.now();

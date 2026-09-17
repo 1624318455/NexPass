@@ -23,68 +23,73 @@ const NexItemSchema = CollectionSchema(
       type: IsarType.objectList,
       target: r'NexField',
     ),
-    r'hasTotp': PropertySchema(
+    r'folderId': PropertySchema(
       id: 1,
+      name: r'folderId',
+      type: IsarType.string,
+    ),
+    r'hasTotp': PropertySchema(
+      id: 2,
       name: r'hasTotp',
       type: IsarType.bool,
     ),
     r'iconKey': PropertySchema(
-      id: 2,
+      id: 3,
       name: r'iconKey',
       type: IsarType.string,
     ),
     r'isFavorite': PropertySchema(
-      id: 3,
+      id: 4,
       name: r'isFavorite',
       type: IsarType.bool,
     ),
     r'lastUsedAt': PropertySchema(
-      id: 4,
+      id: 5,
       name: r'lastUsedAt',
       type: IsarType.dateTime,
     ),
     r'name': PropertySchema(
-      id: 5,
+      id: 6,
       name: r'name',
       type: IsarType.string,
     ),
     r'tags': PropertySchema(
-      id: 6,
+      id: 7,
       name: r'tags',
       type: IsarType.stringList,
     ),
     r'totpSecret': PropertySchema(
-      id: 7,
+      id: 8,
       name: r'totpSecret',
       type: IsarType.string,
     ),
     r'type': PropertySchema(
-      id: 8,
+      id: 9,
       name: r'type',
       type: IsarType.long,
     ),
     r'updatedAt': PropertySchema(
-      id: 9,
+      id: 10,
       name: r'updatedAt',
       type: IsarType.dateTime,
     ),
     r'username': PropertySchema(
-      id: 10,
+      id: 11,
       name: r'username',
       type: IsarType.string,
     ),
     r'uuid': PropertySchema(
-      id: 11,
+      id: 12,
       name: r'uuid',
       type: IsarType.string,
     ),
     r'vaultId': PropertySchema(
-      id: 12,
+      id: 13,
       name: r'vaultId',
       type: IsarType.string,
     ),
     r'website': PropertySchema(
-      id: 13,
+      id: 14,
       name: r'website',
       type: IsarType.string,
     )
@@ -133,6 +138,19 @@ const NexItemSchema = CollectionSchema(
           caseSensitive: false,
         )
       ],
+    ),
+    r'folderId': IndexSchema(
+      id: 6340065978996931043,
+      name: r'folderId',
+      unique: false,
+      replace: false,
+      properties: [
+        IndexPropertySchema(
+          name: r'folderId',
+          type: IndexType.hash,
+          caseSensitive: true,
+        )
+      ],
     )
   },
   links: {},
@@ -155,6 +173,12 @@ int _nexItemEstimateSize(
     for (var i = 0; i < object.fields.length; i++) {
       final value = object.fields[i];
       bytesCount += NexFieldSchema.estimateSize(value, offsets, allOffsets);
+    }
+  }
+  {
+    final value = object.folderId;
+    if (value != null) {
+      bytesCount += 3 + value.length * 3;
     }
   }
   {
@@ -201,19 +225,20 @@ void _nexItemSerialize(
     NexFieldSchema.serialize,
     object.fields,
   );
-  writer.writeBool(offsets[1], object.hasTotp);
-  writer.writeString(offsets[2], object.iconKey);
-  writer.writeBool(offsets[3], object.isFavorite);
-  writer.writeDateTime(offsets[4], object.lastUsedAt);
-  writer.writeString(offsets[5], object.name);
-  writer.writeStringList(offsets[6], object.tags);
-  writer.writeString(offsets[7], object.totpSecret);
-  writer.writeLong(offsets[8], object.type);
-  writer.writeDateTime(offsets[9], object.updatedAt);
-  writer.writeString(offsets[10], object.username);
-  writer.writeString(offsets[11], object.uuid);
-  writer.writeString(offsets[12], object.vaultId);
-  writer.writeString(offsets[13], object.website);
+  writer.writeString(offsets[1], object.folderId);
+  writer.writeBool(offsets[2], object.hasTotp);
+  writer.writeString(offsets[3], object.iconKey);
+  writer.writeBool(offsets[4], object.isFavorite);
+  writer.writeDateTime(offsets[5], object.lastUsedAt);
+  writer.writeString(offsets[6], object.name);
+  writer.writeStringList(offsets[7], object.tags);
+  writer.writeString(offsets[8], object.totpSecret);
+  writer.writeLong(offsets[9], object.type);
+  writer.writeDateTime(offsets[10], object.updatedAt);
+  writer.writeString(offsets[11], object.username);
+  writer.writeString(offsets[12], object.uuid);
+  writer.writeString(offsets[13], object.vaultId);
+  writer.writeString(offsets[14], object.website);
 }
 
 NexItem _nexItemDeserialize(
@@ -230,16 +255,17 @@ NexItem _nexItemDeserialize(
         NexField(),
       ) ??
       [];
-  object.iconKey = reader.readStringOrNull(offsets[2]);
+  object.folderId = reader.readStringOrNull(offsets[1]);
+  object.iconKey = reader.readStringOrNull(offsets[3]);
   object.id = id;
-  object.isFavorite = reader.readBool(offsets[3]);
-  object.lastUsedAt = reader.readDateTimeOrNull(offsets[4]);
-  object.name = reader.readString(offsets[5]);
-  object.tags = reader.readStringList(offsets[6]) ?? [];
-  object.type = reader.readLong(offsets[8]);
-  object.updatedAt = reader.readDateTime(offsets[9]);
-  object.uuid = reader.readStringOrNull(offsets[11]);
-  object.vaultId = reader.readStringOrNull(offsets[12]);
+  object.isFavorite = reader.readBool(offsets[4]);
+  object.lastUsedAt = reader.readDateTimeOrNull(offsets[5]);
+  object.name = reader.readString(offsets[6]);
+  object.tags = reader.readStringList(offsets[7]) ?? [];
+  object.type = reader.readLong(offsets[9]);
+  object.updatedAt = reader.readDateTime(offsets[10]);
+  object.uuid = reader.readStringOrNull(offsets[12]);
+  object.vaultId = reader.readStringOrNull(offsets[13]);
   return object;
 }
 
@@ -259,30 +285,32 @@ P _nexItemDeserializeProp<P>(
           ) ??
           []) as P;
     case 1:
-      return (reader.readBool(offset)) as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 2:
-      return (reader.readStringOrNull(offset)) as P;
-    case 3:
       return (reader.readBool(offset)) as P;
-    case 4:
-      return (reader.readDateTimeOrNull(offset)) as P;
-    case 5:
-      return (reader.readString(offset)) as P;
-    case 6:
-      return (reader.readStringList(offset) ?? []) as P;
-    case 7:
-      return (reader.readString(offset)) as P;
-    case 8:
-      return (reader.readLong(offset)) as P;
-    case 9:
-      return (reader.readDateTime(offset)) as P;
-    case 10:
-      return (reader.readString(offset)) as P;
-    case 11:
+    case 3:
       return (reader.readStringOrNull(offset)) as P;
+    case 4:
+      return (reader.readBool(offset)) as P;
+    case 5:
+      return (reader.readDateTimeOrNull(offset)) as P;
+    case 6:
+      return (reader.readString(offset)) as P;
+    case 7:
+      return (reader.readStringList(offset) ?? []) as P;
+    case 8:
+      return (reader.readString(offset)) as P;
+    case 9:
+      return (reader.readLong(offset)) as P;
+    case 10:
+      return (reader.readDateTime(offset)) as P;
+    case 11:
+      return (reader.readString(offset)) as P;
     case 12:
       return (reader.readStringOrNull(offset)) as P;
     case 13:
+      return (reader.readStringOrNull(offset)) as P;
+    case 14:
       return (reader.readString(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -731,6 +759,71 @@ extension NexItemQueryWhere on QueryBuilder<NexItem, NexItem, QWhereClause> {
       }
     });
   }
+
+  QueryBuilder<NexItem, NexItem, QAfterWhereClause> folderIdIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(IndexWhereClause.equalTo(
+        indexName: r'folderId',
+        value: [null],
+      ));
+    });
+  }
+
+  QueryBuilder<NexItem, NexItem, QAfterWhereClause> folderIdIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(IndexWhereClause.between(
+        indexName: r'folderId',
+        lower: [null],
+        includeLower: false,
+        upper: [],
+      ));
+    });
+  }
+
+  QueryBuilder<NexItem, NexItem, QAfterWhereClause> folderIdEqualTo(
+      String? folderId) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(IndexWhereClause.equalTo(
+        indexName: r'folderId',
+        value: [folderId],
+      ));
+    });
+  }
+
+  QueryBuilder<NexItem, NexItem, QAfterWhereClause> folderIdNotEqualTo(
+      String? folderId) {
+    return QueryBuilder.apply(this, (query) {
+      if (query.whereSort == Sort.asc) {
+        return query
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'folderId',
+              lower: [],
+              upper: [folderId],
+              includeUpper: false,
+            ))
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'folderId',
+              lower: [folderId],
+              includeLower: false,
+              upper: [],
+            ));
+      } else {
+        return query
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'folderId',
+              lower: [folderId],
+              includeLower: false,
+              upper: [],
+            ))
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'folderId',
+              lower: [],
+              upper: [folderId],
+              includeUpper: false,
+            ));
+      }
+    });
+  }
 }
 
 extension NexItemQueryFilter
@@ -816,6 +909,152 @@ extension NexItemQueryFilter
         upper,
         includeUpper,
       );
+    });
+  }
+
+  QueryBuilder<NexItem, NexItem, QAfterFilterCondition> folderIdIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'folderId',
+      ));
+    });
+  }
+
+  QueryBuilder<NexItem, NexItem, QAfterFilterCondition> folderIdIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'folderId',
+      ));
+    });
+  }
+
+  QueryBuilder<NexItem, NexItem, QAfterFilterCondition> folderIdEqualTo(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'folderId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<NexItem, NexItem, QAfterFilterCondition> folderIdGreaterThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'folderId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<NexItem, NexItem, QAfterFilterCondition> folderIdLessThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'folderId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<NexItem, NexItem, QAfterFilterCondition> folderIdBetween(
+    String? lower,
+    String? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'folderId',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<NexItem, NexItem, QAfterFilterCondition> folderIdStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'folderId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<NexItem, NexItem, QAfterFilterCondition> folderIdEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'folderId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<NexItem, NexItem, QAfterFilterCondition> folderIdContains(
+      String value,
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'folderId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<NexItem, NexItem, QAfterFilterCondition> folderIdMatches(
+      String pattern,
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'folderId',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<NexItem, NexItem, QAfterFilterCondition> folderIdIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'folderId',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<NexItem, NexItem, QAfterFilterCondition> folderIdIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'folderId',
+        value: '',
+      ));
     });
   }
 
@@ -2253,6 +2492,18 @@ extension NexItemQueryLinks
     on QueryBuilder<NexItem, NexItem, QFilterCondition> {}
 
 extension NexItemQuerySortBy on QueryBuilder<NexItem, NexItem, QSortBy> {
+  QueryBuilder<NexItem, NexItem, QAfterSortBy> sortByFolderId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'folderId', Sort.asc);
+    });
+  }
+
+  QueryBuilder<NexItem, NexItem, QAfterSortBy> sortByFolderIdDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'folderId', Sort.desc);
+    });
+  }
+
   QueryBuilder<NexItem, NexItem, QAfterSortBy> sortByHasTotp() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'hasTotp', Sort.asc);
@@ -2400,6 +2651,18 @@ extension NexItemQuerySortBy on QueryBuilder<NexItem, NexItem, QSortBy> {
 
 extension NexItemQuerySortThenBy
     on QueryBuilder<NexItem, NexItem, QSortThenBy> {
+  QueryBuilder<NexItem, NexItem, QAfterSortBy> thenByFolderId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'folderId', Sort.asc);
+    });
+  }
+
+  QueryBuilder<NexItem, NexItem, QAfterSortBy> thenByFolderIdDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'folderId', Sort.desc);
+    });
+  }
+
   QueryBuilder<NexItem, NexItem, QAfterSortBy> thenByHasTotp() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'hasTotp', Sort.asc);
@@ -2559,6 +2822,13 @@ extension NexItemQuerySortThenBy
 
 extension NexItemQueryWhereDistinct
     on QueryBuilder<NexItem, NexItem, QDistinct> {
+  QueryBuilder<NexItem, NexItem, QDistinct> distinctByFolderId(
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'folderId', caseSensitive: caseSensitive);
+    });
+  }
+
   QueryBuilder<NexItem, NexItem, QDistinct> distinctByHasTotp() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'hasTotp');
@@ -2656,6 +2926,12 @@ extension NexItemQueryProperty
   QueryBuilder<NexItem, List<NexField>, QQueryOperations> fieldsProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'fields');
+    });
+  }
+
+  QueryBuilder<NexItem, String?, QQueryOperations> folderIdProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'folderId');
     });
   }
 

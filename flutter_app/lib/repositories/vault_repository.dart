@@ -163,6 +163,25 @@ class VaultRepository {
     });
   }
 
+  /// Moves all [items] to folder [folderId] (null/empty = no folder).
+  /// Metadata-only, single transaction. Empty list no-op.
+  Future<void> moveItemsToFolder({
+    required List<NexItem> items,
+    required String? folderId,
+  }) async {
+    if (items.isEmpty) return;
+    final now = DateTime.now();
+    final normalized =
+        (folderId == null || folderId.trim().isEmpty) ? null : folderId.trim();
+    await _isar.writeTxn(() async {
+      for (final item in items) {
+        item.folderId = normalized;
+        item.updatedAt = now;
+        await _isar.nexItems.put(item);
+      }
+    });
+  }
+
   Future<void> markUsed({required NexItem item}) async {
     item.lastUsedAt = DateTime.now();
     await _isar.writeTxn(() async => _isar.nexItems.put(item));

@@ -174,6 +174,13 @@ class VaultNotifier extends StateNotifier<VaultState> {
     await loadVault();
   }
 
+  /// Batch-moves [items] to folder [folderId] (null = no folder).
+  Future<void> moveItemsToFolder(List<NexItem> items, String? folderId) async {
+    if (items.isEmpty) return;
+    await _repository.moveItemsToFolder(items: items, folderId: folderId);
+    await loadVault();
+  }
+
   void markUsed(NexItem item) {
     _repository.markUsed(item: item);
     // No need to sync cache for usage tracking
@@ -192,6 +199,7 @@ class VaultNotifier extends StateNotifier<VaultState> {
       ..name = item.name
       ..iconKey = item.iconKey
       ..tags = List<String>.from(item.tags)
+      ..folderId = item.folderId
       ..isFavorite = item.isFavorite
       ..updatedAt = item.updatedAt
       ..lastUsedAt = item.lastUsedAt
