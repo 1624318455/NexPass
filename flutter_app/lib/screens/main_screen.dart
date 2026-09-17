@@ -447,7 +447,7 @@ class _VaultPageState extends ConsumerState<_VaultPage> {
                   for (int i = 0; i < favoriteItems.length; i++)
                     _StaggeredEntrance(
                       index: i,
-                      child: _selectableCard(favoriteItems[i]),
+                      child: _selectableCard(favoriteItems[i], 'fav'),
                     ),
                 ],
               ),
@@ -467,7 +467,7 @@ class _VaultPageState extends ConsumerState<_VaultPage> {
                   for (int i = 0; i < recentItems.length; i++)
                     _StaggeredEntrance(
                       index: i,
-                      child: _selectableCard(recentItems[i]),
+                      child: _selectableCard(recentItems[i], 'recent'),
                     ),
                 ],
               ),
@@ -475,7 +475,7 @@ class _VaultPageState extends ConsumerState<_VaultPage> {
           for (int i = 0; i < filtered.length; i++)
             _StaggeredEntrance(
               index: i,
-              child: _selectableCard(filtered[i]),
+              child: _selectableCard(filtered[i], 'all'),
             ),
         ]),
       ),
@@ -506,16 +506,21 @@ class _VaultPageState extends ConsumerState<_VaultPage> {
     }
   }
 
-  Widget _selectableCard(NexItem item) {
+  Widget _selectableCard(NexItem item, String section) {
     final card = _VaultItemCard(
       item: item,
       selected: _selected.contains(_keyOf(item)),
+      // B8: only the main list carries Heroes — fav/recent duplicates would
+      // share the same tag within one route and crash navigation.
+      heroEnabled: section == 'all',
       onTap: () => _onCardTap(item),
       onLongPress: () => _toggleSelect(item),
     );
     if (_selecting) return card;
     return _VaultSwipeWrapper(
-      key: ValueKey('all-${item.uuid}'),
+      // B8: section-prefixed keys — the same item renders in up to three
+      // sections, and duplicate keys among siblings crash layout.
+      key: ValueKey('$section-${item.uuid}'),
       item: item,
       child: card,
     );
@@ -869,9 +874,14 @@ class _VaultItemCard extends ConsumerWidget {
   final VoidCallback? onTap;
   final VoidCallback? onLongPress;
   final bool selected;
+  final bool heroEnabled;
 
   const _VaultItemCard(
-      {required this.item, this.onTap, this.onLongPress, this.selected = false});
+      {required this.item,
+      this.onTap,
+      this.onLongPress,
+      this.selected = false,
+      this.heroEnabled = true});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -901,7 +911,8 @@ class _VaultItemCard extends ConsumerWidget {
           padding: const EdgeInsets.all(NexTheme.md),
           child: Row(
           children: [
-            // P1-10: selection checkbox replaces the icon badge in batch mode.
+            // P1-10: selection badge replaces the icon in batch mode.
+            // B8: non-main sections render no Hero (duplicate tags crash nav).
             if (selected)
               Container(
                 width: 36, height: 36,
@@ -912,6 +923,15 @@ class _VaultItemCard extends ConsumerWidget {
                 child: Center(
                     child: NexIcon(NexIconType.shield,
                         size: 18, color: cs.onPrimary)),
+              )
+            else if (!heroEnabled)
+              Container(
+                width: 36, height: 36,
+                decoration: BoxDecoration(
+                  color: iconColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(NexTheme.rSm),
+                ),
+                child: Center(child: NexIcon(iconType, size: 18, color: iconColor)),
               )
             else
             Hero(
@@ -933,16 +953,20 @@ class _VaultItemCard extends ConsumerWidget {
                   Row(
                     children: [
                       Expanded(
-                        child: Hero(
-                          tag: 'vault-title-${item.uuid}',
-                          // Hero flight needs a Material ancestor for text.
-                          child: Material(
-                            color: Colors.transparent,
-                            child: Text(item.name, style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        child: heroEnabled && !selected
+                            ? Hero(
+                                tag: 'vault-title-${item.uuid}',
+                                // Hero flight needs a Material ancestor for text.
+                                child: Material(
+                                  color: Colors.transparent,
+                                  child: Text(item.name, style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                    color: cs.onSurface, fontWeight: FontWeight.w600),
+                                    maxLines: 1, overflow: TextOverflow.ellipsis),
+                                ),
+                              )
+                            : Text(item.name, style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                               color: cs.onSurface, fontWeight: FontWeight.w600),
                               maxLines: 1, overflow: TextOverflow.ellipsis),
-                          ),
-                        ),
                       ),
                       if (showLinkedAuth) Container(
                         padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
@@ -998,6 +1022,7 @@ class _VaultSwipeWrapper extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final cs = Theme.of(context).colorScheme;
     final notifier = ref.read(vaultStateProvider.notifier);
+    final S = AppLocalizations.of(context);
 
     return Dismissible(
       key: key ?? ValueKey(item.uuid),
@@ -1014,8 +1039,8 @@ class _VaultSwipeWrapper extends ConsumerWidget {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(item.isFavorite
-                    ? 'Removed from favorites'
-                    : 'Favorited · username copied'),
+                    ? S.unfavorited
+                    : S.favoritedCopied),
                 duration: const Duration(seconds: 2),
               ),
             );
@@ -1027,16 +1052,15 @@ class _VaultSwipeWrapper extends ConsumerWidget {
         final confirmed = await showDialog<bool>(
           context: context,
           builder: (ctx) => AlertDialog(
-            title: const Text('Delete item?'),
-            content: Text(
-                '"${item.name}" will be removed from this vault.'),
+            title: Text(S.deleteTitle),
+            content: Text(S.deleteConfirm(item.name)),
             actions: [
               TextButton(
                   onPressed: () => Navigator.pop(ctx, false),
-                  child: const Text('Cancel')),
+                  child: Text(S.cancel)),
               FilledButton(
                   onPressed: () => Navigator.pop(ctx, true),
-                  child: const Text('Delete')),
+                  child: Text(S.delete)),
             ],
           ),
         );

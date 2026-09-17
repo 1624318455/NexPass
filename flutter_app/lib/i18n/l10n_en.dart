@@ -221,6 +221,8 @@ final Map<String, String> enStrings = {
   'batchMoveTitle': 'Move to type',
   'batchDeleted': 'Deleted {n} items',
   'batchUpdated': 'Updated {n} items',
+  'favoritedCopied': 'Favorited · username copied',
+  'unfavorited': 'Removed from favorites',
 
   // Folders (P1-10 single level)
   'folderAll': 'All folders',

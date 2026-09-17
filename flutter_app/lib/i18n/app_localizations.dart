@@ -240,6 +240,8 @@ class AppLocalizations {
   String get batchMoveTitle => get('batchMoveTitle');
   String batchDeleted(int n) => get('batchDeleted').replaceAll('{n}', '$n');
   String batchUpdated(int n) => get('batchUpdated').replaceAll('{n}', '$n');
+  String get favoritedCopied => get('favoritedCopied');
+  String get unfavorited => get('unfavorited');
 
   // ── Folders (P1-10 single level) ───────────────────────────────────
 
