@@ -18,6 +18,7 @@ import '../widgets/nex_icons.dart';
 import 'import_preview_screen.dart';
 import 'password_history_screen.dart';
 import 'security_audit_screen.dart';
+import 'security_whitepaper_screen.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -155,6 +156,11 @@ class SettingsScreen extends ConsumerWidget {
         _tile(context, NexIconType.clock, S.historyTitle, S.historySettingsDesc,
             onTap: () => Navigator.push(context,
                 MaterialPageRoute(builder: (_) => const PasswordHistoryScreen()))),
+
+        // P2-11 (B9): security whitepaper — live KDF params + audit badge.
+        _tile(context, NexIconType.info, S.whitepaperTitle, S.whitepaperDesc,
+            onTap: () => Navigator.push(context,
+                MaterialPageRoute(builder: (_) => const SecurityWhitepaperScreen()))),
 
         const SizedBox(height: 8),
         Padding(

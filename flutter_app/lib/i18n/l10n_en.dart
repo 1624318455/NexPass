@@ -213,6 +213,23 @@ final Map<String, String> enStrings = {
   'hibpConsentBody': 'Only the first 5 characters of your password SHA-1 hash leave the device — the full password never does. You can turn this off anytime.',
   'hibpEnable': 'Enable',
 
+  // Security whitepaper (P2-11 minimal)
+  'whitepaperTitle': 'Security Whitepaper',
+  'whitepaperDesc': 'Encryption parameters & audit status',
+  'wpAuditTitle': 'Self-audited · third-party pending',
+  'wpAuditBody': 'Parameters below are read live from the crypto engine. Independent audit badge slot reserved.',
+  'wpKdfTitle': 'Key derivation (this build)',
+  'wpKdfNote': 'Production target: 3 iterations / 64 MB / parallelism 4. Debug builds use reduced parameters for fast startup.',
+  'wpFlowTitle': 'Encryption flow',
+  'wpFlow1': 'Master password → Argon2id → 256-bit derived key.',
+  'wpFlow2': 'Double layer: Isar file-level AES-256-GCM + sensitive-field AES-256-GCM.',
+  'wpFlow3': 'Key stored in Keychain / Keystore; in-memory cache expires after 5 minutes.',
+  'wpFlow4': 'Clipboard auto-clears in 30 s; WebDAV sync is atomic (PUT .tmp → MOVE).',
+  'wpHygieneTitle': 'Hygiene guarantees',
+  'wpHygiene1': 'Zero-knowledge: master password never leaves the device.',
+  'wpHygiene2': 'Heavy crypto runs in background Isolates — no UI jank.',
+  'wpHygiene3': 'Integrity tag blocks cross-device store restore.',
+
   // Batch selection (P1-10)
   'batchSelected': '{n} selected',
   'batchSelectAll': 'Select all',

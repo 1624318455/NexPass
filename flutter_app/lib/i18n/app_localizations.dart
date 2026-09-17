@@ -231,6 +231,24 @@ class AppLocalizations {
   String get hibpConsentBody => get('hibpConsentBody');
   String get hibpEnable => get('hibpEnable');
 
+  // ── Security whitepaper (P2-11 minimal) ────────────────────────────
+
+  String get whitepaperTitle => get('whitepaperTitle');
+  String get whitepaperDesc => get('whitepaperDesc');
+  String get wpAuditTitle => get('wpAuditTitle');
+  String get wpAuditBody => get('wpAuditBody');
+  String get wpKdfTitle => get('wpKdfTitle');
+  String get wpKdfNote => get('wpKdfNote');
+  String get wpFlowTitle => get('wpFlowTitle');
+  String get wpFlow1 => get('wpFlow1');
+  String get wpFlow2 => get('wpFlow2');
+  String get wpFlow3 => get('wpFlow3');
+  String get wpFlow4 => get('wpFlow4');
+  String get wpHygieneTitle => get('wpHygieneTitle');
+  String get wpHygiene1 => get('wpHygiene1');
+  String get wpHygiene2 => get('wpHygiene2');
+  String get wpHygiene3 => get('wpHygiene3');
+
   // ── Batch selection (P1-10) ────────────────────────────────────────
 
   String batchSelected(int n) => get('batchSelected').replaceAll('{n}', '$n');

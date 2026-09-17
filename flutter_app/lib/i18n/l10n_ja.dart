@@ -213,6 +213,23 @@ final Map<String, String> jaStrings = {
   'hibpConsentBody': 'デバイスを離れるのはパスワード SHA-1 ハッシュの先頭 5 文字のみ——パスワード本体が送信されることはありません。いつでもオフにできます。',
   'hibpEnable': '有効化',
 
+  // セキュリティホワイトペーパー（P2-11 最小版）
+  'whitepaperTitle': 'セキュリティホワイトペーパー',
+  'whitepaperDesc': '暗号化パラメータと監査状況',
+  'wpAuditTitle': '自己監査済み · 第三者監査は予定',
+  'wpAuditBody': '以下のパラメータは暗号エンジンからリアルタイムに読み取られます。独立監査バッジ枠を確保済み。',
+  'wpKdfTitle': '鍵導出（現在のビルド）',
+  'wpKdfNote': '製品目標：3 反復 / 64 MB / 並列度 4。デバッグビルドは高速起動のため低減パラメータを使用。',
+  'wpFlowTitle': '暗号化フロー',
+  'wpFlow1': 'マスターパスワード → Argon2id → 256 ビット導出鍵。',
+  'wpFlow2': '二層暗号化：Isar ファイルレベル AES-256-GCM + 機密フィールド AES-256-GCM。',
+  'wpFlow3': '鍵は Keychain / Keystore に保存；メモリキャッシュは 5 分で期限切れ。',
+  'wpFlow4': 'クリップボードは 30 秒で自動消去；WebDAV 同期はアトミック（PUT .tmp → MOVE）。',
+  'wpHygieneTitle': 'ハイジーン保証',
+  'wpHygiene1': 'ゼロノレッジ：マスターパスワードはデバイスから出ません。',
+  'wpHygiene2': '重い暗号処理はバックグラウンド Isolate で実行——UI は固まりません。',
+  'wpHygiene3': '完全性タグがデバイス間のストア復元を防止。',
+
   // 一括選択 (P1-10)
   'batchSelected': '{n} 件選択中',
   'batchSelectAll': 'すべて選択',

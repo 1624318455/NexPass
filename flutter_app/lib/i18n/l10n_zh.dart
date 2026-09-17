@@ -213,6 +213,23 @@ final Map<String, String> zhStrings = {
   'hibpConsentBody': '离开设备的只有密码 SHA-1 哈希的前 5 个字符——完整密码永不联网。可随时关闭。',
   'hibpEnable': '启用',
 
+  // 安全白皮书（P2-11 最小版）
+  'whitepaperTitle': '安全白皮书',
+  'whitepaperDesc': '加密参数与审计状态',
+  'wpAuditTitle': '已自审计 · 第三方审计待进行',
+  'wpAuditBody': '以下参数从密码学引擎实时读取。独立审计徽章位已预留。',
+  'wpKdfTitle': '密钥派生（当前构建）',
+  'wpKdfNote': '正式目标：3 轮迭代 / 64 MB / 并行度 4。调试构建使用降参以加快启动。',
+  'wpFlowTitle': '加密流程',
+  'wpFlow1': '主密码 → Argon2id → 256 位派生密钥。',
+  'wpFlow2': '双层加密：Isar 文件级 AES-256-GCM + 敏感字段级 AES-256-GCM。',
+  'wpFlow3': '密钥存于 Keychain / Keystore；内存缓存 5 分钟过期。',
+  'wpFlow4': '剪贴板 30 秒自动清空；WebDAV 原子同步（PUT .tmp → MOVE）。',
+  'wpHygieneTitle': '卫生保障',
+  'wpHygiene1': '零知识：主密码永不离开设备。',
+  'wpHygiene2': '重型密码学运算在后台 Isolate 执行——界面无卡顿。',
+  'wpHygiene3': '完整性标签防止跨设备存储恢复。',
+
   // 批量选择 (P1-10)
   'batchSelected': '已选 {n} 项',
   'batchSelectAll': '全选',
