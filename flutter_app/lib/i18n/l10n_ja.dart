@@ -221,4 +221,10 @@ final Map<String, String> jaStrings = {
   'batchMoveTitle': '種類へ移動',
   'batchDeleted': '{n} 件を削除しました',
   'batchUpdated': '{n} 件を更新しました',
+
+  // フォルダー（P1-10 単層）
+  'folderAll': 'すべてのフォルダー',
+  'folderNoFolder': 'フォルダーなし',
+  'folderMoveTitle': 'フォルダーへ移動',
+  'folderNewHint': '新しいフォルダー名',
 };

@@ -221,4 +221,10 @@ final Map<String, String> zhStrings = {
   'batchMoveTitle': '移动到分类',
   'batchDeleted': '已删除 {n} 项',
   'batchUpdated': '已更新 {n} 项',
+
+  // 文件夹（P1-10 单层）
+  'folderAll': '全部文件夹',
+  'folderNoFolder': '无文件夹',
+  'folderMoveTitle': '移动到文件夹',
+  'folderNewHint': '新建文件夹名称',
 };

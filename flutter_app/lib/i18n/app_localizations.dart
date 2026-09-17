@@ -241,6 +241,13 @@ class AppLocalizations {
   String batchDeleted(int n) => get('batchDeleted').replaceAll('{n}', '$n');
   String batchUpdated(int n) => get('batchUpdated').replaceAll('{n}', '$n');
 
+  // ── Folders (P1-10 single level) ───────────────────────────────────
+
+  String get folderAll => get('folderAll');
+  String get folderNoFolder => get('folderNoFolder');
+  String get folderMoveTitle => get('folderMoveTitle');
+  String get folderNewHint => get('folderNewHint');
+
   // ── Password history ─────────────────────────────────────────────
 
   String get historyTitle => get('historyTitle');

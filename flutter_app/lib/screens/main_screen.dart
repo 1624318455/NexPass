@@ -185,6 +185,9 @@ class _VaultPageState extends ConsumerState<_VaultPage> {
   // must not leak into audit/sync or survive a vault reload.
   final Set<String> _selected = {};
 
+  // ── P1-10 (B7): single-level folder filter, page-scoped like selection ──
+  String? _folderFilter;
+
   String _keyOf(NexItem item) => item.uuid ?? 'id-${item.id}';
   bool get _selecting => _selected.isNotEmpty;
 
@@ -292,6 +295,11 @@ class _VaultPageState extends ConsumerState<_VaultPage> {
             ),
           ),
 
+        // ── P1-10 (B7): folder filter chips (single level) ──────────────
+        SliverToBoxAdapter(
+          child: _folderChips(S, vaultState),
+        ),
+
         // ── Items ───────────────────────────────────────
         // P0-1: skeleton shimmer while loading, illustrated error state
         // with retry, illustrated empty state (1Password/Dashlane parity).
@@ -390,8 +398,14 @@ class _VaultPageState extends ConsumerState<_VaultPage> {
   Widget _itemSliverList(VaultState state, S) {
     final settings = ref.watch(appSettingsNotifierProvider);
     final matchesTab = (NexItem item) {
-      if (state.selectedTypeTab == 0) return true;
-      return item.type == state.selectedTypeTab;
+      if (state.selectedTypeTab != 0 && item.type != state.selectedTypeTab) {
+        return false;
+      }
+      // P1-10 (B7): single-level folder filter. '__none__' = no folder.
+      final f = _folderFilter;
+      if (f == null) return true;
+      if (f == '__none__') return item.folderId == null || item.folderId!.isEmpty;
+      return item.folderId == f;
     };
 
     final filtered = state.items.where(matchesTab).toList();
@@ -520,6 +534,140 @@ class _VaultPageState extends ConsumerState<_VaultPage> {
     });
   }
 
+  // ── P1-10 (B7): folder helpers ───────────────────────────────────────
+
+  List<String> _allFolders(List<NexItem> items) {
+    final set = <String>{};
+    for (final item in items) {
+      final f = item.folderId;
+      if (f != null && f.trim().isNotEmpty) set.add(f.trim());
+    }
+    final list = set.toList()..sort();
+    return list;
+  }
+
+  Widget _folderChips(dynamic S, VaultState vaultState) {
+    // Hide the row when no folders exist and no filter is active — keeps
+    // the default vault view pixel-identical for folder-free users.
+    final folders = _allFolders(vaultState.items);
+    if (folders.isEmpty && _folderFilter == null) {
+      return const SizedBox.shrink();
+    }
+    final cs = Theme.of(context).colorScheme;
+    Widget chip(String label, bool active, VoidCallback onTap) {
+      return GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: active ? cs.secondaryContainer : Colors.transparent,
+            borderRadius: BorderRadius.circular(NexTheme.rSm),
+            border: Border.all(
+                color: active ? cs.secondary : cs.outline),
+          ),
+          child: Text(label,
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  color: active
+                      ? cs.onSecondaryContainer
+                      : cs.onSurfaceVariant,
+                  fontWeight:
+                      active ? FontWeight.w600 : FontWeight.w500)),
+        ),
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+          horizontal: NexTheme.lg, vertical: NexTheme.xs),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: [
+            chip(S.folderAll, _folderFilter == null,
+                () => setState(() => _folderFilter = null)),
+            const SizedBox(width: NexTheme.sm),
+            chip(S.folderNoFolder, _folderFilter == '__none__',
+                () => setState(() => _folderFilter = '__none__')),
+            for (final f in folders) ...[
+              const SizedBox(width: NexTheme.sm),
+              chip(f, _folderFilter == f,
+                  () => setState(() => _folderFilter = f)),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _batchMoveToFolder(List<NexItem> targets) async {
+    if (targets.isEmpty) return;
+    final S = AppLocalizations.of(context);
+    final folders = _allFolders(
+        ref.read(vaultStateProvider).items);
+    final nameC = TextEditingController();
+    final picked = await showModalBottomSheet<String?>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setModalState) => Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(ctx).viewInsets.bottom,
+          ),
+          child: SafeArea(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(NexTheme.lg),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(S.folderMoveTitle,
+                      style: Theme.of(ctx).textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w700)),
+                  const SizedBox(height: NexTheme.md),
+                  TextField(
+                    controller: nameC,
+                    decoration:
+                        InputDecoration(hintText: S.folderNewHint),
+                    onSubmitted: (v) => Navigator.pop(ctx, v.trim()),
+                  ),
+                  const SizedBox(height: NexTheme.sm),
+                  ListTile(
+                    title: Text(S.folderNoFolder),
+                    onTap: () => Navigator.pop(ctx, ''),
+                  ),
+                  for (final f in folders)
+                    ListTile(
+                      title: Text(f),
+                      onTap: () => Navigator.pop(ctx, f),
+                    ),
+                  const SizedBox(height: NexTheme.sm),
+                  FilledButton(
+                    onPressed: () =>
+                        Navigator.pop(ctx, nameC.text.trim()),
+                    child: Text(S.add),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    if (picked == null) return;
+    HapticFeedback.mediumImpact();
+    // Empty string from the sheet = explicit "no folder" → null.
+    await ref
+        .read(vaultStateProvider.notifier)
+        .moveItemsToFolder(targets, picked.isEmpty ? null : picked);
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(S.batchUpdated(targets.length))),
+      );
+    }
+    _clearSelection();
+  }
+
   Future<void> _batchDelete(List<NexItem> targets) async {
     if (targets.isEmpty) return;
     HapticFeedback.heavyImpact();
@@ -562,8 +710,8 @@ class _VaultPageState extends ConsumerState<_VaultPage> {
     _clearSelection();
   }
 
-  // B6 move = change entry type (1/2/3). Folder-level move lands in B7 and
-  // reuses this sheet + the same notifier batch path.
+  // B6 move = change entry type (1/2/3). B7 adds the folder section below,
+  // reusing the same notifier batch path.
   Future<void> _batchMove(List<NexItem> targets) async {
     if (targets.isEmpty) return;
     final S = AppLocalizations.of(context);
@@ -595,12 +743,22 @@ class _VaultPageState extends ConsumerState<_VaultPage> {
               title: Text(S.typeNote),
               onTap: () => Navigator.pop(ctx, 3),
             ),
+            const Divider(),
+            ListTile(
+              leading: const NexIcon(NexIconType.copy, size: 20),
+              title: Text(S.folderMoveTitle),
+              onTap: () => Navigator.pop(ctx, -1),
+            ),
             const SizedBox(height: NexTheme.sm),
           ],
         ),
       ),
     );
     if (picked == null) return;
+    if (picked == -1) {
+      if (context.mounted) await _batchMoveToFolder(targets);
+      return;
+    }
     HapticFeedback.mediumImpact();
     await ref.read(vaultStateProvider.notifier).moveItemsToType(targets, picked);
     if (mounted) {
@@ -643,7 +801,7 @@ class _VaultPageState extends ConsumerState<_VaultPage> {
           IconButton(
             tooltip: S.batchFavorite,
             onPressed: targets.isEmpty ? null : () => _batchFavorite(targets),
-            icon: NexIcon(NexIconType.shield, size: 20,
+            icon: NexIcon(NexIconType.heart, size: 20,
                 color: cs.onPrimaryContainer),
           ),
           IconButton(
@@ -655,7 +813,7 @@ class _VaultPageState extends ConsumerState<_VaultPage> {
           IconButton(
             tooltip: S.delete,
             onPressed: targets.isEmpty ? null : () => _batchDelete(targets),
-            icon: NexIcon(NexIconType.close, size: 20, color: cs.error),
+            icon: NexIcon(NexIconType.trash, size: 20, color: cs.error),
           ),
         ],
       ),

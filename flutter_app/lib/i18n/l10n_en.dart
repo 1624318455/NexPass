@@ -221,4 +221,10 @@ final Map<String, String> enStrings = {
   'batchMoveTitle': 'Move to type',
   'batchDeleted': 'Deleted {n} items',
   'batchUpdated': 'Updated {n} items',
+
+  // Folders (P1-10 single level)
+  'folderAll': 'All folders',
+  'folderNoFolder': 'No folder',
+  'folderMoveTitle': 'Move to folder',
+  'folderNewHint': 'New folder name',
 };
